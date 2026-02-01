@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "TruoraValidationsSDK",
+    defaultLocalization: "es",
     platforms: [
         .iOS(.v13)
     ],
@@ -31,10 +32,7 @@ let package = Package(
             dependencies: ["TensorFlowLite"],
             path: "ios/validations/TruoraCamera",
             sources: ["Sources"],
-            resources: [
-                .process("Sources/Assets.xcassets"),
-                .process("Resources")
-            ]
+            resources: [.process("Resources")]
         ),
         .target(
             name: "TensorFlowLite",
