@@ -67,7 +67,7 @@ public struct TruoraValidationsSDKImages: Sendable {
   #endif
 
   public var image: Image {
-    let bundle = Bundle.module
+    let bundle = Bundle.truoraModule
     #if os(iOS) || os(tvOS) || os(visionOS)
     let image = Image(named: name, in: bundle, compatibleWith: nil)
     #elseif os(macOS)
@@ -93,17 +93,17 @@ public struct TruoraValidationsSDKImages: Sendable {
 @available(iOS 13.0, tvOS 13.0, watchOS 6.0, macOS 10.15, visionOS 1.0, *)
 public extension SwiftUI.Image {
   init(asset: TruoraValidationsSDKImages) {
-    let bundle = Bundle.module
+    let bundle = Bundle.truoraModule
     self.init(asset.name, bundle: bundle)
   }
 
   init(asset: TruoraValidationsSDKImages, label: Text) {
-    let bundle = Bundle.module
+    let bundle = Bundle.truoraModule
     self.init(asset.name, bundle: bundle, label: label)
   }
 
   init(decorative asset: TruoraValidationsSDKImages) {
-    let bundle = Bundle.module
+    let bundle = Bundle.truoraModule
     self.init(decorative: asset.name, bundle: bundle)
   }
 }

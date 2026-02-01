@@ -353,7 +353,7 @@ public enum TruoraValidationsSDKStrings: Sendable {
 
 extension TruoraValidationsSDKStrings {
   private static func tr(_ table: String, _ key: String, _ args: CVarArg...) -> String {
-    let format = Bundle.module.localizedString(forKey: key, value: nil, table: table)
+    let format = Bundle.truoraModule.localizedString(forKey: key, value: nil, table: table)
     return String(format: format, locale: Locale.current, arguments: args)
   }
 }
