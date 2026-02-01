@@ -31,6 +31,7 @@ let package = Package(
             name: "TruoraCamera",
             dependencies: ["TensorFlowLite"],
             path: "ios/validations/TruoraCamera",
+            exclude: ["Sources/Assets.xcassets"],
             sources: ["Sources"],
             resources: [
                 .process("Sources/Assets.xcassets"),
