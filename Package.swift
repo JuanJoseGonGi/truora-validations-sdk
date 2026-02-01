@@ -21,17 +21,19 @@ let package = Package(
         .target(
             name: "TruoraValidationsSDK",
             dependencies: ["TruoraCamera"],
-            path: "ios/validations/TruoraValidationsSDK/Sources",
-            resources: [.process("../Resources")],
+            path: "ios/validations/TruoraValidationsSDK",
+            sources: ["Sources"],
+            resources: [.process("Resources")],
             swiftSettings: [.define("SWIFT_PACKAGE")]
         ),
         .target(
             name: "TruoraCamera",
             dependencies: ["TensorFlowLite"],
-            path: "ios/validations/TruoraCamera/Sources",
+            path: "ios/validations/TruoraCamera",
+            sources: ["Sources"],
             resources: [
-                .process("Assets.xcassets"),
-                .process("../Resources")
+                .process("Sources/Assets.xcassets"),
+                .process("Resources")
             ]
         ),
         .target(
