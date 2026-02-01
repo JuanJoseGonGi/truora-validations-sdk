@@ -32,7 +32,11 @@ let package = Package(
             dependencies: ["TensorFlowLite"],
             path: "ios/validations/TruoraCamera",
             sources: ["Sources"],
-            resources: [.process("Resources")]
+            resources: [
+                .process("Sources/Assets.xcassets"),
+                .process("Resources")
+            ],
+            swiftSettings: [.define("SWIFT_PACKAGE")]
         ),
         .target(
             name: "TensorFlowLite",
