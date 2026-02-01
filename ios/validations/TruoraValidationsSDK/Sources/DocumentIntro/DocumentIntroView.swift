@@ -91,10 +91,10 @@ struct DocumentIntroView: View {
         .navigationBarHidden(true)
         .alert(isPresented: $viewModel.showError) {
             Alert(
-                title: Text(NSLocalizedString("common_error", bundle: .module, comment: "")),
+                title: Text(NSLocalizedString("common_error", bundle: .truoraModule, comment: "")),
                 message: Text(viewModel.errorMessage ?? ""),
                 dismissButton: .default(
-                    Text(NSLocalizedString("common_ok", bundle: .module, comment: ""))
+                    Text(NSLocalizedString("common_ok", bundle: .truoraModule, comment: ""))
                 )
             )
         }

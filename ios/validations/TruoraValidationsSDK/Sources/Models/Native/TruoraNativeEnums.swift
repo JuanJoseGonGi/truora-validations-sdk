@@ -28,7 +28,7 @@ public enum NativeCountry: String, CaseIterable, Identifiable {
     /// Returns localized display name for the country
     public var displayName: String {
         let key = "country_\(rawValue)"
-        return NSLocalizedString(key, bundle: .module, comment: "")
+        return NSLocalizedString(key, bundle: .truoraModule, comment: "")
     }
 
     /// Returns the flag emoji for the country
@@ -114,7 +114,7 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
         case .generalRegistration: "doc_br_general_reg"
         case .temporaryNationalId: "doc_co_temp_id"
         }
-        return NSLocalizedString(key, bundle: .module, comment: "")
+        return NSLocalizedString(key, bundle: .truoraModule, comment: "")
     }
 
     /// Returns localized description for the document type based on country context
@@ -166,7 +166,7 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
             nil
         }
         guard let key else { return nil }
-        return NSLocalizedString(key, bundle: .module, comment: "")
+        return NSLocalizedString(key, bundle: .truoraModule, comment: "")
     }
 }
 

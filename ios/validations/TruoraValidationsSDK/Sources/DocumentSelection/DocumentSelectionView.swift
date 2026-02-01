@@ -237,22 +237,22 @@ struct DocumentSelectionView: View {
             Alert(
                 title: Text(
                     NSLocalizedString(
-                        "camera_permission_denied_title", bundle: .module, comment: ""
+                        "camera_permission_denied_title", bundle: .truoraModule, comment: ""
                     )
                 ),
                 message: Text(
                     NSLocalizedString(
-                        "camera_permission_denied_description", bundle: .module, comment: ""
+                        "camera_permission_denied_description", bundle: .truoraModule, comment: ""
                     )
                 ),
                 primaryButton: .default(
-                    Text(NSLocalizedString("common_go_to_settings", bundle: .module, comment: ""))
+                    Text(NSLocalizedString("common_go_to_settings", bundle: .truoraModule, comment: ""))
                 ) {
                     guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                     UIApplication.shared.open(url, options: [:], completionHandler: nil)
                 },
                 secondaryButton: .cancel(
-                    Text(NSLocalizedString("common_cancel", bundle: .module, comment: ""))
+                    Text(NSLocalizedString("common_cancel", bundle: .truoraModule, comment: ""))
                 )
             )
         }
@@ -272,7 +272,7 @@ private struct CountryStaticView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            SwiftUI.Image(country.rawValue, bundle: .module)
+            SwiftUI.Image(country.rawValue, bundle: .truoraModule)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 30, height: 22)
@@ -303,7 +303,7 @@ private struct CountryPickerView: View {
             label: {
                 HStack(spacing: 12) {
                     if let country = selectedCountry {
-                        SwiftUI.Image(country.rawValue, bundle: .module)
+                        SwiftUI.Image(country.rawValue, bundle: .truoraModule)
                             .resizable()
                             .scaledToFit()
                             .frame(width: 30, height: 22)
@@ -369,7 +369,7 @@ private struct CountryDropdownOverlay: View {
                         },
                         label: {
                             HStack(spacing: 12) {
-                                SwiftUI.Image(country.rawValue, bundle: .module)
+                                SwiftUI.Image(country.rawValue, bundle: .truoraModule)
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 30, height: rowContentHeight)

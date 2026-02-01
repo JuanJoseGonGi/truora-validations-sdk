@@ -82,7 +82,7 @@ extension DocumentCaptureViewModel: DocumentCapturePresenterToView {
     func setupCamera() {
         guard let delegate = cameraViewDelegate else {
             errorMessage = NSLocalizedString(
-                "camera_error_initialization_failed", bundle: .module, comment: ""
+                "camera_error_initialization_failed", bundle: .truoraModule, comment: ""
             )
             showError = true
             return
@@ -93,7 +93,7 @@ extension DocumentCaptureViewModel: DocumentCapturePresenterToView {
     func takePicture() {
         guard let delegate = cameraViewDelegate else {
             errorMessage = NSLocalizedString(
-                "camera_error_capture_failed", bundle: .module, comment: ""
+                "camera_error_capture_failed", bundle: .truoraModule, comment: ""
             )
             showError = true
             return
@@ -200,7 +200,7 @@ struct DocumentCameraViewWrapper: UIViewRepresentable {
             guard let cameraView else {
                 DispatchQueue.main.async {
                     self.viewModel.errorMessage = NSLocalizedString(
-                        "camera_error_view_not_available", bundle: .module, comment: ""
+                        "camera_error_view_not_available", bundle: .truoraModule, comment: ""
                     )
                     self.viewModel.showError = true
                 }
@@ -213,7 +213,7 @@ struct DocumentCameraViewWrapper: UIViewRepresentable {
             guard let cameraView else {
                 DispatchQueue.main.async {
                     self.viewModel.errorMessage = NSLocalizedString(
-                        "camera_error_not_ready", bundle: .module, comment: ""
+                        "camera_error_not_ready", bundle: .truoraModule, comment: ""
                     )
                     self.viewModel.showError = true
                 }
@@ -299,10 +299,10 @@ struct DocumentCaptureView: View {
         .navigationBarHidden(true)
         .alert(isPresented: $viewModel.showError) {
             Alert(
-                title: Text(NSLocalizedString("common_error", bundle: .module, comment: "")),
+                title: Text(NSLocalizedString("common_error", bundle: .truoraModule, comment: "")),
                 message: viewModel.errorMessage.map { Text($0) },
                 dismissButton: .default(
-                    Text(NSLocalizedString("common_ok", bundle: .module, comment: ""))
+                    Text(NSLocalizedString("common_ok", bundle: .truoraModule, comment: ""))
                 )
             )
         }

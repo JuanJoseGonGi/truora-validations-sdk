@@ -51,9 +51,9 @@ struct PassiveIntroView: View {
         .navigationBarHidden(true)
         .alert(isPresented: $viewModel.showError) {
             Alert(
-                title: Text(NSLocalizedString("common_error", bundle: .module, comment: "")),
+                title: Text(NSLocalizedString("common_error", bundle: .truoraModule, comment: "")),
                 message: Text(viewModel.errorMessage ?? ""),
-                dismissButton: .default(Text(NSLocalizedString("common_ok", bundle: .module, comment: "")))
+                dismissButton: .default(Text(NSLocalizedString("common_ok", bundle: .truoraModule, comment: "")))
             )
         }
         .onAppear {
