@@ -7,8 +7,14 @@ let package = Package(
         .iOS(.v13)
     ],
     products: [
-        .library(name: "TruoraValidationsSDK", targets: ["TruoraValidationsSDK"]),
-        .library(name: "TruoraCamera", targets: ["TruoraCamera"])
+        .library(
+            name: "TruoraValidationsSDK",
+            targets: ["TruoraValidationsSDK"]
+        ),
+        .library(
+            name: "TruoraCamera",
+            targets: ["TruoraCamera"]
+        )
     ],
     dependencies: [],
     targets: [
@@ -16,13 +22,17 @@ let package = Package(
             name: "TruoraValidationsSDK",
             dependencies: ["TruoraCamera"],
             path: "ios/validations/TruoraValidationsSDK/Sources",
+            resources: [.process("../Resources")],
             swiftSettings: [.define("SWIFT_PACKAGE")]
         ),
         .target(
             name: "TruoraCamera",
             dependencies: ["TensorFlowLite"],
             path: "ios/validations/TruoraCamera/Sources",
-            exclude: ["Assets.xcassets"]
+            resources: [
+                .process("Assets.xcassets"),
+                .process("../Resources")
+            ]
         ),
         .target(
             name: "TensorFlowLite",
