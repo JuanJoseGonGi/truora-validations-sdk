@@ -27,6 +27,7 @@ enum PassiveIntroConfigurator {
 
         let uiConfig = ValidationConfig.shared.uiConfig
         let swiftUIView = PassiveIntroView(viewModel: viewModel, config: uiConfig)
+            .sdkLocaleEnvironment(locale: ValidationConfig.shared.uiConfig.language?.locale ?? Locale.current)
         return UIHostingController(rootView: swiftUIView)
     }
 }

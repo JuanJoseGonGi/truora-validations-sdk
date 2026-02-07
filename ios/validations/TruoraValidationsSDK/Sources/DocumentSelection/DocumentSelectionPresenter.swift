@@ -76,19 +76,27 @@ extension DocumentSelectionPresenter: DocumentSelectionViewToPresenter {
     func viewDidLoad() async {
         interactor?.fetchSupportedCountries()
         await preflightCameraPermission()
-        await checkForPreConfiguredCountry()
+        await checkForPreConfiguredValues()
     }
 
-    private func checkForPreConfiguredCountry() async {
+    private func checkForPreConfiguredValues() async {
         let documentConfig = ValidationConfig.shared.documentConfig
         let preConfiguredCountry = documentConfig.country
+        let preConfiguredDocument = documentConfig.documentType
 
         if !preConfiguredCountry.isEmpty,
            let country = NativeCountry(rawValue: preConfiguredCountry.lowercased()) {
             selectedCountry = country
             await view?.setCountryLocked(true)
-            await view?.updateSelection(selectedCountry: country, selectedDocument: nil)
         }
+
+        if !preConfiguredDocument.isEmpty,
+           let document = NativeDocumentType(rawValue: preConfiguredDocument.lowercased()) {
+            selectedDocument = document
+            await view?.setDocumentLocked(true)
+        }
+
+        await view?.updateSelection(selectedCountry: selectedCountry, selectedDocument: selectedDocument)
     }
 
     func countrySelected(_ country: NativeCountry) async {
@@ -123,7 +131,7 @@ extension DocumentSelectionPresenter: DocumentSelectionViewToPresenter {
             return
         }
 
-        let documentConfig = Document()
+        let documentConfig = ValidationConfig.shared.documentConfig
             .setCountry(selectedCountry.rawValue)
             .setDocumentType(selectedDocument.rawValue)
         ValidationConfig.shared.setValidation(.document(documentConfig))
@@ -137,7 +145,7 @@ extension DocumentSelectionPresenter: DocumentSelectionViewToPresenter {
     }
 
     func cancelTapped() async {
-        await router?.handleCancellation()
+        await router?.handleCancellation(loadingType: .document)
     }
 }
 

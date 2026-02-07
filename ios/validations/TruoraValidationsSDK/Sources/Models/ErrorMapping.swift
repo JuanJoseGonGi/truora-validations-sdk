@@ -84,8 +84,8 @@ extension LogoDownloaderError {
             .sdk(SDKError(type: .invalidConfiguration, details: "Logo URL did not return a valid image"))
         case .sizeExceeded(let maxBytes):
             .sdk(SDKError(type: .invalidRange, details: "Logo exceeds maximum size (\(maxBytes / 1024 / 1024)MB)"))
-        case .cancelled:
-            .sdk(SDKError(type: .processCancelledByUser, details: nil))
+        case .canceled:
+            .sdk(SDKError(type: .validationCanceledByUser, details: nil))
         }
     }
 }
@@ -137,7 +137,7 @@ extension Error {
 
         // Handle cancellation
         if self is CancellationError {
-            return .sdk(SDKError(type: .processCancelledByUser, details: nil))
+            return .sdk(SDKError(type: .validationCanceledByUser, details: nil))
         }
 
         // Fallback

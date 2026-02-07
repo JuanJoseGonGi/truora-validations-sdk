@@ -20,8 +20,9 @@ struct PassiveCaptureView: View {
 
     var body: some View {
         ZStack {
-            // Camera preview
+            // Camera preview - extends to full screen (including safe area)
             CameraViewWrapper(viewModel: viewModel)
+                .extendingIntoSafeArea()
 
             // Capture overlay (native) - matches KMP layout structure
             VStack(spacing: 0) {
@@ -57,7 +58,9 @@ struct PassiveCaptureView: View {
                     let buttonHeightOffset = isSmallScreen ? 24.0 : 48.0
                     let buttonOffset = (ovalHeight / 2) + buttonHeightOffset
 
-                    ManualRecordButton { viewModel.handleEvent(.recordVideoRequested) }
+                    ManualRecordButton(
+                        isEnabled: !viewModel.isRecordingInProgress && viewModel.uploadState == .none
+                    ) { viewModel.handleEvent(.recordVideoRequested) }
                         .environmentObject(theme)
                         .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset)
                 }
@@ -85,10 +88,10 @@ struct PassiveCaptureView: View {
         .navigationBarHidden(true)
         .alert(isPresented: $viewModel.showError) {
             Alert(
-                title: Text(NSLocalizedString("common_error", bundle: .truoraModule, comment: "")),
+                title: Text(TruoraLocalization.string(forKey: LocalizationKeys.commonError)),
                 message: Text(viewModel.errorMessage ?? ""),
                 dismissButton: .default(
-                    Text(NSLocalizedString("common_ok", bundle: .truoraModule, comment: ""))
+                    Text(TruoraLocalization.string(forKey: LocalizationKeys.commonOk))
                 )
             )
         }
@@ -102,12 +105,12 @@ struct PassiveCaptureView: View {
         .onReceive(
             NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)
         ) { _ in
-            viewModel.onWillDisappear()
+            viewModel.onAppWillResignActive()
         }
         .onReceive(
             NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
         ) { _ in
-            viewModel.onWillAppear()
+            viewModel.onAppDidBecomeActive()
         }
     }
 

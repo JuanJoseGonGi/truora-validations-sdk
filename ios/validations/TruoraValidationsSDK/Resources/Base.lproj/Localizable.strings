@@ -10,6 +10,7 @@
 "passive_capture_feedback_remove_glasses" = "Remove your glasses";
 "passive_capture_feedback_multiple_people" = "Avoid appearing with anyone else";
 "passive_capture_feedback_hidden_face" = "Uncover your face";
+"passive_capture_feedback_center_face" = "Center your face in the oval";
 "passive_capture_feedback_recording" = "Don't move!\nRecording";
 "passive_capture_record_video" = "record video";
 "passive_capture_cannot_record" = "We couldn't record.\nPress \"%@\".";
@@ -52,6 +53,7 @@
 
 /* Document Selection */
 "document_selection_title" = "Choose your document type";
+"document_selection_locked_title" = "Prepare this document";
 "document_selection_country_label" = "Country of your document:";
 "document_selection_country_placeholder" = "Select a country";
 "document_selection_country_error" = "Please select a country";
@@ -116,6 +118,10 @@
 "document_feedback_bad_angle_description" = "Hold your phone parallel to the document";
 "document_feedback_no_document_title" = "No document detected";
 "document_feedback_no_document_description" = "Place a document in the frame";
+"document_feedback_front_not_found_title" = "Front of document not detected";
+"document_feedback_front_not_found_description" = "We couldn't detect the front of the document";
+"document_feedback_back_not_found_title" = "Back of document not detected";
+"document_feedback_back_not_found_description" = "We couldn't detect the back of the document";
 "document_feedback_face_not_found_title" = "Face not clearly visible";
 "document_feedback_face_not_found_description" = "There may be reflections covering your face or your ID is too far from the camera.";
 "document_feedback_wrong_document_title" = "Wrong document";
@@ -155,6 +161,8 @@
 "document_type_tax_id" = "Tax ID";
 "document_type_ppt" = "PPT";
 "document_type_ptp" = "PTP";
+"document_type_invoice" = "Invoice";
+"document_type_native_national_id" = "Native National ID";
 
 /* Country Specific Documents */
 "doc_mx_national_id" = "INE/IFE (CURP)";
@@ -181,7 +189,6 @@
 
 /* Document Descriptions */
 "desc_original_valid" = "Valid and current";
-"desc_taxpayer_id" = "Taxpayer ID";
 "desc_mx_passport" = "Mexican, valid and current";
 "desc_physical_original" = "Original and in physical format";
 "desc_co_valid_issued" = "Valid and issued in Colombia";
@@ -189,5 +196,10 @@
 "desc_cl_foreign_id" = "Valid and issued in Chile";
 "desc_cl_passport" = "From Chile, valid and current";
 "desc_sv_keep_hand" = "Keep your original document handy";
-"desc_co_tax_id" = "Tax Identification Number";
 "desc_co_temp_id" = "Temporary National ID";
+
+/* Cancel Alert */
+"cancel_alert_title" = "Cancel validation";
+"cancel_alert_message" = "You are about to cancel your current validation";
+"cancel_alert_confirm" = "Yes, cancel";
+"cancel_alert_cancel" = "No, go back";

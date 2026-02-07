@@ -20,6 +20,17 @@ extension CameraManager {
         captureSession?.stopRunning()
     }
 
+    /// Resumes a previously paused camera session.
+    /// This does not reconfigure inputs/outputs or preview layer; it only restarts the session.
+    func resumeCamera() {
+        guard cameraIsSetup, let captureSession else { return }
+        guard !captureSession.isRunning else { return }
+
+        DispatchQueue.global(qos: .userInteractive).async {
+            captureSession.startRunning()
+        }
+    }
+
     func stopCamera() {
         pauseCamera()
         cleanupGestureRecognizers()

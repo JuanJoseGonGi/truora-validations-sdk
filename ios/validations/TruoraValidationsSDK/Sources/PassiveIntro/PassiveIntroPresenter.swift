@@ -68,7 +68,7 @@ extension PassiveIntroPresenter: PassiveIntroViewToPresenter {
 
     func cancelTapped() async {
         validationTask?.cancel()
-        await router?.handleCancellation()
+        await router?.handleCancellation(loadingType: .face)
     }
 }
 

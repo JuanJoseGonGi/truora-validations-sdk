@@ -108,7 +108,7 @@ import XCTest
     var onValidationCreated: (() -> Void)?
     var onValidationFailed: (() -> Void)?
 
-    func validationCreated(response: NativeValidationCreateResponse) {
+    func validationCreated(response: NativeValidationCreateResponse) async {
         validationCreatedCalled = true
         lastResponse = response
         onValidationCreated?()

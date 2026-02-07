@@ -507,6 +507,80 @@ import XCTest
         XCTAssertFalse(self.mockView.lastShowRotationAnimation ?? true, "Animation should be complete")
         XCTAssertEqual(self.mockView.lastSide, .back, "Should transition to back side")
     }
+
+    // MARK: - Autocapture Fallback Tests
+
+    func testSwitchToManualCapture_whenInAutocaptureMode_transitionsToManualMode() async {
+        // Given - Presenter starts in autocapture mode (default)
+        await sut.viewDidLoad()
+        mockView.reset()
+
+        // Verify initial state is autocapture (searching feedback)
+        XCTAssertEqual(mockView.lastFeedbackType, .searching, "Should start in autocapture mode")
+
+        // When - Model fails to load, triggering manual capture fallback
+        await sut.switchToManualCapture()
+
+        // Then - Should transition to manual mode
+        XCTAssertTrue(mockView.updateComposeUICalled, "Should update UI")
+        XCTAssertEqual(mockView.lastFeedbackType, .scanningManual, "Should switch to manual mode")
+    }
+
+    func testSwitchToManualCapture_whenAlreadyInManualMode_doesNothing() async {
+        // Given - Create presenter in manual mode
+        let manualPresenter = DocumentCapturePresenter(
+            view: mockView,
+            interactor: mockInteractor,
+            router: mockRouter,
+            validationId: "test-validation-id",
+            useAutocapture: false,
+            timeProvider: mockTimeProvider
+        )
+        await manualPresenter.viewDidLoad()
+        mockView.reset()
+
+        // When - Try to switch to manual (already in manual)
+        await manualPresenter.switchToManualCapture()
+
+        // Then - Should not update UI (guard returns early)
+        XCTAssertFalse(mockView.updateComposeUICalled, "Should not update UI when already in manual mode")
+    }
+
+    func testSwitchToManualCapture_calledMultipleTimes_onlyTransitionsOnce() async {
+        // Given - Presenter in autocapture mode
+        await sut.viewDidLoad()
+        mockView.reset()
+
+        // When - Call switchToManualCapture multiple times concurrently
+        // This tests the atomic flag in DetectionStateManager prevents race conditions
+        await withTaskGroup(of: Void.self) { group in
+            for _ in 0 ..< 5 {
+                group.addTask {
+                    await self.sut.switchToManualCapture()
+                }
+            }
+        }
+
+        // Then - Should only have transitioned once (feedback type should be manual)
+        XCTAssertEqual(mockView.lastFeedbackType, .scanningManual, "Should be in manual mode")
+        // Key assertion: UI should only be updated once due to atomic flag synchronization
+        XCTAssertEqual(mockView.updateComposeUICallCount, 1, "UI should only be updated once")
+    }
+
+    func testCancelTapped_stopsCameraAndHandlesCancellation() async {
+        // Given
+        await sut.viewDidLoad()
+        mockView.reset()
+        mockRouter.reset()
+
+        // When
+        await sut.cancelTapped()
+
+        // Then
+        XCTAssertTrue(mockView.stopCameraCalled, "Should stop camera")
+        XCTAssertTrue(mockRouter.handleCancellationCalled, "Should handle cancellation")
+        XCTAssertEqual(mockRouter.lastCancellationLoadingType, .document, "Should pass document loading type")
+    }
 }
 
 // swiftlint:enable type_body_length
@@ -519,7 +593,9 @@ import XCTest
     private(set) var stopCameraCalled = false
     private(set) var pauseVideoCalled = false
     private(set) var pauseCameraCalled = false
+    private(set) var resumeCameraCalled = false
     private(set) var updateComposeUICalled = false
+    private(set) var updateComposeUICallCount = 0
     private(set) var showErrorCalled = false
 
     private(set) var lastErrorMessage: String?
@@ -553,6 +629,10 @@ import XCTest
         pauseCameraCalled = true
     }
 
+    func resumeCamera() {
+        resumeCameraCalled = true
+    }
+
     func updateComposeUI(
         side: DocumentCaptureSide,
         feedbackType: DocumentFeedbackType,
@@ -567,6 +647,7 @@ import XCTest
         clearBackPhoto: Bool
     ) {
         updateComposeUICalled = true
+        updateComposeUICallCount += 1
         lastSide = side
         lastFeedbackType = feedbackType
         lastShowHelpDialog = showHelpDialog
@@ -589,7 +670,9 @@ import XCTest
         stopCameraCalled = false
         pauseVideoCalled = false
         pauseCameraCalled = false
+        resumeCameraCalled = false
         updateComposeUICalled = false
+        updateComposeUICallCount = 0
         showErrorCalled = false
         lastErrorMessage = nil
     }
@@ -655,16 +738,30 @@ import XCTest
     var navigateToResultCalled = false
     var lastNavigatedValidationId: String?
     var lastNavigatedLoadingType: ResultLoadingType?
+    var lastNavigatedIsCanceled: Bool?
     var navigateToResultExpectation: XCTestExpectation?
 
     var navigateToDocumentFeedbackCalled = false
     var lastFeedbackScenario: FeedbackScenario?
     var lastFeedbackRetriesLeft: Int?
 
-    override func navigateToResult(validationId: String, loadingType: ResultLoadingType = .face) throws {
+    var handleCancellationCalled = false
+    var lastCancellationLoadingType: ResultLoadingType?
+
+    override func handleCancellation(loadingType: ResultLoadingType) {
+        handleCancellationCalled = true
+        lastCancellationLoadingType = loadingType
+    }
+
+    override func navigateToResult(
+        validationId: String,
+        loadingType: ResultLoadingType = .face,
+        isCanceled: Bool = false
+    ) throws {
         navigateToResultCalled = true
         lastNavigatedValidationId = validationId
         lastNavigatedLoadingType = loadingType
+        lastNavigatedIsCanceled = isCanceled
         navigateToResultExpectation?.fulfill()
     }
 
@@ -683,10 +780,14 @@ import XCTest
         navigateToResultCalled = false
         lastNavigatedValidationId = nil
         lastNavigatedLoadingType = nil
+        lastNavigatedIsCanceled = nil
         navigateToResultExpectation = nil
 
         navigateToDocumentFeedbackCalled = false
         lastFeedbackScenario = nil
         lastFeedbackRetriesLeft = nil
+
+        handleCancellationCalled = false
+        lastCancellationLoadingType = nil
     }
 }

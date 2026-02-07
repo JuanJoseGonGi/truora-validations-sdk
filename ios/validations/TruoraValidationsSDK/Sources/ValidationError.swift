@@ -12,7 +12,7 @@ public enum ValidationError: Error, Equatable {
     case invalidConfiguration(String)
     case apiError(String)
     case networkError(String)
-    case cancelled
+    case canceled
     case cameraError(String)
     case internalError(String)
     case uploadFailed(String)
@@ -29,8 +29,8 @@ extension ValidationError: LocalizedError {
             "API error: \(message)"
         case .networkError(let message):
             "Network error: \(message)"
-        case .cancelled:
-            "Validation cancelled"
+        case .canceled:
+            "Validation canceled"
         case .cameraError(let message):
             "Camera error: \(message)"
         case .internalError(let message):

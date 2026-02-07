@@ -108,7 +108,7 @@ public class TruoraValidationsSDK {
                 viewController.present(navController, animated: true)
             } catch {
                 completion?(
-                    .failure(.sdk(SDKError(type: .internalError, details: error.localizedDescription)))
+                    .failure(.sdk(SDKError(type: .internalError, details: error.localizedDescription)), nil)
                 )
             }
         }

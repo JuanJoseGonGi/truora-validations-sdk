@@ -2,7 +2,7 @@
 //  Bundle+SPMPublic.swift
 //  TruoraValidationsSDK
 //
-//  Provides public access to the SDK resource bundle when building with Swift Package Manager.
+//  Provides public access to the SDK resource bundle when building with SPM.
 //  SPM generates Bundle.module as internal, so we find the bundle by name at runtime.
 //
 
@@ -48,34 +48,31 @@ public extension Bundle {
         }
 
         // Search all loaded bundles for one matching our name
-        for bundle in Bundle.allBundles {
+        let matchingBundle = Bundle.allBundles.first { bundle in
             let path = bundle.bundlePath
-            if path.hasSuffix(bundleNameWithExtension) || path.contains(bundleName) {
-                return bundle
-            }
+            return path.hasSuffix(bundleNameWithExtension) || path.contains(bundleName)
         }
+        if let bundle = matchingBundle { return bundle }
 
         // Search all frameworks
-        for bundle in Bundle.allFrameworks {
-            if bundle.bundlePath.contains(bundleName) {
-                return bundle
-            }
+        if let framework = Bundle.allFrameworks.first(where: { $0.bundlePath.contains(bundleName) }) {
+            return framework
         }
 
         // Search for any bundle that contains our localization files
-        for bundle in Bundle.allBundles + Bundle.allFrameworks {
-            if bundle.url(forResource: "Localizable", withExtension: "strings", subdirectory: nil, localization: "es") != nil {
-                // Verify it's our bundle by checking for a known key
-                let testKey = "passive_instructions_title"
-                let value = bundle.localizedString(forKey: testKey, value: testKey, table: nil)
-                if value != testKey {
-                    return bundle
-                }
-            }
+        let allBundles = Bundle.allBundles + Bundle.allFrameworks
+        let testKey = "passive_instructions_title"
+        for bundle in allBundles where bundle.url(
+            forResource: "Localizable",
+            withExtension: "strings",
+            subdirectory: nil,
+            localization: "es"
+        ) != nil {
+            let value = bundle.localizedString(forKey: testKey, value: testKey, table: nil)
+            if value != testKey { return bundle }
         }
 
         // If main bundle has our resources (static linking scenario)
-        let testKey = "passive_instructions_title"
         let mainValue = Bundle.main.localizedString(forKey: testKey, value: testKey, table: nil)
         if mainValue != testKey {
             return Bundle.main

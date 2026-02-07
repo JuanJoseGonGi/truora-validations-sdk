@@ -45,8 +45,8 @@ struct ManualRecordingBanner: View {
 
     /// Format the "cannot record" message with the button text.
     private var cannotRecordMessage: String {
-        let buttonText = TruoraValidationsSDKStrings.passiveCaptureRecordVideo
-        return TruoraValidationsSDKStrings.passiveCaptureCannotRecord(buttonText)
+        let buttonText = TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureRecordVideo)
+        return TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureCannotRecord, arguments: buttonText)
     }
 }
 

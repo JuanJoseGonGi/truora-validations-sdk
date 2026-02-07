@@ -23,6 +23,9 @@ import UIKit
     @Published var errorMessage: String?
     @Published var showError = false
 
+    /// Tracks if a recording is currently in progress to prevent multiple clicks
+    @Published var isRecordingInProgress: Bool = false
+
     var presenter: PassiveCaptureViewToPresenter?
     weak var cameraViewDelegate: CameraViewDelegate?
 
@@ -38,7 +41,19 @@ import UIKit
         Task { await presenter?.viewWillDisappear() }
     }
 
+    func onAppWillResignActive() {
+        Task { await presenter?.appWillResignActive() }
+    }
+
+    func onAppDidBecomeActive() {
+        Task { await presenter?.appDidBecomeActive() }
+    }
+
     func handleEvent(_ event: PassiveCaptureEvent) {
+        // Immediately disable button when recording is requested to prevent multiple clicks
+        if case .recordVideoRequested = event {
+            isRecordingInProgress = true
+        }
         Task { await presenter?.handleCaptureEvent(event) }
     }
 
@@ -119,6 +134,15 @@ extension PassiveCaptureViewModel: PassiveCapturePresenterToView {
         delegate.pauseCamera()
     }
 
+    func resumeCamera() {
+        print("🟢 PassiveCaptureViewModel: Resuming camera")
+        guard let delegate = cameraViewDelegate else {
+            print("⚠️ PassiveCaptureViewModel: resumeCamera() called but delegate is nil")
+            return
+        }
+        delegate.resumeCamera()
+    }
+
     func pauseVideo() {
         print("🟢 PassiveCaptureViewModel: Pausing video")
         guard let delegate = cameraViewDelegate else {
@@ -153,5 +177,9 @@ extension PassiveCaptureViewModel: PassiveCapturePresenterToView {
     func showError(_ message: String) {
         self.errorMessage = message
         self.showError = true
+    }
+
+    func resetRecordingInProgress() {
+        isRecordingInProgress = false
     }
 }

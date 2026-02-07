@@ -37,6 +37,7 @@ import XCTest
             view: mockView,
             interactor: mockInteractor,
             router: mockRouter,
+            validationId: "test-validation-id",
             timeProvider: mockTimeProvider
         )
     }
@@ -102,6 +103,140 @@ import XCTest
         // Then
         XCTAssertNotNil(sut, "Presenter should cleanup timers without crashing")
         XCTAssertTrue(mockView.stopCameraCalled, "Should stop camera when view disappears")
+    }
+
+    func testAppWillResignActive_notRecording_pausesCameraWithoutStopping() async {
+        // Given
+        await sut.cameraReady()
+        mockView.pauseCameraCalled = false
+        mockView.stopCameraCalled = false
+
+        // When
+        await sut.appWillResignActive()
+
+        // Then
+        XCTAssertTrue(mockView.pauseCameraCalled, "Should pause camera when app becomes inactive")
+        XCTAssertFalse(mockView.stopCameraCalled, "Should not stop camera on background")
+    }
+
+    func testAppDidBecomeActive_notRecording_resumesCamera() async {
+        // Given
+        await sut.cameraReady()
+        await sut.appWillResignActive()
+        mockView.resumeCameraCalled = false
+
+        // When
+        await sut.appDidBecomeActive()
+
+        // Then
+        XCTAssertTrue(mockView.resumeCameraCalled, "Should resume camera when app becomes active")
+    }
+
+    func testSuspendResume_whileRecording_autocapture_restartsAtDetection() async {
+        // Given
+        await sut.handleCaptureEvent(.recordVideoRequested)
+        mockView.pauseVideoCalled = false
+        mockView.pauseCameraCalled = false
+        mockView.stopCameraCalled = false
+        mockView.setupCameraCalled = false
+
+        // When (background)
+        await sut.appWillResignActive()
+
+        // Then
+        XCTAssertTrue(mockView.pauseVideoCalled, "Should stop recording without producing media")
+        XCTAssertTrue(mockView.pauseCameraCalled, "Should pause camera session on background")
+
+        // When (foreground)
+        await sut.appDidBecomeActive()
+
+        // Then - Should restart camera cleanly
+        XCTAssertTrue(mockView.stopCameraCalled, "Should stop camera for a clean restart")
+        XCTAssertTrue(mockView.setupCameraCalled, "Should setup camera again after resume")
+
+        // When - camera becomes ready again
+        mockView.updateUICalled = false
+        await sut.cameraReady()
+
+        // Then - should be waiting for face (detection), not counting down
+        XCTAssertTrue(mockView.updateUICalled, "Should update UI after resume")
+        XCTAssertEqual(mockView.lastState as? PassiveCaptureState, .recording)
+        XCTAssertEqual(mockView.lastFeedback, .showFace)
+    }
+
+    func testSuspendResume_whileRecording_manual_restartsRecordingAfterCameraReady() async {
+        // Given
+        let presenter = PassiveCapturePresenter(
+            view: mockView,
+            interactor: mockInteractor,
+            router: mockRouter,
+            validationId: "test-validation-id",
+            useAutocapture: false,
+            timeProvider: mockTimeProvider
+        )
+        sut = presenter
+
+        await sut.handleCaptureEvent(.recordVideoRequested)
+        mockView.stopCameraCalled = false
+        mockView.setupCameraCalled = false
+        mockView.startRecordingCalled = false
+
+        // When (background)
+        await sut.appWillResignActive()
+
+        // When (foreground)
+        await sut.appDidBecomeActive()
+
+        // Then
+        XCTAssertTrue(mockView.stopCameraCalled, "Should stop camera for a clean restart")
+        XCTAssertTrue(mockView.setupCameraCalled, "Should setup camera again after resume")
+
+        // When - camera becomes ready again
+        await sut.cameraReady()
+
+        // Then - should start recording again
+        XCTAssertTrue(mockView.startRecordingCalled, "Should restart recording after resume in manual mode")
+        XCTAssertEqual(mockView.lastState as? PassiveCaptureState, .recording)
+        XCTAssertEqual(mockView.lastFeedback, .recording)
+    }
+
+    func testHelpWhileRecording_autocapture_stopsAndRestartsAtDetection() async {
+        // Given
+        await sut.handleCaptureEvent(.recordVideoRequested)
+        mockView.pauseVideoCalled = false
+        mockView.startRecordingCalled = false
+
+        // When
+        await sut.handleCaptureEvent(.helpRequested)
+
+        // Then
+        XCTAssertTrue(mockView.pauseVideoCalled, "Should stop recording when help is requested")
+        XCTAssertTrue(mockView.lastShowHelpDialog ?? false, "Help dialog should be shown")
+
+        // When
+        mockView.updateUICalled = false
+        await sut.handleCaptureEvent(.helpDismissed)
+
+        // Then - should restart at detection (not immediately start recording)
+        XCTAssertTrue(mockView.updateUICalled, "Should update UI after dismissing help")
+        XCTAssertEqual(mockView.lastState as? PassiveCaptureState, .recording)
+        XCTAssertEqual(mockView.lastFeedback, .showFace)
+        XCTAssertFalse(mockView.startRecordingCalled, "Should not immediately start recording; waits for face")
+    }
+
+    func testBackgroundDuringUpload_doesNotStopOrResumeCamera() async {
+        // Given
+        await sut.videoRecordingCompleted(videoData: Data([0x01, 0x02]))
+        mockView.stopCameraCalled = false
+        mockView.resumeCameraCalled = false
+
+        // When
+        await sut.appWillResignActive()
+        await sut.appDidBecomeActive()
+
+        // Then
+        XCTAssertFalse(mockView.stopCameraCalled, "Should not stop camera during upload backgrounding")
+        XCTAssertFalse(mockView.resumeCameraCalled, "Should not resume camera during upload")
     }
 
     // MARK: - Face Detection Tests
@@ -397,7 +532,10 @@ import XCTest
             mockView.lastShowHelpDialog ?? false,
             "Help dialog should be shown"
         )
-        XCTAssertTrue(mockView.pauseVideoCalled, "Should pause video when help is requested")
+        XCTAssertFalse(
+            mockView.pauseVideoCalled,
+            "Should not pause video unless currently recording"
+        )
     }
 
     func testHandleCaptureEvent_helpDismissed_hidesDialog() async {
@@ -587,6 +725,7 @@ import XCTest
             view: mockView,
             interactor: mockInteractor,
             router: mockRouter,
+            validationId: "test-validation-id",
             useAutocapture: false
         )
 
@@ -600,6 +739,7 @@ import XCTest
             view: mockView,
             interactor: mockInteractor,
             router: mockRouter,
+            validationId: "test-validation-id",
             useAutocapture: false
         )
 
@@ -636,6 +776,7 @@ import XCTest
             view: mockView,
             interactor: mockInteractor,
             router: mockRouter,
+            validationId: "test-validation-id",
             useAutocapture: false
         )
         await presenter.handleCaptureEvent(PassiveCaptureEvent.helpRequested)
@@ -689,6 +830,132 @@ import XCTest
             "Should have no feedback when manually requesting manual mode"
         )
     }
+
+    // MARK: - Face Centering Tests
+
+    func testDetectionsReceived_withCenteredFace_clearsFeedback() async {
+        // Given
+        sut.currentState = .recording
+        // Face centered at (0.5, 0.5) with 30% height
+        let centeredFace = [createFaceDetectionResult(
+            boundingBox: CGRect(x: 0.35, y: 0.35, width: 0.30, height: 0.30)
+        )]
+
+        // When
+        await sut.detectionsReceived(centeredFace)
+
+        // Then
+        XCTAssertEqual(
+            mockView.lastFeedback,
+            FeedbackType.none,
+            "Should clear feedback for centered face"
+        )
+    }
+
+    func testDetectionsReceived_withFaceTooSmall_showsCenterFeedback() async {
+        // Given
+        sut.currentState = .recording
+        // Face centered but only 10% height (below minFaceHeight)
+        let smallFace = [createFaceDetectionResult(
+            boundingBox: CGRect(x: 0.45, y: 0.45, width: 0.10, height: 0.10)
+        )]
+
+        // When
+        await sut.detectionsReceived(smallFace)
+
+        // Then
+        XCTAssertEqual(
+            mockView.lastFeedback,
+            .centerFace,
+            "Should show CENTER_FACE for too-small face"
+        )
+    }
+
+    func testDetectionsReceived_withFaceTooLarge_showsCenterFeedback() async {
+        // Given
+        sut.currentState = .recording
+        // Face covering 90% of height (above maxFaceHeight)
+        let largeFace = [createFaceDetectionResult(
+            boundingBox: CGRect(x: 0.05, y: 0.05, width: 0.90, height: 0.90)
+        )]
+
+        // When
+        await sut.detectionsReceived(largeFace)
+
+        // Then
+        XCTAssertEqual(
+            mockView.lastFeedback,
+            .centerFace,
+            "Should show CENTER_FACE for too-large face"
+        )
+    }
+
+    func testDetectionsReceived_withFaceAtEdge_showsCenterFeedback() async {
+        // Given
+        sut.currentState = .recording
+        // Face at corner, far from oval center
+        let edgeFace = [createFaceDetectionResult(
+            boundingBox: CGRect(x: 0.0, y: 0.75, width: 0.20, height: 0.25)
+        )]
+
+        // When
+        await sut.detectionsReceived(edgeFace)
+
+        // Then
+        XCTAssertEqual(
+            mockView.lastFeedback,
+            .centerFace,
+            "Should show CENTER_FACE for face at edge"
+        )
+    }
+
+    func testDetectionsReceived_withNotCenteredFace_showsCenterFeedback() async {
+        // Given
+        sut.currentState = .recording
+        // Face at top edge, not centered
+        let offCenterFace = [createFaceDetectionResult(
+            boundingBox: CGRect(x: 0.35, y: 0.75, width: 0.30, height: 0.25)
+        )]
+
+        // When
+        await sut.detectionsReceived(offCenterFace)
+
+        // Then
+        XCTAssertEqual(
+            mockView.lastFeedback,
+            .centerFace,
+            "Should show CENTER_FACE feedback"
+        )
+        XCTAssertFalse(
+            mockView.startRecordingCalled,
+            "Should NOT start recording when face not centered"
+        )
+    }
+
+    func testDetectionsReceived_notCenteredThenCentered_startsTimer() async {
+        // Given
+        sut.currentState = .recording
+
+        // When - first send off-center face
+        let offCenterFace = [createFaceDetectionResult(
+            boundingBox: CGRect(x: 0.0, y: 0.0, width: 0.20, height: 0.30)
+        )]
+        await sut.detectionsReceived(offCenterFace)
+        XCTAssertEqual(mockView.lastFeedback, .centerFace)
+
+        // Then send centered face
+        let centeredFace = [createFaceDetectionResult(
+            boundingBox: CGRect(x: 0.35, y: 0.35, width: 0.30, height: 0.30)
+        )]
+        await sut.detectionsReceived(centeredFace)
+
+        // Then
+        XCTAssertEqual(
+            mockView.lastFeedback,
+            FeedbackType.none,
+            "Should clear feedback for centered face"
+        )
+    }
 }
 
 // swiftlint:enable type_body_length
@@ -702,6 +969,7 @@ import XCTest
     var stopRecordingCalled = false
     var stopCameraCalled = false
     var pauseCameraCalled = false
+    var resumeCameraCalled = false
     var pauseVideoCalled = false
     var resumeVideoCalled = false
     var updateUICalled = false
@@ -733,6 +1001,10 @@ import XCTest
 
     func pauseCamera() {
         pauseCameraCalled = true
+    }
+
+    func resumeCamera() {
+        resumeCameraCalled = true
     }
 
     func pauseVideo() {
@@ -792,12 +1064,18 @@ import XCTest
 @MainActor private final class MockPassiveCaptureRouter: ValidationRouter {
     private(set) var navigateToResultCalled = false
     private(set) var lastValidationId: String?
+    private(set) var lastIsCanceled: Bool?
     private(set) var handleErrorCalled = false
     private(set) var lastErrorMessage: String?
 
-    override func navigateToResult(validationId: String, loadingType: ResultLoadingType = .face) throws {
+    override func navigateToResult(
+        validationId: String,
+        loadingType: ResultLoadingType = .face,
+        isCanceled: Bool = false
+    ) throws {
         navigateToResultCalled = true
         lastValidationId = validationId
+        lastIsCanceled = isCanceled
     }
 
     override func handleError(_ error: TruoraException) {
@@ -808,9 +1086,11 @@ import XCTest
 
 // MARK: - Test Helpers
 
+/// Creates a face detection result centered on the oval (0.5, 0.5)
+/// with 30% height - passes centering and size checks.
 private func createFaceDetectionResult(
     confidence: Float = 0.9,
-    boundingBox: CGRect = CGRect(x: 100, y: 100, width: 200, height: 200),
+    boundingBox: CGRect = CGRect(x: 0.35, y: 0.35, width: 0.30, height: 0.30),
     landmarks: VNFaceLandmarks2D? = nil
 ) -> DetectionResult {
     DetectionResult(

@@ -37,7 +37,7 @@ enum LogoDownloaderError: LocalizedError, Equatable {
     case invalidContentType(String)
     case invalidImageData
     case sizeExceeded(maxBytes: Int)
-    case cancelled
+    case canceled
 
     var errorDescription: String? {
         switch self {
@@ -55,8 +55,8 @@ enum LogoDownloaderError: LocalizedError, Equatable {
             "Data does not appear to be a valid image"
         case .sizeExceeded(let maxBytes):
             "Logo size exceeds maximum allowed (\(maxBytes) bytes)"
-        case .cancelled:
-            "Request was cancelled"
+        case .canceled:
+            "Request was canceled"
         }
     }
 }
@@ -64,9 +64,17 @@ enum LogoDownloaderError: LocalizedError, Equatable {
 final class LogoDownloader: LogoDownloading {
     private static let maxLogoSizeBytes: Int = 5 * 1024 * 1024 // 5MB
 
+    private let sessionConfig: TruoraSessionConfiguration
     private let session: URLSession
 
-    init(session: URLSession = .shared) {
+    init(sessionConfig: TruoraSessionConfiguration = .default) {
+        self.sessionConfig = sessionConfig
+        self.session = sessionConfig.createSession()
+    }
+
+    /// Creates a downloader with a custom URLSession (for testing).
+    init(sessionConfig: TruoraSessionConfiguration = .default, session: URLSession) {
+        self.sessionConfig = sessionConfig
         self.session = session
     }
 
@@ -81,7 +89,7 @@ final class LogoDownloader: LogoDownloading {
             throw LogoDownloaderError.insecureUrl
         }
 
-        let (data, response) = try await session.data(from: url)
+        let (data, response) = try await sessionConfig.perform(from: url, using: session)
         return try validateResponse(data: data, response: response, error: nil).get()
     }
 
@@ -131,7 +139,7 @@ final class LogoDownloader: LogoDownloading {
         error: Error?
     ) -> Result<Data, Error> {
         if let urlError = error as? URLError, urlError.code == .cancelled {
-            return .failure(LogoDownloaderError.cancelled)
+            return .failure(LogoDownloaderError.canceled)
         }
 
         if let error {

@@ -95,7 +95,8 @@ extension PassiveIntroInteractor: PassiveIntroPresenterToInteractor {
                 NativeSubValidationTypeEnum.similarity.rawValue
             ],
             documentType: nil,
-            timeout: timeout
+            timeout: timeout,
+            userAuthorized: true
         )
     }
 

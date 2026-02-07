@@ -46,9 +46,9 @@ enum ResultViewState {
             switch result.status {
             case .success:
                 .success
-            case .failed:
+            case .failure:
                 .failure
-            case .pending, .processing:
+            case .pending:
                 .completed
             }
         }

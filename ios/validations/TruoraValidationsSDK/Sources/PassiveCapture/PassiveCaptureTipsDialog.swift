@@ -13,24 +13,26 @@ struct PassiveCaptureTipsDialog: View {
 
     @EnvironmentObject var theme: TruoraTheme
 
+    /// Computed so strings reflect current locale; lookup cost is negligible when dialog is shown.
     private var tips: [String] {
         [
-            TruoraValidationsSDKStrings.passiveCaptureTip1,
-            TruoraValidationsSDKStrings.passiveCaptureTip2,
-            TruoraValidationsSDKStrings.passiveCaptureTip3,
-            TruoraValidationsSDKStrings.passiveCaptureTip4
+            TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureTip1),
+            TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureTip2),
+            TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureTip3),
+            TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureTip4)
         ]
     }
 
     var body: some View {
         ZStack {
             Color.black.opacity(0.5)
+                .extendingIntoSafeArea()
                 .onTapGesture { onDismiss() }
 
             VStack(spacing: 0) {
                 // Header with title and close button
                 HStack {
-                    Text(TruoraValidationsSDKStrings.passiveCaptureTipsTitle)
+                    Text(TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureTipsTitle))
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(theme.colors.layoutGray900)
 
@@ -65,7 +67,7 @@ struct PassiveCaptureTipsDialog: View {
 
                 // Manual recording button
                 TruoraPrimaryButton(
-                    title: TruoraValidationsSDKStrings.passiveCaptureManualRecording,
+                    title: TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureManualRecording),
                     isLoading: false,
                     action: onManualRecording
                 )

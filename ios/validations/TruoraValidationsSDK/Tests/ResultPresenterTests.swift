@@ -50,8 +50,7 @@ import XCTest
 
     func testViewDidLoad_notWaitingForResults_startsPollingAndShowsCompleted() async {
         // Given
-        ValidationConfig.shared.faceConfig.enableWaitForResults(false)
-        let sut = createPresenter(loadingType: .face)
+        let sut = createPresenter(loadingType: .face, shouldWaitForResults: false)
 
         // When
         await sut.viewDidLoad()
@@ -103,19 +102,229 @@ import XCTest
 
         // Then
         XCTAssertTrue(mockView.showResultCalled)
-        XCTAssertEqual(mockView.lastResult?.status, .failed)
+        XCTAssertEqual(mockView.lastResult?.status, .failure)
+    }
+
+    // MARK: - Cancellation Tests
+
+    func testViewDidLoad_whenCanceled_showsFailedResultImmediately() async {
+        // Given
+        let sut = createPresenter(isCanceled: true)
+
+        // When
+        await sut.viewDidLoad()
+
+        // Then
+        XCTAssertTrue(mockView.showResultCalled)
+        XCTAssertEqual(mockView.lastResult?.status, .failure)
+        XCTAssertFalse(mockInteractor.startPollingCalled)
+    }
+
+    func testDoneTapped_whenCanceled_dismissesFlowAndNotifiesCancellation() async throws {
+        // Given
+        try await ValidationConfig.shared.configure(
+            apiKey: "test-key",
+            accountId: "test-account",
+            delegate: mockDelegate.closure
+        )
+        let sut = createPresenter(isCanceled: true)
+        await sut.viewDidLoad()
+
+        // When
+        await sut.doneTapped()
+
+        // Then
+        XCTAssertTrue(mockRouter.dismissFlowCalled)
+        XCTAssertTrue(mockDelegate.failureCalled)
+    }
+
+    // MARK: - Finish View Configuration Tests
+
+    func testPollingCompleted_successHidden_autoDismissesAndNotifiesDelegate() async throws {
+        // Given
+        try await ValidationConfig.shared.configure(
+            apiKey: "test-key",
+            accountId: "test-account",
+            delegate: mockDelegate.closure
+        )
+        let config = FinishViewConfiguration(success: .hide, failure: .show)
+        ValidationConfig.shared.faceConfig.setFinishViewConfiguration(config)
+        let sut = createPresenter()
+
+        await sut.viewDidLoad()
+
+        // When
+        let result = ValidationResult(validationId: "id", status: .success)
+        await sut.pollingCompleted(result: result)
+
+        // Then
+        XCTAssertTrue(mockRouter.dismissFlowCalled, "Should auto-dismiss when success is hidden")
+        XCTAssertFalse(mockView.showResultCalled, "Should NOT show result screen")
+        XCTAssertTrue(mockDelegate.completeCalled, "Should notify delegate")
+    }
+
+    func testPollingCompleted_successShown_showsResultScreen() async {
+        // Given
+        let config = FinishViewConfiguration(success: .show, failure: .hide)
+        ValidationConfig.shared.faceConfig.setFinishViewConfiguration(config)
+        let sut = createPresenter()
+
+        await sut.viewDidLoad()
+
+        // When
+        let result = ValidationResult(validationId: "id", status: .success)
+        await sut.pollingCompleted(result: result)
+
+        // Then
+        XCTAssertTrue(mockView.showResultCalled, "Should show result screen")
+        XCTAssertFalse(mockRouter.dismissFlowCalled, "Should NOT auto-dismiss")
+    }
+
+    func testPollingCompleted_failureHidden_autoDismissesAndNotifiesDelegate() async throws {
+        // Given
+        try await ValidationConfig.shared.configure(
+            apiKey: "test-key",
+            accountId: "test-account",
+            delegate: mockDelegate.closure
+        )
+        let config = FinishViewConfiguration(success: .show, failure: .hide)
+        ValidationConfig.shared.faceConfig.setFinishViewConfiguration(config)
+        let sut = createPresenter()
+
+        await sut.viewDidLoad()
+
+        // When
+        let result = ValidationResult(validationId: "id", status: .failure)
+        await sut.pollingCompleted(result: result)
+
+        // Then
+        XCTAssertTrue(mockRouter.dismissFlowCalled, "Should auto-dismiss when failure is hidden")
+        XCTAssertFalse(mockView.showResultCalled, "Should NOT show result screen")
+        XCTAssertTrue(mockDelegate.completeCalled, "Should notify delegate")
+    }
+
+    func testPollingCompleted_failureShown_showsResultScreen() async {
+        // Given
+        let config = FinishViewConfiguration(success: .hide, failure: .show)
+        ValidationConfig.shared.faceConfig.setFinishViewConfiguration(config)
+        let sut = createPresenter()
+
+        await sut.viewDidLoad()
+
+        // When
+        let result = ValidationResult(validationId: "id", status: .failure)
+        await sut.pollingCompleted(result: result)
+
+        // Then
+        XCTAssertTrue(mockView.showResultCalled, "Should show result screen")
+        XCTAssertFalse(mockRouter.dismissFlowCalled, "Should NOT auto-dismiss")
+    }
+
+    func testPollingFailed_failureHidden_autoDismisses() async throws {
+        // Given
+        try await ValidationConfig.shared.configure(
+            apiKey: "test-key",
+            accountId: "test-account",
+            delegate: mockDelegate.closure
+        )
+        let config = FinishViewConfiguration(success: .show, failure: .hide)
+        ValidationConfig.shared.faceConfig.setFinishViewConfiguration(config)
+        let sut = createPresenter()
+
+        await sut.viewDidLoad()
+
+        // When
+        await sut.pollingFailed(error: .network(message: "error"))
+
+        // Then
+        XCTAssertTrue(mockRouter.dismissFlowCalled, "Should auto-dismiss on polling failure")
+        XCTAssertFalse(mockView.showResultCalled, "Should NOT show result screen")
+        XCTAssertTrue(mockDelegate.failureCalled, "Should notify delegate of failure")
+    }
+
+    func testPollingFailed_failureShown_showsFailedResult() async {
+        // Given
+        let config = FinishViewConfiguration(success: .hide, failure: .show)
+        ValidationConfig.shared.faceConfig.setFinishViewConfiguration(config)
+        let sut = createPresenter()
+
+        await sut.viewDidLoad()
+
+        // When
+        await sut.pollingFailed(error: .network(message: "error"))
+
+        // Then
+        XCTAssertTrue(mockView.showResultCalled, "Should show failure result screen")
+        XCTAssertEqual(mockView.lastResult?.status, .failure)
+        XCTAssertFalse(mockRouter.dismissFlowCalled, "Should NOT auto-dismiss")
+    }
+
+    func testPollingCompleted_noFinishViewConfig_showsResultAsDefault() async {
+        // Given - no finishViewConfig set, shouldWaitForResults = true
+        ValidationConfig.shared.faceConfig.enableWaitForResults(true)
+        let sut = createPresenter()
+
+        await sut.viewDidLoad()
+
+        // When
+        let result = ValidationResult(validationId: "id", status: .success)
+        await sut.pollingCompleted(result: result)
+
+        // Then
+        XCTAssertTrue(mockView.showResultCalled, "Should show result screen by default")
+        XCTAssertFalse(mockRouter.dismissFlowCalled, "Should NOT auto-dismiss")
+    }
+
+    func testFinishViewConfig_impliesWaitForResults_showsLoading() async {
+        // Given
+        let config = FinishViewConfiguration(success: .hide, failure: .hide)
+        ValidationConfig.shared.faceConfig.setFinishViewConfiguration(config)
+        let sut = createPresenter()
+
+        // When
+        await sut.viewDidLoad()
+
+        // Then
+        XCTAssertTrue(mockView.showLoadingCalled, "Should show loading (waitForResults is implied)")
+        XCTAssertTrue(mockInteractor.startPollingCalled, "Should start polling")
+    }
+
+    func testFinishViewConfig_canceledIgnoresConfig_showsFailure() async {
+        // Given - even with both hidden, cancellation should still show failure
+        let config = FinishViewConfiguration(success: .hide, failure: .hide)
+        ValidationConfig.shared.faceConfig.setFinishViewConfiguration(config)
+        let sut = createPresenter(isCanceled: true)
+
+        // When
+        await sut.viewDidLoad()
+
+        // Then
+        XCTAssertTrue(mockView.showResultCalled, "Cancellation should still show failure screen")
+        XCTAssertEqual(mockView.lastResult?.status, .failure)
+        XCTAssertFalse(mockInteractor.startPollingCalled, "Should NOT start polling on cancel")
     }
 
     // MARK: - Helper Methods
 
     private func createPresenter(
-        loadingType: ResultLoadingType = .face
+        loadingType: ResultLoadingType = .face,
+        shouldWaitForResults: Bool = true,
+        isCanceled: Bool = false
     ) -> ResultPresenter {
-        ResultPresenter(
+        // Configure the validation config to match the test expectation
+        switch loadingType {
+        case .face:
+            ValidationConfig.shared.faceConfig.enableWaitForResults(shouldWaitForResults)
+        case .document:
+            ValidationConfig.shared.documentConfig.enableWaitForResults(shouldWaitForResults)
+        }
+
+        return ResultPresenter(
             view: mockView,
             interactor: mockInteractor,
             router: mockRouter,
-            loadingType: loadingType
+            loadingType: loadingType,
+            isCanceled: isCanceled
         )
     }
 }
@@ -151,7 +360,7 @@ import XCTest
 
 // MARK: - Mock Interactor
 
-@MainActor private class MockResultInteractor: ResultPresenterToInteractor {
+private class MockResultInteractor: ResultPresenterToInteractor {
     var validationId: String = "test-validation-id"
     var startPollingCalled = false
     var cancelPollingCalled = false
@@ -189,10 +398,10 @@ import XCTest
             case .complete(let validationResult):
                 self?.completeCalled = true
                 self?.lastResult = validationResult
-            case .failure(let error):
+            case .failure(let error, _):
                 self?.failureCalled = true
                 self?.lastError = error
-            case .capture:
+            case .canceled:
                 break
             }
         }

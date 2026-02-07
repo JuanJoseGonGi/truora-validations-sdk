@@ -18,6 +18,9 @@ public protocol CameraDelegate: AnyObject {
     func lastFrameCaptured(frameData: Data)
     func reportError(error: CameraError)
     func detectionsReceived(_ results: [DetectionResult])
+    /// Called when autocapture becomes unavailable (e.g., ML model failed to load).
+    /// The error parameter provides debugging information about the failure cause.
+    func autocaptureUnavailable(error: Error?)
 }
 
 /// Frame processor protocol for processing camera frames

@@ -64,6 +64,11 @@ private final class URLProtocolStub: URLProtocol {
         return URLSession(configuration: config)
     }
 
+    private func makeDownloader() -> LogoDownloader {
+        // Use noRetry config for tests to avoid retry delays
+        LogoDownloader(sessionConfig: .noRetry, session: makeSession())
+    }
+
     func testDownloadLogoSuccessReturnsData() throws {
         let url = try XCTUnwrap(URL(string: "https://example.com/logo.png"))
         let response = try XCTUnwrap(HTTPURLResponse(
@@ -76,7 +81,7 @@ private final class URLProtocolStub: URLProtocol {
         let expected = Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
         URLProtocolStub.stub = .init(data: expected, response: response, error: nil)
 
-        let sut = LogoDownloader(session: makeSession())
+        let sut = makeDownloader()
         let exp = expectation(description: "download completes")
 
         _ = sut.downloadLogo(from: url) { result in
@@ -94,7 +99,7 @@ private final class URLProtocolStub: URLProtocol {
 
     func testDownloadLogoRejectsNonHttps() throws {
         let url = try XCTUnwrap(URL(string: "http://example.com/logo.png"))
-        let sut = LogoDownloader(session: makeSession())
+        let sut = makeDownloader()
         let exp = expectation(description: "download completes")
 
         let task = sut.downloadLogo(from: url) { result in
@@ -121,7 +126,7 @@ private final class URLProtocolStub: URLProtocol {
         ))
         URLProtocolStub.stub = .init(data: Data([0x00]), response: response, error: nil)
 
-        let sut = LogoDownloader(session: makeSession())
+        let sut = makeDownloader()
         let exp = expectation(description: "download completes")
 
         _ = sut.downloadLogo(from: url) { result in
@@ -152,7 +157,7 @@ private final class URLProtocolStub: URLProtocol {
         ))
         URLProtocolStub.stub = .init(data: tooBig, response: response, error: nil)
 
-        let sut = LogoDownloader(session: makeSession())
+        let sut = makeDownloader()
         let exp = expectation(description: "download completes")
 
         _ = sut.downloadLogo(from: url) { result in
@@ -187,6 +192,11 @@ private final class URLProtocolStub: URLProtocol {
         return URLSession(configuration: config)
     }
 
+    private func makeDownloader() -> LogoDownloader {
+        // Use noRetry config for tests to avoid retry delays
+        LogoDownloader(sessionConfig: .noRetry, session: makeSession())
+    }
+
     func testDownloadLogoSync_success() throws {
         // Valid JPEG magic bytes
         let testData = Data([0xFF, 0xD8, 0xFF, 0xE0])
@@ -199,9 +209,7 @@ private final class URLProtocolStub: URLProtocol {
         )
         URLProtocolStub.stub = URLProtocolStubResponse(data: testData, response: response, error: nil)
 
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [URLProtocolStub.self]
-        let sut = LogoDownloader(session: URLSession(configuration: config))
+        let sut = makeDownloader()
 
         let result = sut.downloadLogoSync(from: testUrl)
 
@@ -214,9 +222,7 @@ private final class URLProtocolStub: URLProtocol {
     }
 
     func testDownloadLogoSync_insecureUrl() throws {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [URLProtocolStub.self]
-        let sut = LogoDownloader(session: URLSession(configuration: config))
+        let sut = makeDownloader()
 
         let result = try sut.downloadLogoSync(from: XCTUnwrap(URL(string: "http://example.com/logo.png")))
 
@@ -236,9 +242,7 @@ private final class URLProtocolStub: URLProtocol {
             error: nil
         )
 
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [URLProtocolStub.self]
-        let sut = LogoDownloader(session: URLSession(configuration: config))
+        let sut = makeDownloader()
 
         let result = sut.downloadLogoSync(from: testUrl)
 
@@ -263,9 +267,7 @@ private final class URLProtocolStub: URLProtocol {
             error: nil
         )
 
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [URLProtocolStub.self]
-        let sut = LogoDownloader(session: URLSession(configuration: config))
+        let sut = makeDownloader()
 
         let result = sut.downloadLogoSync(from: testUrl)
 
@@ -287,9 +289,7 @@ private final class URLProtocolStub: URLProtocol {
         )
         URLProtocolStub.stub = URLProtocolStubResponse(data: Data(), response: response, error: nil)
 
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [URLProtocolStub.self]
-        let sut = LogoDownloader(session: URLSession(configuration: config))
+        let sut = makeDownloader()
 
         let result = sut.downloadLogoSync(from: testUrl)
 
@@ -317,7 +317,7 @@ extension LogoDownloaderAsyncTests {
         let data = Data([0x00, 0x01, 0x02, 0x03])
         URLProtocolStub.stub = .init(data: data, response: response, error: nil)
 
-        let sut = LogoDownloader(session: makeSession())
+        let sut = makeDownloader()
         let exp = expectation(description: "download completes")
 
         _ = sut.downloadLogo(from: url) { result in
@@ -349,7 +349,7 @@ extension LogoDownloaderAsyncTests {
         let data = Data([0x00, 0x01, 0x02, 0x03])
         URLProtocolStub.stub = .init(data: data, response: response, error: nil)
 
-        let sut = LogoDownloader(session: makeSession())
+        let sut = makeDownloader()
         let exp = expectation(description: "download completes")
 
         _ = sut.downloadLogo(from: url) { result in
@@ -376,7 +376,7 @@ extension LogoDownloaderAsyncTests {
         let data = Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
         URLProtocolStub.stub = .init(data: data, response: response, error: nil)
 
-        let sut = LogoDownloader(session: makeSession())
+        let sut = makeDownloader()
         let exp = expectation(description: "download completes")
 
         _ = sut.downloadLogo(from: url) { result in
@@ -403,7 +403,7 @@ extension LogoDownloaderAsyncTests {
         let data = Data([0xFF, 0xD8, 0xFF, 0xE0])
         URLProtocolStub.stub = .init(data: data, response: response, error: nil)
 
-        let sut = LogoDownloader(session: makeSession())
+        let sut = makeDownloader()
         let exp = expectation(description: "download completes")
 
         _ = sut.downloadLogo(from: url) { result in
@@ -430,7 +430,7 @@ extension LogoDownloaderAsyncTests {
         let data = Data([0x47, 0x49, 0x46, 0x38, 0x39, 0x61])
         URLProtocolStub.stub = .init(data: data, response: response, error: nil)
 
-        let sut = LogoDownloader(session: makeSession())
+        let sut = makeDownloader()
         let exp = expectation(description: "download completes")
 
         _ = sut.downloadLogo(from: url) { result in
@@ -457,7 +457,7 @@ extension LogoDownloaderAsyncTests {
         let data = Data([0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50])
         URLProtocolStub.stub = .init(data: data, response: response, error: nil)
 
-        let sut = LogoDownloader(session: makeSession())
+        let sut = makeDownloader()
         let exp = expectation(description: "download completes")
 
         _ = sut.downloadLogo(from: url) { result in
@@ -484,7 +484,7 @@ extension LogoDownloaderAsyncTests {
         let svgData = Data("<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>".utf8)
         URLProtocolStub.stub = .init(data: svgData, response: response, error: nil)
 
-        let sut = LogoDownloader(session: makeSession())
+        let sut = makeDownloader()
         let exp = expectation(description: "download completes")
 
         _ = sut.downloadLogo(from: url) { result in

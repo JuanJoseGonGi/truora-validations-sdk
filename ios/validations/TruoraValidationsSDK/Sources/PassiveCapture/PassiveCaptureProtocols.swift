@@ -17,6 +17,7 @@ import UIKit
     func stopRecording()
     func stopCamera()
     func pauseCamera()
+    func resumeCamera()
     func pauseVideo()
     func resumeVideo()
     func updateUI(
@@ -29,12 +30,18 @@ import UIKit
         uploadState: UploadState
     )
     func showError(_ message: String)
+
+    /// Resets the recording in progress flag, re-enabling the record button
+    func resetRecordingInProgress()
 }
 
+@MainActor
 protocol PassiveCaptureViewToPresenter: AnyObject {
     func viewDidLoad() async
     func viewWillAppear() async
     func viewWillDisappear() async
+    func appWillResignActive() async
+    func appDidBecomeActive() async
     func cameraReady() async
     func cameraPermissionDenied() async
     func videoRecordingCompleted(videoData: Data) async
@@ -48,6 +55,7 @@ protocol PassiveCapturePresenterToInteractor: AnyObject {
     func uploadVideo(_ videoData: Data)
 }
 
+@MainActor
 protocol PassiveCaptureInteractorToPresenter: AnyObject {
     func videoUploadCompleted(validationId: String) async
     func videoUploadFailed(_ error: TruoraException) async

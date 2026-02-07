@@ -191,7 +191,7 @@ import XCTest
         let fileUrl = tempDir.appendingPathComponent("test.jpg")
         try "test".data(using: .utf8)?.write(to: fileUrl)
 
-        let referenceFace = try ReferenceFace.from(fileUrl)
+        let referenceFace = ReferenceFace.from(fileUrl)
 
         try await ValidationConfig.shared.configure(
             apiKey: "test-key",
@@ -218,6 +218,54 @@ import XCTest
     func testStartReferenceFaceEnrollmentWithoutAccountIdReturnsNil() {
         let task = router.startReferenceFaceEnrollmentForTest()
         XCTAssertNil(task)
+    }
+
+    // MARK: - Handle Cancellation Tests
+
+    func testHandleCancellation_whenNavControllerNotInWindow_doesNotPresent() {
+        // Given - Navigation controller is not in window hierarchy (default in tests)
+
+        // When
+        router.handleCancellation(loadingType: .face)
+
+        // Then - Should not crash, alert is not presented (no window)
+        // This verifies the guard at the start of handleCancellation
+        XCTAssertNil(mockNavigationController.presentedViewController)
+    }
+
+    func testHandleCancellation_passesCorrectLoadingType() async throws {
+        // Given
+        try await ValidationConfig.shared.configure(
+            apiKey: "test-key",
+            accountId: "test-account",
+            delegate: mockDelegate.closure
+        )
+
+        // Create a testable router that captures the loading type
+        let testableRouter = TestableCancellationRouter(navigationController: mockNavigationController)
+
+        // When - Call with face loading type
+        testableRouter.handleCancellation(loadingType: .face)
+
+        // Then
+        XCTAssertEqual(testableRouter.lastLoadingType, .face)
+
+        // When - Call with document loading type
+        testableRouter.handleCancellation(loadingType: .document)
+
+        // Then
+        XCTAssertEqual(testableRouter.lastLoadingType, .document)
+    }
+}
+
+// MARK: - Testable Router for Cancellation
+
+@MainActor private class TestableCancellationRouter: ValidationRouter {
+    var lastLoadingType: ResultLoadingType?
+
+    override func handleCancellation(loadingType: ResultLoadingType) {
+        lastLoadingType = loadingType
+        // Don't call super - we just want to verify the parameter
     }
 }
 

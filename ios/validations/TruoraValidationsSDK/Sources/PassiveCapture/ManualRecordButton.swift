@@ -10,15 +10,21 @@ import SwiftUI
 /// Pill-shaped manual record button with red recording icon.
 /// Matches KMP `ManualRecordButton` / `RecordButton` design.
 struct ManualRecordButton: View {
+    let isEnabled: Bool
     let action: () -> Void
     @EnvironmentObject var theme: TruoraTheme
+
+    init(isEnabled: Bool = true, action: @escaping () -> Void) {
+        self.isEnabled = isEnabled
+        self.action = action
+    }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
                 RecordIcon()
 
-                Text(TruoraValidationsSDKStrings.passiveCaptureRecordVideo)
+                Text(TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureRecordVideo))
                     .font(theme.typography.titleSmall)
                     .fontWeight(.semibold)
             }
@@ -28,6 +34,8 @@ struct ManualRecordButton: View {
             .foregroundColor(theme.colors.layoutGray900)
             .clipShape(Capsule())
         }
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1.0 : 0.6)
     }
 }
 

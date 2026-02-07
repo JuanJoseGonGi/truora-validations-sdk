@@ -184,7 +184,7 @@ import XCTest
     var lastResponse: NativeValidationCreateResponse?
     var lastError: TruoraException?
 
-    func validationCreated(response: NativeValidationCreateResponse) {
+    func validationCreated(response: NativeValidationCreateResponse) async {
         validationCreatedCalled = true
         lastResponse = response
     }

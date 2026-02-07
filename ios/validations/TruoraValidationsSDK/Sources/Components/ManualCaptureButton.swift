@@ -29,9 +29,17 @@ enum CaptureMode {
 struct ManualCaptureButton: View {
     let title: String
     let mode: CaptureMode
+    let isEnabled: Bool
     let action: () -> Void
 
     @EnvironmentObject var theme: TruoraTheme
+
+    init(title: String, mode: CaptureMode, isEnabled: Bool = true, action: @escaping () -> Void) {
+        self.title = title
+        self.mode = mode
+        self.isEnabled = isEnabled
+        self.action = action
+    }
 
     /// Icon color based on capture mode
     private var iconColor: Color {
@@ -60,6 +68,8 @@ struct ManualCaptureButton: View {
             .background(Color.white)
             .clipShape(Capsule())
         }
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1.0 : 0.6)
     }
 }
 

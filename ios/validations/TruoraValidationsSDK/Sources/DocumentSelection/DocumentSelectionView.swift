@@ -24,6 +24,9 @@ import UIKit
     /// When true, the country was pre-configured and cannot be changed by the user
     @Published var isCountryLocked: Bool = false
 
+    /// When true, the document type was pre-configured and cannot be changed by the user
+    @Published var isDocumentLocked: Bool = false
+
     /// Tracks if country dropdown is expanded (for overlay rendering outside ScrollView)
     @Published var isCountryDropdownExpanded: Bool = false
 
@@ -56,6 +59,10 @@ extension DocumentSelectionViewModel: DocumentSelectionPresenterToView {
 
     func setCountryLocked(_ isLocked: Bool) {
         self.isCountryLocked = isLocked
+    }
+
+    func setDocumentLocked(_ isLocked: Bool) {
+        self.isDocumentLocked = isLocked
     }
 
     func setErrors(isCountryError: Bool, isDocumentError: Bool) {
@@ -92,6 +99,13 @@ struct DocumentSelectionView: View {
         self.theme = TruoraTheme(config: config)
     }
 
+    private var viewTitle: String {
+        if viewModel.isCountryLocked, viewModel.isDocumentLocked {
+            return TruoraLocalization.string(forKey: LocalizationKeys.documentSelectionLockedTitle)
+        }
+        return TruoraLocalization.string(forKey: LocalizationKeys.documentSelectionTitle)
+    }
+
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
@@ -103,7 +117,7 @@ struct DocumentSelectionView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         // Title
-                        Text(TruoraValidationsSDKStrings.documentSelectionTitle)
+                        Text(viewTitle)
                             .font(theme.typography.titleLarge)
                             .foregroundColor(theme.colors.onSurface)
                             .padding(.top, 16)
@@ -118,7 +132,7 @@ struct DocumentSelectionView: View {
                         } else {
                             // Country Picker
                             VStack(alignment: .leading, spacing: 8) {
-                                Text(TruoraValidationsSDKStrings.documentSelectionCountryLabel)
+                                Text(TruoraLocalization.string(forKey: LocalizationKeys.documentSelectionCountryLabel))
                                     .font(theme.typography.bodyMedium)
                                     .foregroundColor(theme.colors.onSurface)
 
@@ -139,9 +153,13 @@ struct DocumentSelectionView: View {
                                 ) { $0 }
 
                                 if viewModel.isCountryError {
-                                    Text(TruoraValidationsSDKStrings.documentSelectionCountryError)
-                                        .font(theme.typography.bodySmall)
-                                        .foregroundColor(theme.colors.error)
+                                    Text(
+                                        TruoraLocalization.string(
+                                            forKey: LocalizationKeys.documentSelectionCountryError
+                                        )
+                                    )
+                                    .font(theme.typography.bodySmall)
+                                    .foregroundColor(theme.colors.error)
                                 }
                             }
                         }
@@ -152,33 +170,49 @@ struct DocumentSelectionView: View {
                                 // Use different label when country is locked
                                 Text(
                                     viewModel.isCountryLocked
-                                        ? TruoraValidationsSDKStrings
-                                        .documentSelectionAcceptedDocuments
-                                        : TruoraValidationsSDKStrings.documentSelectionDocumentLabel
+                                        ? TruoraLocalization.string(
+                                            forKey: LocalizationKeys.documentSelectionAcceptedDocuments
+                                        )
+                                        : TruoraLocalization.string(
+                                            forKey: LocalizationKeys.documentSelectionDocumentLabel
+                                        )
                                 )
                                 .font(theme.typography.bodyMedium)
                                 .foregroundColor(theme.colors.onSurface)
 
-                                DocumentTypePickerView(
-                                    documentTypes: viewModel.availableDocuments,
-                                    selectedDocument: viewModel.selectedDocument,
-                                    selectedCountry: viewModel.selectedCountry,
-                                    isError: viewModel.isDocumentError,
-                                    isExpanded: Binding(
-                                        get: { viewModel.isDocumentDropdownExpanded },
-                                        set: { viewModel.isDocumentDropdownExpanded = $0
-                                            if $0 { viewModel.isCountryDropdownExpanded = false }
-                                        }
+                                if viewModel.isDocumentLocked,
+                                   let country = viewModel.selectedCountry,
+                                   let docType = viewModel.selectedDocument {
+                                    DocumentTypeStaticView(
+                                        country: country,
+                                        document: docType
                                     )
-                                ) { document in
-                                    Task { await viewModel.presenter?.documentSelected(document) }
+                                } else {
+                                    DocumentTypePickerView(
+                                        documentTypes: viewModel.availableDocuments,
+                                        selectedDocument: viewModel.selectedDocument,
+                                        selectedCountry: viewModel.selectedCountry,
+                                        isError: viewModel.isDocumentError,
+                                        isExpanded: Binding(
+                                            get: { viewModel.isDocumentDropdownExpanded },
+                                            set: { viewModel.isDocumentDropdownExpanded = $0
+                                                if $0 { viewModel.isCountryDropdownExpanded = false }
+                                            }
+                                        )
+                                    ) { document in
+                                        Task { await viewModel.presenter?.documentSelected(document) }
+                                    }
+                                    .environmentObject(theme)
                                 }
-                                .environmentObject(theme)
 
                                 if viewModel.isDocumentError {
-                                    Text(TruoraValidationsSDKStrings.documentSelectionDocumentError)
-                                        .font(theme.typography.bodySmall)
-                                        .foregroundColor(theme.colors.error)
+                                    Text(
+                                        TruoraLocalization.string(
+                                            forKey: LocalizationKeys.documentSelectionDocumentError
+                                        )
+                                    )
+                                    .font(theme.typography.bodySmall)
+                                    .foregroundColor(theme.colors.error)
                                 }
                             }
                         }
@@ -191,7 +225,9 @@ struct DocumentSelectionView: View {
                 // Footer with continue button
                 TruoraFooterView(
                     securityTip: nil,
-                    buttonText: TruoraValidationsSDKStrings.documentSelectionContinue,
+                    buttonText: TruoraLocalization.string(
+                        forKey: LocalizationKeys.documentSelectionContinue
+                    ),
                     isLoading: viewModel.isLoading
                 ) {
                     Task { await viewModel.presenter?.continueTapped() }
@@ -200,7 +236,9 @@ struct DocumentSelectionView: View {
 
             // Loading overlay
             if viewModel.isLoading {
-                LoadingOverlayView(message: TruoraValidationsSDKStrings.documentSelectionLoading)
+                LoadingOverlayView(
+                    message: TruoraLocalization.string(forKey: LocalizationKeys.documentSelectionLoading)
+                )
             }
         }
         .overlayPreferenceValue(CountryPickerAnchorKey.self) { anchor in
@@ -236,27 +274,23 @@ struct DocumentSelectionView: View {
         .alert(isPresented: $viewModel.showCameraPermissionAlert) {
             Alert(
                 title: Text(
-                    NSLocalizedString(
-                        "camera_permission_denied_title", bundle: .truoraModule, comment: ""
-                    )
+                    TruoraLocalization.string(forKey: LocalizationKeys.cameraPermissionDeniedTitle)
                 ),
                 message: Text(
-                    NSLocalizedString(
-                        "camera_permission_denied_description", bundle: .truoraModule, comment: ""
-                    )
+                    TruoraLocalization.string(forKey: LocalizationKeys.cameraPermissionDeniedDescription)
                 ),
                 primaryButton: .default(
-                    Text(NSLocalizedString("common_go_to_settings", bundle: .truoraModule, comment: ""))
+                    Text(TruoraLocalization.string(forKey: LocalizationKeys.commonGoToSettings))
                 ) {
                     guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                     UIApplication.shared.open(url, options: [:], completionHandler: nil)
                 },
                 secondaryButton: .cancel(
-                    Text(NSLocalizedString("common_cancel", bundle: .truoraModule, comment: ""))
+                    Text(TruoraLocalization.string(forKey: LocalizationKeys.commonCancel))
                 )
             )
         }
-        .background(theme.colors.surface)
+        .background(theme.colors.surface.extendingIntoSafeArea())
         .onAppear {
             viewModel.onAppear()
         }
@@ -311,7 +345,7 @@ private struct CountryPickerView: View {
                             .font(.system(size: 16))
                             .foregroundColor(theme.colors.onSurface)
                     } else {
-                        Text(TruoraValidationsSDKStrings.documentSelectionCountryPlaceholder)
+                        Text(TruoraLocalization.string(forKey: LocalizationKeys.documentSelectionCountryPlaceholder))
                             .font(.system(size: 16))
                             .foregroundColor(theme.colors.tint00)
                     }
@@ -395,6 +429,29 @@ private struct CountryDropdownOverlay: View {
     }
 }
 
+// MARK: - Document Static View (when locked/pre-configured)
+
+private struct DocumentTypeStaticView: View {
+    let country: NativeCountry
+    let document: NativeDocumentType
+
+    @EnvironmentObject var theme: TruoraTheme
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(document.label)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(theme.colors.onSurface)
+            if let description = document.descriptionText(for: country) {
+                Text(description)
+                    .font(.system(size: 14))
+                    .foregroundColor(theme.colors.layoutGray500)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+}
+
 // MARK: - Document Type Picker Component
 
 private struct DocumentTypePickerView: View {
@@ -432,9 +489,13 @@ private struct DocumentTypePickerView: View {
                                 }
                             }
                         } else {
-                            Text(TruoraValidationsSDKStrings.documentSelectionDocumentPlaceholder)
-                                .font(.system(size: 16))
-                                .foregroundColor(theme.colors.tint00)
+                            Text(
+                                TruoraLocalization.string(
+                                    forKey: LocalizationKeys.documentSelectionDocumentPlaceholder
+                                )
+                            )
+                            .font(.system(size: 16))
+                            .foregroundColor(theme.colors.tint00)
                         }
                         Spacer()
                         SwiftUI.Image(systemName: "chevron.down")
@@ -449,7 +510,10 @@ private struct DocumentTypePickerView: View {
                     .cornerRadius(8)
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(showError ? theme.colors.error : theme.colors.tint00, lineWidth: 1)
+                            .stroke(
+                                showError ? theme.colors.error : theme.colors.tint00,
+                                lineWidth: 1
+                            )
                     )
                 }
             )
@@ -469,8 +533,10 @@ private struct DocumentTypePickerView: View {
                                             Text(document.label)
                                                 .font(.system(size: 16, weight: .bold))
                                                 .foregroundColor(theme.colors.onSurface)
-                                            if let country = selectedCountry,
-                                               let description = document.descriptionText(for: country) {
+                                            let description = selectedCountry.flatMap {
+                                                document.descriptionText(for: $0)
+                                            }
+                                            if let description {
                                                 Text(description)
                                                     .font(.system(size: 14))
                                                     .foregroundColor(theme.colors.layoutGray500)
@@ -548,6 +614,23 @@ private struct DocumentSelectionLockedPreview: View {
         vm.countries = [.co]
         vm.selectedCountry = .co
         vm.isCountryLocked = true
+        return vm
+    }()
+
+    var body: some View {
+        DocumentSelectionView(viewModel: viewModel, config: nil)
+    }
+}
+
+@available(iOS 14.0, *)
+private struct DocumentSelectionTypeLockedPreview: View {
+    @StateObject private var viewModel: DocumentSelectionViewModel = {
+        let vm = DocumentSelectionViewModel()
+        vm.countries = [.co]
+        vm.selectedCountry = .co
+        vm.selectedDocument = .nationalId
+        vm.isCountryLocked = true
+        vm.isDocumentLocked = true
         return vm
     }()
 

@@ -33,12 +33,12 @@ struct PassiveIntroContentView: View {
 
                 // Title & Subtitle
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(TruoraValidationsSDKStrings.passiveInstructionsTitle)
+                    Text(TruoraLocalization.string(forKey: LocalizationKeys.passiveInstructionsTitle))
                         .font(theme.typography.titleLarge)
                         .foregroundColor(theme.colors.onSurface)
                         .multilineTextAlignment(.leading)
 
-                    Text(TruoraValidationsSDKStrings.passiveInstructionsText)
+                    Text(TruoraLocalization.string(forKey: LocalizationKeys.passiveInstructionsText))
                         .font(theme.typography.bodyLarge)
                         .foregroundColor(theme.colors.onSurface)
                         .multilineTextAlignment(.leading)

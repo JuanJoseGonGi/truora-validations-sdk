@@ -141,7 +141,6 @@ import XCTest
     var completionCalled = false
     var failureCalled = false
     var cancellationCalled = false
-    var captureCalled = false
     var lastResult: ValidationResult?
     var lastError: TruoraException?
 
@@ -151,16 +150,11 @@ import XCTest
             case .complete(let validationResult):
                 self.completionCalled = true
                 self.lastResult = validationResult
-            case .failure(let err):
-                switch err {
-                case .sdk(let sdkError) where sdkError.type == .processCancelledByUser:
-                    self.cancellationCalled = true
-                default:
-                    self.failureCalled = true
-                    self.lastError = err
-                }
-            case .capture:
-                self.captureCalled = true
+            case .failure(let err, _):
+                self.failureCalled = true
+                self.lastError = err
+            case .canceled:
+                self.cancellationCalled = true
             }
         }
     }

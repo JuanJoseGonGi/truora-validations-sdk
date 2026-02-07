@@ -24,14 +24,14 @@ struct FailureResultContent: View {
                 .frame(maxWidth: .infinity)
 
             VStack(alignment: .leading, spacing: 12) {
-                Text(TruoraValidationsSDKStrings.failureResultTitle)
+                Text(TruoraLocalization.string(forKey: LocalizationKeys.failureResultTitle))
                     .font(theme.typography.titleLarge)
                     .fontWeight(.bold)
                     .foregroundColor(theme.colors.onSurface)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text(TruoraValidationsSDKStrings.failureResultDescription)
+                Text(TruoraLocalization.string(forKey: LocalizationKeys.failureResultDescription))
                     .font(theme.typography.bodyLarge)
                     .foregroundColor(theme.colors.onSurface.opacity(0.8))
                     .multilineTextAlignment(.leading)

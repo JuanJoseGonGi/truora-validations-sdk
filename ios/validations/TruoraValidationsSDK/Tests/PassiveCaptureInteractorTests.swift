@@ -122,7 +122,7 @@ import XCTest
     var lastValidationId: String?
     var videoUploadFailedExpectation: XCTestExpectation?
 
-    func videoUploadCompleted(validationId: String) {
+    func videoUploadCompleted(validationId: String) async {
         uploadCompletedCalled = true
         lastValidationId = validationId
     }

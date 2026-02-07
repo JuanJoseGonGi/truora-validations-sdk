@@ -27,8 +27,7 @@ public enum NativeCountry: String, CaseIterable, Identifiable {
 
     /// Returns localized display name for the country
     public var displayName: String {
-        let key = "country_\(rawValue)"
-        return NSLocalizedString(key, bundle: .truoraModule, comment: "")
+        TruoraLocalization.string(forKey: LocalizationKeys.countryKey(isoCode: rawValue))
     }
 
     /// Returns the flag emoji for the country
@@ -51,17 +50,17 @@ public enum NativeCountry: String, CaseIterable, Identifiable {
     public var documentTypes: [NativeDocumentType] {
         switch self {
         case .mx:
-            [.nationalId, .taxId, .foreignId, .passport]
+            [.nationalId, .foreignId, .passport]
         case .br:
-            [.cnh, .generalRegistration, .nationalId, .taxId]
+            [.cnh, .generalRegistration]
         case .co:
-            [.nationalId, .foreignId, .rut, .ppt, .passport, .identityCard, .taxId, .temporaryNationalId, .ptp]
+            [.nationalId, .foreignId, .rut, .ppt, .passport, .identityCard, .temporaryNationalId]
         case .cl:
             [.nationalId, .foreignId, .driverLicense, .passport]
         case .cr:
-            [.nationalId, .foreignId, .passport]
+            [.nationalId, .foreignId]
         case .pe:
-            [.nationalId, .foreignId, .taxId, .ptp]
+            [.nationalId, .foreignId]
         case .ve:
             [.nationalId]
         case .all:
@@ -99,22 +98,22 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
     /// Returns localized display label for the document type
     public var label: String {
         let key = switch self {
-        case .nationalId: "document_type_national_id"
-        case .identityCard: "document_type_identity_card"
-        case .foreignId: "document_type_foreign_id"
-        case .ppt: "document_type_ppt"
-        case .driverLicense: "document_type_driver_license"
-        case .cnh: "doc_br_cnh"
-        case .passport: "document_type_passport"
-        case .invoice: "document_type_invoice"
-        case .taxId: "document_type_tax_id"
-        case .ptp: "document_type_ptp"
-        case .rut: "document_type_rut"
-        case .nativeNationalId: "document_type_native_national_id"
-        case .generalRegistration: "doc_br_general_reg"
-        case .temporaryNationalId: "doc_co_temp_id"
+        case .nationalId: LocalizationKeys.documentTypeNationalId
+        case .identityCard: LocalizationKeys.documentTypeIdentityCard
+        case .foreignId: LocalizationKeys.documentTypeForeignId
+        case .ppt: LocalizationKeys.documentTypePpt
+        case .driverLicense: LocalizationKeys.documentTypeDriverLicense
+        case .cnh: LocalizationKeys.docBrCnh
+        case .passport: LocalizationKeys.documentTypePassport
+        case .invoice: LocalizationKeys.documentTypeInvoice
+        case .taxId: LocalizationKeys.documentTypeTaxId
+        case .ptp: LocalizationKeys.documentTypePtp
+        case .rut: LocalizationKeys.documentTypeRut
+        case .nativeNationalId: LocalizationKeys.documentTypeNativeNationalId
+        case .generalRegistration: LocalizationKeys.docBrGeneralReg
+        case .temporaryNationalId: LocalizationKeys.docCoTempId
         }
-        return NSLocalizedString(key, bundle: .truoraModule, comment: "")
+        return TruoraLocalization.string(forKey: key)
     }
 
     /// Returns localized description for the document type based on country context
@@ -122,51 +121,48 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
         let key: String? = switch country {
         case .mx:
             switch self {
-            case .nationalId, .foreignId: "desc_original_valid"
-            case .taxId: "desc_taxpayer_id"
-            case .passport: "desc_mx_passport"
+            case .nationalId, .foreignId: LocalizationKeys.descOriginalValid
+            case .passport: LocalizationKeys.descMxPassport
             default: nil
             }
         case .br:
             switch self {
-            case .cnh, .generalRegistration: "desc_physical_original"
+            case .cnh, .generalRegistration: LocalizationKeys.descPhysicalOriginal
             default: nil
             }
         case .co:
             switch self {
-            case .nationalId, .rut, .identityCard: "desc_physical_original"
-            case .foreignId, .ppt: "desc_co_valid_issued"
-            case .passport: "desc_co_passport"
-            case .temporaryNationalId: "desc_co_temp_id"
-            case .ptp: "doc_co_ppt"
-            case .taxId: "desc_co_tax_id"
+            case .nationalId, .rut, .identityCard: LocalizationKeys.descPhysicalOriginal
+            case .foreignId, .ppt: LocalizationKeys.descCoValidIssued
+            case .passport: LocalizationKeys.descCoPassport
+            case .temporaryNationalId: LocalizationKeys.descCoTempId
             default: nil
             }
         case .cl:
             switch self {
-            case .nationalId: "desc_physical_original"
-            case .foreignId, .driverLicense: "desc_cl_foreign_id"
-            case .passport: "desc_cl_passport"
+            case .nationalId: LocalizationKeys.descPhysicalOriginal
+            case .foreignId, .driverLicense: LocalizationKeys.descClForeignId
+            case .passport: LocalizationKeys.descClPassport
             default: nil
             }
         case .pe:
             switch self {
-            case .nationalId: "desc_physical_original"
+            case .nationalId: LocalizationKeys.descPhysicalOriginal
             default: nil
             }
         case .sv:
-            "desc_sv_keep_hand"
+            LocalizationKeys.descSvKeepHand
         case .ve:
-            self == .nationalId ? "desc_physical_original" : nil
+            self == .nationalId ? LocalizationKeys.descPhysicalOriginal : nil
         case .all:
-            self == .passport ? "desc_original_valid" : nil
+            self == .passport ? LocalizationKeys.descOriginalValid : nil
         case .ar:
-            self == .nationalId ? "desc_physical_original" : nil
+            self == .nationalId ? LocalizationKeys.descPhysicalOriginal : nil
         case .cr:
             nil
         }
         guard let key else { return nil }
-        return NSLocalizedString(key, bundle: .truoraModule, comment: "")
+        return TruoraLocalization.string(forKey: key)
     }
 }
 

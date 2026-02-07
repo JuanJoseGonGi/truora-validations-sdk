@@ -12,25 +12,23 @@ import Foundation
 ///
 /// Error code ranges:
 /// - 20001-20008: Authentication and API key errors
-/// - 20009-20016: Process and validation errors
+/// - 20009-20016: Validation errors
 /// - 20017-20026: Configuration and state errors
 /// - 20500+: Internal/system errors
 public enum SDKErrorType: Int, CaseIterable {
     /// Authentication and API key errors (20001-20008)
     case apiKeyMissing = 20001
 
-    /// Process and validation errors (20009-20016)
+    /// Validation errors (20009-20016)
     case validationError = 20009
-    case processCancelledByUser = 20010
+    case validationCanceledByUser = 20010
     case cameraPermissionError = 20011
-    case invalidFileUploadLink = 20012
-    case processInterrupted = 20013
+    case validationInterrupted = 20013
     case missingModule = 20014
-    case identityProcessResultsTimedOut = 20016
+    case validationResultsTimedOut = 20016
 
     /// Configuration and state errors (20017-20026)
     case invalidApiKey = 20017
-    case missingValidationsClient = 20018
     case invalidAccountId = 20019
     case nullParameter = 20020
     case invalidRange = 20021
@@ -49,26 +47,22 @@ public enum SDKErrorType: Int, CaseIterable {
         // Authentication and API key errors
         case .apiKeyMissing:
             "API Key is missing"
-        // Process and validation errors
+        // Validation errors
         case .validationError:
             "Validation failed"
-        case .processCancelledByUser:
-            "Process cancelled by the user"
+        case .validationCanceledByUser:
+            "Validation canceled by the user"
         case .cameraPermissionError:
-            "Camera permission denied, process cannot continue"
-        case .invalidFileUploadLink:
-            "File upload link is invalid"
-        case .processInterrupted:
-            "Process was interrupted. Please try again"
+            "Camera permission denied, validation cannot continue"
+        case .validationInterrupted:
+            "Validation was interrupted. Please try again"
         case .missingModule:
             "Missing module"
-        case .identityProcessResultsTimedOut:
-            "Identity process results timed out"
+        case .validationResultsTimedOut:
+            "Validation results timed out"
         // Configuration and state errors
         case .invalidApiKey:
             "Invalid API Key sent"
-        case .missingValidationsClient:
-            "Missing validations client"
         case .invalidAccountId:
             "Invalid account id"
         case .nullParameter:

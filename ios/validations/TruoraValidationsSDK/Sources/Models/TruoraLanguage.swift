@@ -14,4 +14,18 @@ public enum TruoraLanguage: String, Codable, CaseIterable {
     case spanish = "es"
 
     case portuguese = "pt"
+
+    /// The .lproj directory name for this language in the resource bundle (e.g. "en", "es", "pt").
+    var languageBundleName: String {
+        switch self {
+        case .english: "en"
+        case .spanish: "es"
+        case .portuguese: "pt"
+        }
+    }
+
+    /// The Locale for this language
+    var locale: Locale {
+        Locale(identifier: rawValue)
+    }
 }

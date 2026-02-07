@@ -59,7 +59,12 @@ private final class APIURLProtocolStub: URLProtocol {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [APIURLProtocolStub.self]
         let session = URLSession(configuration: config)
-        sut = TruoraAPIClient(apiKey: "test-api-key", session: session)
+        // Use noRetry config for tests to avoid retry delays
+        sut = TruoraAPIClient(
+            apiKey: "test-api-key",
+            sessionConfig: .noRetry,
+            session: session
+        )
     }
 
     override func tearDown() {
@@ -94,7 +99,8 @@ private final class APIURLProtocolStub: URLProtocol {
             threshold: 0.8,
             subvalidations: nil,
             documentType: nil,
-            timeout: nil
+            timeout: nil,
+            userAuthorized: true
         )
 
         // When

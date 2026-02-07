@@ -23,7 +23,7 @@ public class UIConfig {
     private var _customLogoData: Data?
     private var _logoWidth: CGFloat?
     private var _logoHeight: CGFloat?
-    private var _language: TruoraLanguage = .english
+    private var _language: TruoraLanguage?
 
     public init() {}
 
@@ -67,7 +67,7 @@ public class UIConfig {
         _logoHeight
     }
 
-    public var language: TruoraLanguage {
+    public var language: TruoraLanguage? {
         _language
     }
 

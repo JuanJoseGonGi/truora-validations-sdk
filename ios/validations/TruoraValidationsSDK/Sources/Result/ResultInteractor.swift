@@ -65,18 +65,23 @@ private extension ResultInteractor {
         ]
     }
 
-    func shouldReturnResult(for status: String) -> Bool {
-        status.lowercased() != "pending"
+    func shouldReturnResult(for validationDetail: NativeValidationDetailResponse) -> Bool {
+        // Stop polling if validation_status is not pending OR if failure_status is set
+        validationDetail.validationStatus.lowercased() != "pending"
+            || validationDetail.failureStatus != nil
     }
 
-    func fetchValidationDetail(apiClient: TruoraAPIClient) async throws -> NativeValidationDetailResponse {
+    func fetchValidationDetail(
+        apiClient: TruoraAPIClient
+    ) async throws -> NativeValidationDetailResponse {
         try await apiClient.getValidation(validationId: validationId)
     }
 
     func performPolling() async {
         guard let apiClient = ValidationConfig.shared.apiClient else {
+            let details = "API client not configured"
             await presenter?.pollingFailed(
-                error: .sdk(SDKError(type: .invalidConfiguration, details: "API client not configured"))
+                error: .sdk(SDKError(type: .invalidConfiguration, details: details))
             )
             return
         }
@@ -132,7 +137,7 @@ private extension ResultInteractor {
 
             do {
                 let validationDetail = try await fetchValidationDetail(apiClient: apiClient)
-                if shouldReturnResult(for: validationDetail.validationStatus) {
+                if shouldReturnResult(for: validationDetail) {
                     return createValidationResult(from: validationDetail)
                 }
             } catch is CancellationError {
@@ -143,7 +148,10 @@ private extension ResultInteractor {
                     throw error
                 }
                 let errorMsg = error.localizedDescription
-                print("⚠️ ResultInteractor: Transient error on attempt \(attempt + 1), retrying: \(errorMsg)")
+                let retryNum = attempt + 1
+                let log = "⚠️ ResultInteractor: Transient error on attempt "
+                    + "\(retryNum), retrying: \(errorMsg)"
+                print(log)
             }
 
             // Sleep throws CancellationError if task is cancelled, which is expected behavior
@@ -155,29 +163,177 @@ private extension ResultInteractor {
         print("❌ ResultInteractor: Polling timeout after \(backoffIntervals.count) attempts")
         throw TruoraException.sdk(
             SDKError(
-                type: .identityProcessResultsTimedOut,
+                type: .validationResultsTimedOut,
                 details: "Validation processing timeout. Please check back later."
             )
         )
     }
 
-    func createValidationResult(from validationDetail: NativeValidationDetailResponse) -> ValidationResult {
-        let status: ValidationStatus = switch validationDetail.validationStatus.lowercased() {
-        case "success":
-            .success
-        case "failed", "failure":
-            .failed
-        default:
-            .processing
+    func createValidationResult(
+        from validationDetail: NativeValidationDetailResponse
+    ) -> ValidationResult {
+        // If failure_status is present, treat as failed regardless of validation_status
+        let status: ValidationStatus = if validationDetail.failureStatus != nil {
+            .failure
+        } else {
+            switch validationDetail.validationStatus.lowercased() {
+            case "success":
+                .success
+            case "failed", "failure":
+                .failure
+            default:
+                .pending
+            }
         }
 
         let confidence = validationDetail.details?.faceRecognitionValidations?.confidenceScore
+        let detail = mapToValidationDetail(from: validationDetail)
 
         return ValidationResult(
             validationId: validationDetail.validationId,
             status: status,
             confidence: confidence,
-            metadata: nil
+            metadata: nil,
+            detail: detail
+        )
+    }
+
+    // MARK: - Detail Mapping
+
+    func mapToValidationDetail(
+        from response: NativeValidationDetailResponse
+    ) -> ValidationDetail {
+        ValidationDetail(
+            validationId: response.validationId,
+            type: response.type,
+            validationStatus: response.validationStatus,
+            failureStatus: response.failureStatus,
+            creationDate: response.creationDate,
+            accountId: response.accountId,
+            details: mapDetailInfo(from: response.details),
+            validationInputs: mapInputs(from: response.validationInputs),
+            userResponse: mapUserResponse(from: response.userResponse)
+        )
+    }
+
+    func mapDetailInfo(
+        from details: NativeValidationDetails?
+    ) -> ValidationDetailInfo? {
+        guard let details else { return nil }
+        return ValidationDetailInfo(
+            faceRecognitionValidations: mapFaceRecognition(
+                from: details.faceRecognitionValidations
+            ),
+            documentDetails: mapDocumentDetails(from: details.documentDetails),
+            documentValidations: mapDocumentValidations(
+                from: details.documentValidations
+            ),
+            backgroundCheck: mapBackgroundCheck(from: details.backgroundCheck)
+        )
+    }
+
+    func mapFaceRecognition(
+        from face: NativeFaceRecognitionValidations?
+    ) -> FaceRecognitionDetail? {
+        guard let face else { return nil }
+        return FaceRecognitionDetail(
+            confidenceScore: face.confidenceScore,
+            similarityStatus: face.similarityStatus,
+            passiveLivenessStatus: face.passiveLivenessStatus,
+            enrollmentId: face.enrollmentId,
+            ageRange: face.ageRange.map {
+                AgeRangeDetail(high: $0.high, low: $0.low)
+            },
+            faceSearch: face.faceSearch.map {
+                FaceSearchDetail(
+                    status: $0.status,
+                    confidenceScore: $0.confidenceScore
+                )
+            }
+        )
+    }
+
+    func mapDocumentDetails(
+        from doc: NativeDocumentDetails?
+    ) -> DocumentDetail? {
+        guard let doc else { return nil }
+        return DocumentDetail(
+            docId: doc.docId,
+            country: doc.country,
+            documentType: doc.documentType,
+            documentNumber: doc.documentNumber,
+            name: doc.name,
+            lastName: doc.lastName,
+            dateOfBirth: doc.dateOfBirth,
+            gender: doc.gender,
+            issueDate: doc.issueDate,
+            expirationDate: doc.expirationDate,
+            expeditionPlace: doc.expeditionPlace,
+            birthPlace: doc.birthPlace,
+            height: doc.height,
+            rh: doc.rh,
+            mimeType: doc.mimeType,
+            clientId: doc.clientId,
+            creationDate: doc.creationDate,
+            frontUrl: doc.frontUrl,
+            reverseUrl: doc.reverseUrl
+        )
+    }
+
+    func mapDocumentValidations(
+        from validations: NativeDocumentSubValidations?
+    ) -> DocumentSubValidationResults? {
+        guard let validations else { return nil }
+        return DocumentSubValidationResults(
+            dataConsistency: validations.dataConsistency?.map(mapSubResult),
+            governmentDatabase: validations.governmentDatabase?.map(mapSubResult),
+            imageAnalysis: validations.imageAnalysis?.map(mapSubResult),
+            photocopyAnalysis: validations.photocopyAnalysis?.map(mapSubResult),
+            manualAnalysis: validations.manualAnalysis?.map(mapSubResult),
+            photoOfPhoto: validations.photoOfPhoto?.map(mapSubResult)
+        )
+    }
+
+    func mapSubResult(
+        from result: NativeSubValidationResult
+    ) -> SubValidationDetail {
+        SubValidationDetail(
+            validationName: result.validationName,
+            result: result.result,
+            validationType: result.validationType,
+            message: result.message,
+            manuallyReviewed: result.manuallyReviewed,
+            createdAt: result.createdAt,
+            dataValidations: result.dataValidations
+        )
+    }
+
+    func mapBackgroundCheck(
+        from check: NativeBackgroundCheck?
+    ) -> BackgroundCheckDetail? {
+        guard let check else { return nil }
+        return BackgroundCheckDetail(
+            checkId: check.checkId,
+            checkUrl: check.checkUrl
+        )
+    }
+
+    func mapInputs(
+        from inputs: NativeValidationInputs?
+    ) -> ValidationDetailInputs? {
+        guard let inputs else { return nil }
+        return ValidationDetailInputs(
+            country: inputs.country,
+            documentType: inputs.documentType
+        )
+    }
+
+    func mapUserResponse(
+        from response: NativeUserResponse?
+    ) -> ValidationDetailUserResponse? {
+        guard let response else { return nil }
+        return ValidationDetailUserResponse(
+            inputFiles: response.inputFiles
         )
     }
 }

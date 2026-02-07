@@ -346,7 +346,7 @@ import XCTest
         )
     }
 
-    func testValidationFailed_withDifferentErrorTypes_displaysAppropriateMessages() async throws {
+    func testValidationFailed_withDifferentErrorTypes_displaysAppropriateMessages() async {
         // Test different error types
         let errorTypes: [TruoraException] = [
             .sdk(SDKError(type: .invalidConfiguration, details: "Invalid config")),
@@ -356,7 +356,7 @@ import XCTest
 
         for error in errorTypes {
             // Given
-            try await MainActor.run { setUp() } // Reset for each iteration
+            await MainActor.run { setUp() } // Reset for each iteration
 
             // When
             await sut.validationFailed(error)
@@ -395,7 +395,7 @@ import XCTest
 
 // MARK: - Mock Interactor
 
-@MainActor private final class MockPassiveIntroInteractor: PassiveIntroPresenterToInteractor {
+private final class MockPassiveIntroInteractor: PassiveIntroPresenterToInteractor {
     private(set) var createValidationCalled = false
     private(set) var enrollmentCompletedCalled = false
     private(set) var lastAccountId: String?
@@ -435,7 +435,7 @@ import XCTest
     private(set) var lastErrorMessage: String?
     var shouldThrowError = false
 
-    override func handleCancellation() {
+    override func handleCancellation(loadingType: ResultLoadingType) {
         handleCancellationCalled = true
     }
 

@@ -78,7 +78,7 @@ struct ValidationLoadingView: View {
             ZStack {
                 // Full-screen dark blue background
                 theme.colors.primary900
-                    .edgesIgnoringSafeArea(.all)
+                    .extendingIntoSafeArea()
 
                 VStack(spacing: 0) {
                     Spacer()
@@ -97,8 +97,12 @@ struct ValidationLoadingView: View {
                     VStack(alignment: .leading, spacing: isIPad ? 12 : 8) {
                         Text(
                             loadingType == .face
-                                ? TruoraValidationsSDKStrings.passiveCaptureLoadingTitle
-                                : TruoraValidationsSDKStrings.documentAutocaptureLoadingVerifying
+                                ? TruoraLocalization.string(
+                                    forKey: LocalizationKeys.passiveCaptureLoadingTitle
+                                )
+                                : TruoraLocalization.string(
+                                    forKey: LocalizationKeys.documentAutocaptureLoadingVerifying
+                                )
                         )
                         .font(theme.typography.titleSmall)
                         .fontWeight(.bold)
@@ -106,11 +110,15 @@ struct ValidationLoadingView: View {
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
-                        Text(TruoraValidationsSDKStrings.documentAutocaptureLoadingVerifyingDescription)
-                            .font(theme.typography.bodyLarge)
-                            .foregroundColor(.white)
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(
+                            TruoraLocalization.string(
+                                forKey: LocalizationKeys.docAutocaptureVerifyingDesc
+                            )
+                        )
+                        .font(theme.typography.bodyLarge)
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                         AnimatedLoadingBar(height: loadingBarHeight)
                             .padding(.top, isIPad ? 16 : 8)

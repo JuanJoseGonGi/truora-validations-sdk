@@ -36,6 +36,7 @@ enum DocumentCaptureConfigurator {
 
         let config = ValidationConfig.shared.uiConfig
         let swiftUIView = DocumentCaptureView(viewModel: viewModel, config: config)
+            .sdkLocaleEnvironment(locale: config.language?.locale ?? Locale.current)
         let hostingController = UIHostingController(rootView: swiftUIView)
         hostingController.modalPresentationStyle = .fullScreen
         return hostingController

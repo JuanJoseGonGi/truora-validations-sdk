@@ -17,6 +17,7 @@ import UIKit
     func pauseVideo()
     func stopCamera()
     func pauseCamera()
+    func resumeCamera()
 
     func updateComposeUI(
         side: DocumentCaptureSide,
@@ -33,8 +34,12 @@ import UIKit
     )
 
     func showError(_ message: String)
+
+    /// Resets the capture in progress flag, re-enabling the capture button
+    func resetCaptureInProgress()
 }
 
+@MainActor
 protocol DocumentCaptureViewToPresenter: AnyObject {
     func viewDidLoad() async
     func viewWillAppear() async
@@ -49,6 +54,10 @@ protocol DocumentCaptureViewToPresenter: AnyObject {
     func manualCaptureTapped() async
     func cancelTapped() async
     func retryTapped() async
+
+    /// Called when autocapture becomes unavailable (e.g., ML model fails).
+    /// Silently transitions to manual capture without user interaction.
+    func switchToManualCapture() async
 }
 
 protocol DocumentCapturePresenterToInteractor: AnyObject {
@@ -63,6 +72,7 @@ protocol DocumentCapturePresenterToInteractor: AnyObject {
     )
 }
 
+@MainActor
 protocol DocumentCaptureInteractorToPresenter: AnyObject {
     func photoUploadCompleted(side: DocumentCaptureSide) async
     func photoUploadFailed(side: DocumentCaptureSide, error: TruoraException) async

@@ -59,6 +59,13 @@ import XCTest
         XCTAssertTrue(mockRouter.dismissDocumentFeedbackCalled)
     }
 
+    func testCancelTapped_dismissesFeedbackAndHandlesCancellation() async {
+        await sut.cancelTapped()
+
+        XCTAssertTrue(mockRouter.dismissDocumentFeedbackCalled)
+        XCTAssertTrue(mockRouter.handleCancellationCalled)
+    }
+
     func testWeakReferences_allowViewDeallocation() {
         autoreleasepool {
             var view: MockDocumentFeedbackView? = MockDocumentFeedbackView()
@@ -98,9 +105,14 @@ import XCTest
 
 @MainActor private final class MockDocumentFeedbackRouter: ValidationRouter {
     private(set) var dismissDocumentFeedbackCalled = false
+    private(set) var handleCancellationCalled = false
 
     override func dismissDocumentFeedback(completion: (() -> Void)? = nil) {
         dismissDocumentFeedbackCalled = true
         completion?()
+    }
+
+    override func handleCancellation(loadingType: ResultLoadingType) {
+        handleCancellationCalled = true
     }
 }

@@ -46,7 +46,7 @@ extension DocumentIntroPresenter: DocumentIntroViewToPresenter {
     }
 
     func cancelTapped() async {
-        await router?.handleCancellation()
+        await router?.handleCancellation(loadingType: .document)
     }
 }
 

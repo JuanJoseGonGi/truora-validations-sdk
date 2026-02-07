@@ -33,7 +33,7 @@ import XCTest
         XCTAssertNil(sut.secondary, "Secondary color should be nil by default")
         XCTAssertNil(sut.error, "Error color should be nil by default")
         XCTAssertNil(sut.logoUrl, "Logo URL should be nil by default")
-        XCTAssertEqual(sut.language, .english, "Language should default to English")
+        XCTAssertNil(sut.language, "Language should be nil by default (uses device locale)")
     }
 
     // MARK: - Surface Color Tests

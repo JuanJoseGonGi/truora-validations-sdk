@@ -192,6 +192,84 @@ import XCTest
         XCTAssertTrue(result === sut, "Should return self for chaining")
     }
 
+    // MARK: - Finish View Configuration Tests
+
+    func testFinishViewConfigDefaultIsNil() {
+        // Then
+        XCTAssertNil(sut.finishViewConfig, "Finish view config should be nil by default")
+    }
+
+    func testSetFinishViewConfiguration() {
+        // Given
+        let config = FinishViewConfiguration(success: .show, failure: .hide)
+
+        // When
+        let result = sut.setFinishViewConfiguration(config)
+
+        // Then
+        XCTAssertNotNil(sut.finishViewConfig, "Should set finish view config")
+        XCTAssertEqual(sut.finishViewConfig?.success, .show, "Success should be .show")
+        XCTAssertEqual(sut.finishViewConfig?.failure, .hide, "Failure should be .hide")
+        XCTAssertTrue(result === sut, "Should return self for chaining")
+    }
+
+    func testSetFinishViewConfigurationImplicitlyEnablesWaitForResults() {
+        // Given
+        _ = sut.enableWaitForResults(false)
+        XCTAssertFalse(sut.shouldWaitForResults, "Precondition: wait for results disabled")
+
+        // When
+        _ = sut.setFinishViewConfiguration(FinishViewConfiguration(success: .hide, failure: .hide))
+
+        // Then
+        XCTAssertTrue(sut.shouldWaitForResults, "Should implicitly enable wait for results")
+    }
+
+    func testEnableWaitForResultsFalseClearsFinishViewConfig() {
+        // Given
+        let config = FinishViewConfiguration(success: .hide, failure: .show)
+        _ = sut.setFinishViewConfiguration(config)
+        XCTAssertNotNil(sut.finishViewConfig, "Precondition: config is set")
+
+        // When
+        _ = sut.enableWaitForResults(false)
+
+        // Then
+        XCTAssertNil(sut.finishViewConfig, "Should clear finish view config")
+        XCTAssertFalse(sut.shouldWaitForResults)
+    }
+
+    func testEnableWaitForResultsTruePreservesFinishViewConfig() {
+        // Given
+        let config = FinishViewConfiguration(success: .hide, failure: .show)
+        _ = sut.setFinishViewConfiguration(config)
+
+        // When
+        _ = sut.enableWaitForResults(true)
+
+        // Then
+        XCTAssertNotNil(sut.finishViewConfig, "Should preserve finish view config")
+        XCTAssertTrue(sut.shouldWaitForResults)
+    }
+
+    func testSetFinishViewConfigurationBothShow() {
+        // When
+        _ = sut.setFinishViewConfiguration(FinishViewConfiguration(success: .show, failure: .show))
+
+        // Then
+        XCTAssertEqual(sut.finishViewConfig?.success, .show)
+        XCTAssertEqual(sut.finishViewConfig?.failure, .show)
+    }
+
+    func testSetFinishViewConfigurationBothHide() {
+        // When
+        _ = sut.setFinishViewConfiguration(FinishViewConfiguration(success: .hide, failure: .hide))
+
+        // Then
+        XCTAssertEqual(sut.finishViewConfig?.success, .hide)
+        XCTAssertEqual(sut.finishViewConfig?.failure, .hide)
+    }
+
     // MARK: - Method Chaining Tests
 
     func testMethodChaining() throws {
@@ -213,6 +291,26 @@ import XCTest
         XCTAssertEqual(sut.similarityThreshold, 0.9, "Should have set similarity threshold")
         XCTAssertFalse(sut.useAutocapture, "Should have disabled autocapture")
         XCTAssertFalse(sut.shouldWaitForResults, "Should have disabled wait for results")
+        XCTAssertEqual(sut.timeoutSeconds, 90, "Should have set timeout")
+    }
+
+    func testMethodChainingWithFinishViewConfig() throws {
+        // Given
+        let referenceFace = try ReferenceFace.from("https://example.com/face.jpg")
+        let finishConfig = FinishViewConfiguration(success: .hide, failure: .show)
+
+        // When
+        let result =
+            sut
+                .useReferenceFace(referenceFace)
+                .setSimilarityThreshold(0.9)
+                .setFinishViewConfiguration(finishConfig)
+                .setTimeout(90)
+
+        // Then
+        XCTAssertTrue(result === sut, "Should support method chaining")
+        XCTAssertNotNil(sut.finishViewConfig, "Should have set finish view config")
+        XCTAssertTrue(sut.shouldWaitForResults, "Should have enabled wait for results")
         XCTAssertEqual(sut.timeoutSeconds, 90, "Should have set timeout")
     }
 }

@@ -10,6 +10,7 @@
 "passive_capture_feedback_remove_glasses" = "Retire seus óculos";
 "passive_capture_feedback_multiple_people" = "Evite aparecer com alguém mais";
 "passive_capture_feedback_hidden_face" = "Descubra seu rosto";
+"passive_capture_feedback_center_face" = "Centralize seu rosto no oval";
 "passive_capture_feedback_recording" = "Não se mova!\nGravando";
 "passive_capture_record_video" = "gravar vídeo";
 "passive_capture_cannot_record" = "Não conseguimos gravar.\nPressione \"%@\".";
@@ -52,6 +53,7 @@
 
 /* Document Selection */
 "document_selection_title" = "Escolha o seu tipo de documento";
+"document_selection_locked_title" = "Prepare este documento";
 "document_selection_country_label" = "País do seu documento:";
 "document_selection_country_placeholder" = "Selecione um país";
 "document_selection_country_error" = "Por favor selecione um país";
@@ -116,6 +118,10 @@
 "document_feedback_bad_angle_description" = "Segure seu telefone paralelo ao documento";
 "document_feedback_no_document_title" = "Nenhum documento detectado";
 "document_feedback_no_document_description" = "Coloque um documento no quadro";
+"document_feedback_front_not_found_title" = "Frente do documento não detectada";
+"document_feedback_front_not_found_description" = "Não encontramos a frente do documento";
+"document_feedback_back_not_found_title" = "Verso do documento não detectado";
+"document_feedback_back_not_found_description" = "Não encontramos o verso do documento";
 "document_feedback_face_not_found_title" = "Seu rosto não está claramente visível";
 "document_feedback_face_not_found_description" = "Pode haver reflexos cobrindo seu rosto ou sua identificação está muito longe da câmera.";
 "document_feedback_wrong_document_title" = "Documento incorreto";
@@ -155,6 +161,8 @@
 "document_type_tax_id" = "CNPJ";
 "document_type_ppt" = "PPT";
 "document_type_ptp" = "PTP";
+"document_type_invoice" = "Fatura";
+"document_type_native_national_id" = "Cédula nacional nativa";
 
 /* Country Specific Documents */
 "doc_mx_national_id" = "INE/IFE (CURP)";
@@ -181,7 +189,6 @@
 
 /* Document Descriptions */
 "desc_original_valid" = "Original e vigente";
-"desc_taxpayer_id" = "ID do contribuinte";
 "desc_mx_passport" = "Mexicano, original e vigente";
 "desc_physical_original" = "Original e em formato físico";
 "desc_co_valid_issued" = "Válido e expedido na Colômbia";
@@ -189,5 +196,10 @@
 "desc_cl_foreign_id" = "Válido e expedido no Chile";
 "desc_cl_passport" = "Do Chile, válido e vigente";
 "desc_sv_keep_hand" = "Mantenha seu documento original à mão";
-"desc_co_tax_id" = "Número de Identificação Tributária";
 "desc_co_temp_id" = "Cédula de cidadania temporal";
+
+/* Cancel Alert */
+"cancel_alert_title" = "Cancelar validação";
+"cancel_alert_message" = "Você está prestes a cancelar sua validação atual";
+"cancel_alert_confirm" = "Sim, cancelar";
+"cancel_alert_cancel" = "Não, voltar";

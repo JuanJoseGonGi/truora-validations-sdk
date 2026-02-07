@@ -60,13 +60,13 @@ struct ResultView: View {
 
                 TruoraFooterView(
                     securityTip: nil,
-                    buttonText: TruoraValidationsSDKStrings.resultButtonLabel,
+                    buttonText: TruoraLocalization.string(forKey: LocalizationKeys.resultButtonLabel),
                     isLoading: viewModel.isButtonLoading
                 ) {
                     viewModel.doneTapped()
                 }
             }
-            .background(theme.colors.surface)
+            .background(theme.colors.surface.extendingIntoSafeArea())
         }
     }
 }
@@ -106,7 +106,7 @@ private struct ResultViewFailurePreview: View {
                 viewModel.showResult(
                     ValidationResult(
                         validationId: "preview-456",
-                        status: .failed
+                        status: .failure
                     )
                 )
             }

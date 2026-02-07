@@ -67,14 +67,19 @@ private var routerAssociatedKey: UInt8 = 0
         navController.pushViewController(passiveCaptureViewController, animated: true)
     }
 
-    func navigateToResult(validationId: String, loadingType: ResultLoadingType = .face) throws {
+    func navigateToResult(
+        validationId: String,
+        loadingType: ResultLoadingType = .face,
+        isCanceled: Bool = false
+    ) throws {
         guard let navController = navigationController else {
             throw TruoraException.sdk(SDKError(type: .internalError, details: "Navigation controller is nil"))
         }
         let resultViewController = try ResultConfigurator.buildModule(
             router: self,
             validationId: validationId,
-            loadingType: loadingType
+            loadingType: loadingType,
+            isCanceled: isCanceled
         )
         navController.pushViewController(resultViewController, animated: true)
     }
@@ -184,7 +189,7 @@ private var routerAssociatedKey: UInt8 = 0
     }
 
     func handleError(_ error: TruoraException) {
-        ValidationConfig.shared.delegate?(.failure(error))
+        ValidationConfig.shared.delegate?(.failure(error, nil))
         dismissFlow()
     }
 
@@ -192,7 +197,7 @@ private var routerAssociatedKey: UInt8 = 0
         self.enrollmentTask = task
     }
 
-    func handleCancellation() {
+    func handleCancellation(loadingType: ResultLoadingType) {
         // Show alert
         guard let navController = navigationController,
               navController.viewIfLoaded?.window != nil else {
@@ -203,17 +208,43 @@ private var routerAssociatedKey: UInt8 = 0
         }
 
         let alert = UIAlertController(
-            title: "Cancel validation",
-            message: "You are about to cancel your current validation process",
+            title: TruoraLocalization.string(forKey: LocalizationKeys.cancelAlertTitle),
+            message: TruoraLocalization.string(forKey: LocalizationKeys.cancelAlertMessage),
             preferredStyle: .alert
         )
-        alert.addAction(
-            UIAlertAction(title: "OK", style: .default) { [weak self] _ in
-                ValidationConfig.shared.delegate?(
-                    .failure(.sdk(SDKError(type: .processCancelledByUser)))
-                )
 
-                self?.dismissFlow()
+        // Cancel button - dismisses alert and stays in flow
+        alert.addAction(
+            UIAlertAction(
+                title: TruoraLocalization.string(forKey: LocalizationKeys.cancelAlertCancel),
+                style: .cancel
+            )
+        )
+
+        // OK button - confirms cancellation and navigates to failure result
+        alert.addAction(
+            UIAlertAction(
+                title: TruoraLocalization.string(forKey: LocalizationKeys.cancelAlertConfirm),
+                style: .default
+            ) { [weak self] _ in
+                guard let self else { return }
+                // Cancel any ongoing async work (e.g., reference face enrollment)
+                self.enrollmentTask?.cancel()
+                do {
+                    // Navigate to Result screen with canceled state.
+                    // Empty validationId is intentional for cancellation - Result screen
+                    // will show failure UI and notify delegate with .canceled result.
+                    try self.navigateToResult(
+                        validationId: "",
+                        loadingType: loadingType,
+                        isCanceled: true
+                    )
+                } catch {
+                    // Fallback: dismiss directly if navigation fails
+                    print("⚠️ ValidationRouter: Failed to navigate to cancel result: \(error)")
+                    ValidationConfig.shared.delegate?(.canceled(nil))
+                    self.dismissFlow()
+                }
             }
         )
         navController.present(alert, animated: true)
@@ -373,7 +404,19 @@ private func performEnrollment(
 
     print("🟢 ValidationRouter: Creating enrollment for account: \(accountId)")
 
-    let enrollment = try await apiClient.createEnrollment(request: request)
+    let enrollment: NativeEnrollmentResponse
+    do {
+        enrollment = try await apiClient.createEnrollment(request: request)
+    } catch let error as TruoraAPIError {
+        if case .serverError(statusCode: 409, let body) = error {
+            try await handleExistingEnrollment(
+                body: body,
+                apiClient: apiClient
+            )
+            return
+        }
+        throw error
+    }
 
     guard !Task.isCancelled else {
         print("⚠️ ValidationRouter: Enrollment task was cancelled")
@@ -391,6 +434,11 @@ private func performEnrollment(
         referenceFace: referenceFace,
         apiClient: apiClient
     )
+
+    try await waitForEnrollmentReady(
+        enrollmentId: enrollment.enrollmentId,
+        apiClient: apiClient
+    )
 }
 
 private func uploadReferenceFaceFile(
@@ -401,7 +449,15 @@ private func uploadReferenceFaceFile(
     print("🟢 ValidationRouter: Uploading reference face to presigned URL")
 
     // Read file data from URL
-    let fileData = try Data(contentsOf: referenceFace.url)
+    let fileData: Data
+    do {
+        fileData = try Data(contentsOf: referenceFace.url)
+    } catch {
+        throw TruoraException.sdk(SDKError(
+            type: .internalError,
+            details: "Failed to read reference face file: \(error.localizedDescription)"
+        ))
+    }
 
     // Determine content type from URL path extension
     let ext = referenceFace.url.pathExtension.lowercased()
@@ -423,6 +479,85 @@ private func uploadReferenceFaceFile(
     await MainActor.run {
         print("✅ ValidationRouter: Reference face enrollment completed")
     }
+}
+
+// MARK: - Enrollment Polling
+
+/// Handles a 409 conflict when enrollment already exists.
+/// Parses the enrollment ID from the response body and polls
+/// until it is ready for face validation.
+private func handleExistingEnrollment(
+    body: String?,
+    apiClient: TruoraAPIClient
+) async throws {
+    guard let data = body?.data(using: .utf8),
+          let json = try? JSONDecoder().decode(
+              NativeEnrollmentResponse.self, from: data
+          ) else {
+        print("🟢 ValidationRouter: Enrollment exists, could not parse ID")
+        return
+    }
+
+    print("🟢 ValidationRouter: Enrollment exists - ID: \(json.enrollmentId)")
+    try await waitForEnrollmentReady(
+        enrollmentId: json.enrollmentId,
+        apiClient: apiClient
+    )
+}
+
+/// Exponential backoff intervals for enrollment polling.
+/// Starts at 500ms and doubles up to 8s (total ~30s).
+private let enrollmentBackoffIntervals: [UInt64] = [
+    500_000_000, // 0.5s
+    1_000_000_000, // 1s
+    2_000_000_000, // 2s
+    4_000_000_000, // 4s
+    8_000_000_000, // 8s
+    8_000_000_000, // 8s
+    8_000_000_000 // 8s
+]
+
+/// Polls the enrollment until it is ready for face validation.
+///
+/// The enrollment is considered ready when status is "pending" with reason
+/// "waiting_face_validation" — meaning the reference face was processed and
+/// the backend is waiting for the face validation to be created.
+private func waitForEnrollmentReady(
+    enrollmentId: String,
+    apiClient: TruoraAPIClient
+) async throws {
+    for (attempt, interval) in enrollmentBackoffIntervals.enumerated() {
+        guard !Task.isCancelled else {
+            throw CancellationError()
+        }
+
+        let enrollment = try await apiClient.getEnrollment(enrollmentId: enrollmentId)
+        let status = enrollment.status.lowercased()
+        let reason = enrollment.reason?.lowercased() ?? ""
+        let totalAttempts = enrollmentBackoffIntervals.count
+
+        if reason == "waiting_face_validation" {
+            print("🟢 ValidationRouter: Enrollment ready for face validation (attempt \(attempt + 1)/\(totalAttempts))")
+            return
+        }
+
+        if status == "failure" {
+            throw TruoraException.network(
+                message: "Enrollment failed with reason: \(enrollment.reason ?? "unknown")",
+                underlyingError: nil
+            )
+        }
+
+        // Still processing — wait with exponential backoff and retry
+        let attemptNum = attempt + 1
+        let log = "🟢 ValidationRouter: Enrollment status=\(status) "
+            + "reason=\(reason) (\(attemptNum)/\(totalAttempts)), waiting..."
+        print(log)
+        try await Task.sleep(nanoseconds: interval)
+    }
+
+    let total = enrollmentBackoffIntervals.count
+    print("⚠️ ValidationRouter: Enrollment not ready after \(total) attempts, proceeding")
 }
 
 // MARK: - Test Helpers

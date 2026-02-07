@@ -27,6 +27,14 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static let cameraPermissionDeniedTitle = TruoraValidationsSDKStrings.tr("Localizable", "camera_permission_denied_title")
   /// Open Settings
   public static let cameraPermissionOpenSettings = TruoraValidationsSDKStrings.tr("Localizable", "camera_permission_open_settings")
+  /// No, go back
+  public static let cancelAlertCancel = TruoraValidationsSDKStrings.tr("Localizable", "cancel_alert_cancel")
+  /// Yes, cancel
+  public static let cancelAlertConfirm = TruoraValidationsSDKStrings.tr("Localizable", "cancel_alert_confirm")
+  /// You are about to cancel your current validation
+  public static let cancelAlertMessage = TruoraValidationsSDKStrings.tr("Localizable", "cancel_alert_message")
+  /// Cancel validation
+  public static let cancelAlertTitle = TruoraValidationsSDKStrings.tr("Localizable", "cancel_alert_title")
   /// Cancel
   public static let commonCancel = TruoraValidationsSDKStrings.tr("Localizable", "common_cancel")
   /// Close
@@ -69,8 +77,6 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static let descClPassport = TruoraValidationsSDKStrings.tr("Localizable", "desc_cl_passport")
   /// From Colombia, valid and current
   public static let descCoPassport = TruoraValidationsSDKStrings.tr("Localizable", "desc_co_passport")
-  /// Tax Identification Number
-  public static let descCoTaxId = TruoraValidationsSDKStrings.tr("Localizable", "desc_co_tax_id")
   /// Temporary National ID
   public static let descCoTempId = TruoraValidationsSDKStrings.tr("Localizable", "desc_co_temp_id")
   /// Valid and issued in Colombia
@@ -83,8 +89,6 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static let descPhysicalOriginal = TruoraValidationsSDKStrings.tr("Localizable", "desc_physical_original")
   /// Keep your original document handy
   public static let descSvKeepHand = TruoraValidationsSDKStrings.tr("Localizable", "desc_sv_keep_hand")
-  /// Taxpayer ID
-  public static let descTaxpayerId = TruoraValidationsSDKStrings.tr("Localizable", "desc_taxpayer_id")
   /// National Identity Document
   public static let docArNationalId = TruoraValidationsSDKStrings.tr("Localizable", "doc_ar_national_id")
   /// CNH
@@ -187,6 +191,10 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static let documentCaptureSuccess = TruoraValidationsSDKStrings.tr("Localizable", "document_capture_success")
   /// Take photo
   public static let documentCaptureTakePhoto = TruoraValidationsSDKStrings.tr("Localizable", "document_capture_take_photo")
+  /// We couldn't detect the back of the document
+  public static let documentFeedbackBackNotFoundDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_back_not_found_description")
+  /// Back of document not detected
+  public static let documentFeedbackBackNotFoundTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_back_not_found_title")
   /// Hold your phone parallel to the document
   public static let documentFeedbackBadAngleDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_bad_angle_description")
   /// Bad angle
@@ -207,6 +215,10 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static let documentFeedbackFaceNotFoundDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_face_not_found_description")
   /// Face not clearly visible
   public static let documentFeedbackFaceNotFoundTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_face_not_found_title")
+  /// We couldn't detect the front of the document
+  public static let documentFeedbackFrontNotFoundDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_front_not_found_description")
+  /// Front of document not detected
+  public static let documentFeedbackFrontNotFoundTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_front_not_found_title")
   /// Please try again
   public static let documentFeedbackGenericDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_generic_description")
   /// Capture failed
@@ -269,6 +281,8 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static let documentSelectionDocumentPlaceholder = TruoraValidationsSDKStrings.tr("Localizable", "document_selection_document_placeholder")
   /// Loading...
   public static let documentSelectionLoading = TruoraValidationsSDKStrings.tr("Localizable", "document_selection_loading")
+  /// Prepare this document
+  public static let documentSelectionLockedTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_selection_locked_title")
   /// Choose your document type
   public static let documentSelectionTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_selection_title")
   /// Driver License
@@ -277,8 +291,12 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static let documentTypeForeignId = TruoraValidationsSDKStrings.tr("Localizable", "document_type_foreign_id")
   /// Identity Card
   public static let documentTypeIdentityCard = TruoraValidationsSDKStrings.tr("Localizable", "document_type_identity_card")
+  /// Invoice
+  public static let documentTypeInvoice = TruoraValidationsSDKStrings.tr("Localizable", "document_type_invoice")
   /// National ID
   public static let documentTypeNationalId = TruoraValidationsSDKStrings.tr("Localizable", "document_type_national_id")
+  /// Native National ID
+  public static let documentTypeNativeNationalId = TruoraValidationsSDKStrings.tr("Localizable", "document_type_native_national_id")
   /// Passport
   public static let documentTypePassport = TruoraValidationsSDKStrings.tr("Localizable", "document_type_passport")
   /// PPT
@@ -297,6 +315,8 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static func passiveCaptureCannotRecord(_ p1: Any) -> String {
     return TruoraValidationsSDKStrings.tr("Localizable", "passive_capture_cannot_record",String(describing: p1))
   }
+  /// Center your face in the oval
+  public static let passiveCaptureFeedbackCenterFace = TruoraValidationsSDKStrings.tr("Localizable", "passive_capture_feedback_center_face")
   /// Uncover your face
   public static let passiveCaptureFeedbackHiddenFace = TruoraValidationsSDKStrings.tr("Localizable", "passive_capture_feedback_hidden_face")
   /// Avoid appearing with anyone else

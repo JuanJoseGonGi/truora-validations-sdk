@@ -29,6 +29,9 @@ import UIKit
     @Published var backPhotoData: Data?
     @Published var backPhotoStatus: CaptureStatus?
 
+    /// Tracks if a capture is currently in progress to prevent multiple clicks
+    @Published var isCaptureInProgress: Bool = false
+
     var presenter: DocumentCaptureViewToPresenter?
     weak var cameraViewDelegate: DocumentCaptureCameraDelegate?
 
@@ -58,6 +61,7 @@ import UIKit
 
     /// Native event handlers
     func captureButtonTapped() {
+        isCaptureInProgress = true
         Task { await presenter?.manualCaptureTapped() }
     }
 
@@ -76,14 +80,28 @@ import UIKit
     func retryTapped() {
         Task { await presenter?.retryTapped() }
     }
+
+    /// Called when autocapture becomes unavailable (e.g., ML model fails to load).
+    /// Uses `switchToManualCapture()` which has atomic flag protection to ensure
+    /// only one transition occurs even if called multiple times concurrently.
+    /// This is important because model loading failures may trigger multiple callbacks.
+    func autocaptureUnavailable() {
+        Task { await presenter?.switchToManualCapture() }
+    }
+
+    /// Called when user explicitly requests manual capture mode via UI (e.g., help dialog).
+    /// Uses the capture event system which resets detection state and dismisses the dialog.
+    /// Unlike `autocaptureUnavailable`, this path handles UI state (dismissing help dialog)
+    /// and doesn't need atomic protection since user actions are inherently sequential.
+    func userRequestedManualMode() {
+        Task { await presenter?.handleCaptureEvent(.switchToManualMode) }
+    }
 }
 
 extension DocumentCaptureViewModel: DocumentCapturePresenterToView {
     func setupCamera() {
         guard let delegate = cameraViewDelegate else {
-            errorMessage = NSLocalizedString(
-                "camera_error_initialization_failed", bundle: .truoraModule, comment: ""
-            )
+            errorMessage = TruoraLocalization.string(forKey: LocalizationKeys.cameraErrorInitializationFailed)
             showError = true
             return
         }
@@ -92,9 +110,7 @@ extension DocumentCaptureViewModel: DocumentCapturePresenterToView {
 
     func takePicture() {
         guard let delegate = cameraViewDelegate else {
-            errorMessage = NSLocalizedString(
-                "camera_error_capture_failed", bundle: .truoraModule, comment: ""
-            )
+            errorMessage = TruoraLocalization.string(forKey: LocalizationKeys.cameraErrorCaptureFailed)
             showError = true
             return
         }
@@ -111,6 +127,10 @@ extension DocumentCaptureViewModel: DocumentCapturePresenterToView {
 
     func pauseCamera() {
         cameraViewDelegate?.pauseCamera()
+    }
+
+    func resumeCamera() {
+        cameraViewDelegate?.resumeCamera()
     }
 
     func updateComposeUI(
@@ -151,6 +171,10 @@ extension DocumentCaptureViewModel: DocumentCapturePresenterToView {
         errorMessage = message
         showError = true
     }
+
+    func resetCaptureInProgress() {
+        isCaptureInProgress = false
+    }
 }
 
 // MARK: - Camera Delegate Protocol
@@ -160,6 +184,7 @@ extension DocumentCaptureViewModel: DocumentCapturePresenterToView {
     func takePicture()
     func stopCamera()
     func pauseCamera()
+    func resumeCamera()
     func pauseVideo()
 }
 
@@ -199,8 +224,8 @@ struct DocumentCameraViewWrapper: UIViewRepresentable {
         func setupCamera() {
             guard let cameraView else {
                 DispatchQueue.main.async {
-                    self.viewModel.errorMessage = NSLocalizedString(
-                        "camera_error_view_not_available", bundle: .truoraModule, comment: ""
+                    self.viewModel.errorMessage = TruoraLocalization.string(
+                        forKey: LocalizationKeys.cameraErrorViewNotAvailable
                     )
                     self.viewModel.showError = true
                 }
@@ -212,8 +237,8 @@ struct DocumentCameraViewWrapper: UIViewRepresentable {
         func takePicture() {
             guard let cameraView else {
                 DispatchQueue.main.async {
-                    self.viewModel.errorMessage = NSLocalizedString(
-                        "camera_error_not_ready", bundle: .truoraModule, comment: ""
+                    self.viewModel.errorMessage = TruoraLocalization.string(
+                        forKey: LocalizationKeys.cameraErrorNotReady
                     )
                     self.viewModel.showError = true
                 }
@@ -228,6 +253,10 @@ struct DocumentCameraViewWrapper: UIViewRepresentable {
 
         func pauseCamera() {
             cameraView?.pauseCamera()
+        }
+
+        func resumeCamera() {
+            cameraView?.resumeCamera()
         }
 
         func pauseVideo() {
@@ -252,6 +281,15 @@ struct DocumentCameraViewWrapper: UIViewRepresentable {
 
         func detectionsReceived(_ results: [DetectionResult]) {
             viewModel.detectionsReceived(results)
+        }
+
+        func autocaptureUnavailable(error: Error?) {
+            // Model failed to load - switch to manual capture mode silently
+            // Log error for debugging (print is used consistently across SDK for logging)
+            if let error {
+                print("⚠️ DocumentCapture: Autocapture unavailable - \(error.localizedDescription)")
+            }
+            viewModel.autocaptureUnavailable()
         }
     }
 }
@@ -282,27 +320,30 @@ struct DocumentCaptureView: View {
                 frontPhotoStatus: viewModel.frontPhotoStatus,
                 backPhotoData: viewModel.backPhotoData,
                 backPhotoStatus: viewModel.backPhotoStatus,
+                isCaptureEnabled: !viewModel.isCaptureInProgress && !viewModel.showLoadingScreen,
                 onCapture: { viewModel.captureButtonTapped() },
                 onHelp: { viewModel.helpRequested() },
                 onHelpDismiss: { viewModel.helpDismissed() },
                 onCancel: { viewModel.cancelTapped() },
                 onRetry: { viewModel.retryTapped() },
-                onSwitchToManual: { viewModel.captureButtonTapped() }
+                onSwitchToManual: { viewModel.userRequestedManualMode() }
             )
 
             // Loading overlay
             if viewModel.showLoadingScreen {
-                LoadingOverlayView(message: TruoraValidationsSDKStrings.documentCaptureProcessing)
+                LoadingOverlayView(
+                    message: TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureProcessing)
+                )
             }
         }
         .environmentObject(theme)
         .navigationBarHidden(true)
         .alert(isPresented: $viewModel.showError) {
             Alert(
-                title: Text(NSLocalizedString("common_error", bundle: .truoraModule, comment: "")),
+                title: Text(TruoraLocalization.string(forKey: LocalizationKeys.commonError)),
                 message: viewModel.errorMessage.map { Text($0) },
                 dismissButton: .default(
-                    Text(NSLocalizedString("common_ok", bundle: .truoraModule, comment: ""))
+                    Text(TruoraLocalization.string(forKey: LocalizationKeys.commonOk))
                 )
             )
         }
@@ -343,6 +384,7 @@ struct DocumentCaptureOverlayView: View {
     let frontPhotoStatus: CaptureStatus?
     let backPhotoData: Data?
     let backPhotoStatus: CaptureStatus?
+    let isCaptureEnabled: Bool
 
     let onCapture: () -> Void
     let onHelp: () -> Void
@@ -362,6 +404,7 @@ struct DocumentCaptureOverlayView: View {
         frontPhotoStatus: CaptureStatus?,
         backPhotoData: Data?,
         backPhotoStatus: CaptureStatus?,
+        isCaptureEnabled: Bool = true,
         onCapture: @escaping () -> Void,
         onHelp: @escaping () -> Void,
         onHelpDismiss: @escaping () -> Void,
@@ -377,6 +420,7 @@ struct DocumentCaptureOverlayView: View {
         self.frontPhotoStatus = frontPhotoStatus
         self.backPhotoData = backPhotoData
         self.backPhotoStatus = backPhotoStatus
+        self.isCaptureEnabled = isCaptureEnabled
         self.onCapture = onCapture
         self.onHelp = onHelp
         self.onHelpDismiss = onHelpDismiss
@@ -402,6 +446,8 @@ struct DocumentCaptureOverlayView: View {
                     // Centered feedback message (inside the cutout area)
                     if !showRotationAnimation {
                         DocumentCaptureFeedbackMessage(feedbackType: feedbackType)
+                    } else {
+                        DocumentCaptureFeedbackMessage(feedbackType: .rotate)
                     }
 
                     // Thumbnails positioned below the mask
@@ -420,6 +466,7 @@ struct DocumentCaptureOverlayView: View {
             DocumentCaptureFooter(
                 feedbackType: feedbackType,
                 showHelpButton: !(frontPhotoStatus == .success && backPhotoStatus == .success),
+                isCaptureEnabled: isCaptureEnabled,
                 onHelpClick: onHelp,
                 onManualCapture: onCapture
             )
@@ -453,7 +500,7 @@ private struct DocumentCaptureHeaderView: View {
         VStack(spacing: 16) {
             if showRotationAnimation {
                 // Flip document instruction - two lines
-                Text(TruoraValidationsSDKStrings.documentCaptureRotateInstruction)
+                Text(TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureRotateInstruction))
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
@@ -470,8 +517,8 @@ private struct DocumentCaptureHeaderView: View {
                 // Instruction text - 18sp semibold per Figma
                 Text(
                     side == .front
-                        ? TruoraValidationsSDKStrings.documentCaptureFrontInstruction
-                        : TruoraValidationsSDKStrings.documentCaptureBackInstruction
+                        ? TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureFrontInstruction)
+                        : TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureBackInstruction)
                 )
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.white)
@@ -481,7 +528,7 @@ private struct DocumentCaptureHeaderView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 180)
-        .background(theme.colors.primary900)
+        .background(theme.colors.primary900.extendingIntoSafeArea())
     }
 
     /// Returns the appropriate document icon based on side
@@ -555,15 +602,15 @@ private struct DocumentCaptureFeedbackMessage: View {
     var feedbackText: String {
         switch feedbackType {
         case .none: ""
-        case .locate: TruoraValidationsSDKStrings.documentCaptureFeedbackLocate
-        case .closer: TruoraValidationsSDKStrings.documentCaptureFeedbackCloser
-        case .further: TruoraValidationsSDKStrings.documentCaptureFeedbackFurther
-        case .rotate: TruoraValidationsSDKStrings.documentCaptureFeedbackRotate
-        case .center: TruoraValidationsSDKStrings.documentCaptureFeedbackCenter
-        case .scanning: TruoraValidationsSDKStrings.documentCaptureScanning
-        case .scanningManual: TruoraValidationsSDKStrings.documentCaptureScanningManual
-        case .searching: TruoraValidationsSDKStrings.documentCaptureScanning
-        case .multipleDocuments: TruoraValidationsSDKStrings.documentCaptureFeedbackMultiple
+        case .locate: TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureFeedbackLocate)
+        case .closer: TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureFeedbackCloser)
+        case .further: TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureFeedbackFurther)
+        case .rotate: TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureFeedbackRotate)
+        case .center: TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureFeedbackCenter)
+        case .scanning: TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureScanning)
+        case .scanningManual: TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureScanningManual)
+        case .searching: TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureScanning)
+        case .multipleDocuments: TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureFeedbackMultiple)
         }
     }
 
@@ -699,6 +746,7 @@ private struct DocumentPhotoThumbnail: View {
 private struct DocumentCaptureFooter: View {
     let feedbackType: DocumentFeedbackType
     let showHelpButton: Bool
+    let isCaptureEnabled: Bool
     let onHelpClick: () -> Void
     let onManualCapture: () -> Void
 
@@ -714,8 +762,9 @@ private struct DocumentCaptureFooter: View {
             // Manual capture button (if applicable)
             if showManualButton {
                 ManualCaptureButton(
-                    title: TruoraValidationsSDKStrings.documentCaptureTakePhoto,
+                    title: TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureTakePhoto),
                     mode: .picture,
+                    isEnabled: isCaptureEnabled,
                     action: onManualCapture
                 )
             }
@@ -725,7 +774,7 @@ private struct DocumentCaptureFooter: View {
                 // Help button - hidden when both sides captured
                 if showHelpButton {
                     Button(action: onHelpClick) {
-                        Text(TruoraValidationsSDKStrings.passiveCaptureHelp)
+                        Text(TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureHelp))
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.white)
                             .padding(.horizontal, 12)
@@ -752,7 +801,7 @@ private struct DocumentCaptureFooter: View {
             .padding(.horizontal, 24)
         }
         .frame(height: 150)
-        .background(theme.colors.primary900)
+        .background(theme.colors.primary900.extendingIntoSafeArea())
     }
 }
 
@@ -766,13 +815,16 @@ struct DocumentCaptureTipsDialog: View {
 
     @EnvironmentObject var theme: TruoraTheme
 
-    /// Tips for document capture - matches KMP document_autocapture_tips
-    private let tips = [
-        TruoraValidationsSDKStrings.documentCaptureHelpTip1,
-        TruoraValidationsSDKStrings.documentCaptureHelpTip2,
-        TruoraValidationsSDKStrings.documentCaptureHelpTip3,
-        TruoraValidationsSDKStrings.documentCaptureHelpTip4
-    ]
+    /// Tips for document capture - matches KMP document_autocapture_tips.
+    /// Computed so strings update if locale changes at runtime.
+    private var tips: [String] {
+        [
+            TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureHelpTip1),
+            TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureHelpTip2),
+            TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureHelpTip3),
+            TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureHelpTip4)
+        ]
+    }
 
     var body: some View {
         ZStack {
@@ -784,7 +836,7 @@ struct DocumentCaptureTipsDialog: View {
             VStack(spacing: 0) {
                 // Header with title and close button
                 HStack {
-                    Text(TruoraValidationsSDKStrings.documentCaptureHelpTitle)
+                    Text(TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureHelpTitle))
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(theme.colors.layoutGray900)
 
@@ -826,7 +878,7 @@ struct DocumentCaptureTipsDialog: View {
 
                 // Manual capture button
                 TruoraPrimaryButton(
-                    title: TruoraValidationsSDKStrings.documentCaptureManualButton,
+                    title: TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureManualButton),
                     isLoading: false,
                     action: onManualCapture
                 )

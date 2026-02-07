@@ -15,6 +15,7 @@ import Foundation
     func setCountries(_ countries: [NativeCountry])
     func updateSelection(selectedCountry: NativeCountry?, selectedDocument: NativeDocumentType?)
     func setCountryLocked(_ isLocked: Bool)
+    func setDocumentLocked(_ isLocked: Bool)
     func setErrors(isCountryError: Bool, isDocumentError: Bool)
     func setLoading(_ isLoading: Bool)
     func displayCameraPermissionAlert()

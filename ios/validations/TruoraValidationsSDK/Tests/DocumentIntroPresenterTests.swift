@@ -190,6 +190,7 @@ import XCTest
 
 @MainActor private final class MockDocumentIntroRouter: ValidationRouter {
     private(set) var handleCancellationCalled = false
+    private(set) var lastCancellationLoadingType: ResultLoadingType?
     private(set) var handleErrorCalled = false
     private(set) var lastErrorMessage: String?
 
@@ -198,8 +199,9 @@ import XCTest
     private(set) var lastFrontUploadUrl: String?
     private(set) var lastReverseUploadUrl: String?
 
-    override func handleCancellation() {
+    override func handleCancellation(loadingType: ResultLoadingType) {
         handleCancellationCalled = true
+        lastCancellationLoadingType = loadingType
     }
 
     override func handleError(_ error: TruoraException) {

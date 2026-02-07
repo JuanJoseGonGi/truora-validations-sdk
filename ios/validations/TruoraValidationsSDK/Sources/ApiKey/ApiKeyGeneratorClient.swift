@@ -8,11 +8,19 @@ public class ApiKeyGeneratorClient {
     /// Base URL for the Account API
     public static let baseURL = "https://api.account.truora.com/v1"
 
+    private let sessionConfig: TruoraSessionConfiguration
     private let session: URLSession
 
     /// Creates a new API key generator client.
-    /// - Parameter session: URLSession to use for requests (defaults to shared session)
-    public init(session: URLSession = .shared) {
+    /// - Parameter sessionConfig: Session configuration with retry/timeout settings
+    public init(sessionConfig: TruoraSessionConfiguration = .default) {
+        self.sessionConfig = sessionConfig
+        self.session = sessionConfig.createSession()
+    }
+
+    /// Creates a client with a custom URLSession (for testing).
+    init(sessionConfig: TruoraSessionConfiguration = .default, session: URLSession) {
+        self.sessionConfig = sessionConfig
         self.session = session
     }
 
@@ -45,7 +53,7 @@ public class ApiKeyGeneratorClient {
             .data(using: .utf8)
 
         do {
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await sessionConfig.perform(request, using: session)
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw ApiKeyError.generationFailed("Invalid response type")

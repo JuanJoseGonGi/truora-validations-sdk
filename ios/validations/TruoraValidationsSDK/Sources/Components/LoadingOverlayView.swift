@@ -13,6 +13,7 @@ struct LoadingOverlayView: View {
     var body: some View {
         ZStack {
             Color.black.opacity(0.6)
+                .extendingIntoSafeArea()
 
             VStack(spacing: 20) {
                 ActivityIndicator(
@@ -26,6 +27,7 @@ struct LoadingOverlayView: View {
                     .font(.system(size: 16, weight: .medium))
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

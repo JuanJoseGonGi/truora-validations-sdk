@@ -14,6 +14,7 @@ protocol DocumentFeedbackViewToPresenter: AnyObject {
     func retryTapped() async
     func tipsTapped() async
     func dismissed() async
+    func cancelTapped() async
 }
 
 // MARK: - Presenter to View

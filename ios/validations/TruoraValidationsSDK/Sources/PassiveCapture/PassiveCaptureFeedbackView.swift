@@ -17,15 +17,17 @@ struct PassiveCaptureFeedbackView: View {
         case .none:
             ""
         case .showFace:
-            TruoraValidationsSDKStrings.passiveCaptureFeedbackShowFace
+            TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureFeedbackShowFace)
         case .removeGlasses:
-            TruoraValidationsSDKStrings.passiveCaptureFeedbackRemoveGlasses
+            TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureFeedbackRemoveGlasses)
         case .multiplePeople:
-            TruoraValidationsSDKStrings.passiveCaptureFeedbackMultiplePeople
+            TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureFeedbackMultiplePeople)
         case .hiddenFace:
-            TruoraValidationsSDKStrings.passiveCaptureFeedbackHiddenFace
+            TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureFeedbackHiddenFace)
+        case .centerFace:
+            TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureFeedbackCenterFace)
         case .recording:
-            TruoraValidationsSDKStrings.passiveCaptureFeedbackRecording
+            TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureFeedbackRecording)
         }
     }
 
@@ -37,6 +39,7 @@ struct PassiveCaptureFeedbackView: View {
         case .removeGlasses: "feedback_remove_glasses"
         case .multiplePeople: "feedback_multiple_people"
         case .hiddenFace: "feedback_hidden_face"
+        case .centerFace: "feedback_center_face"
         case .recording: "feedback_recording"
         }
     }

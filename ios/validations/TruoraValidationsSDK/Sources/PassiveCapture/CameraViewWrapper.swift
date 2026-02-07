@@ -94,6 +94,14 @@ struct CameraViewWrapper: UIViewRepresentable {
             cameraView.pauseCamera()
         }
 
+        func resumeCamera() {
+            guard let cameraView else {
+                print("⚠️ CameraViewDelegate: resumeCamera() called but cameraView is nil")
+                return
+            }
+            cameraView.resumeCamera()
+        }
+
         func cameraReady() {
             print("🟢 CameraViewWrapper: Camera ready callback")
             viewModel.cameraReady()
@@ -109,7 +117,9 @@ struct CameraViewWrapper: UIViewRepresentable {
         }
 
         func reportError(error: CameraError) {
+            #if DEBUG
             print("❌ CameraViewWrapper: Camera error: \(error)")
+            #endif
 
             if case .permissionDenied = error {
                 viewModel.cameraPermissionDenied()
@@ -121,13 +131,21 @@ struct CameraViewWrapper: UIViewRepresentable {
         func detectionsReceived(_ results: [DetectionResult]) {
             viewModel.detectionsReceived(results)
         }
+
+        func autocaptureUnavailable(error: Error?) {
+            // Not applicable for face capture - autocapture is always available
+            // Face detection uses Vision framework which doesn't require ML model download
+            _ = error
+        }
     }
 }
 
+@MainActor
 protocol CameraViewDelegate: AnyObject {
     func setupCamera()
     func startRecording()
     func stopRecording(skipMediaNotification: Bool)
     func stopCamera()
     func pauseCamera()
+    func resumeCamera()
 }

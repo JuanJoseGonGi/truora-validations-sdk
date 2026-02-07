@@ -50,6 +50,11 @@ public class CameraView: UIView {
         cameraManager.pauseCamera()
     }
 
+    /// Resumes a previously paused camera session without reconfiguring.
+    public func resumeCamera() {
+        cameraManager.resumeCamera()
+    }
+
     public func isSessionRunning() -> Bool {
         cameraManager.isSessionRunning()
     }

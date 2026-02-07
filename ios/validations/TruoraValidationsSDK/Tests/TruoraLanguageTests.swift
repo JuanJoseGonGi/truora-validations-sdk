@@ -58,4 +58,32 @@ import XCTest
 
         XCTAssertNil(language)
     }
+
+    // MARK: - languageBundleName Tests
+
+    func testLanguageBundleName_english() {
+        XCTAssertEqual(TruoraLanguage.english.languageBundleName, "en")
+    }
+
+    func testLanguageBundleName_spanish() {
+        XCTAssertEqual(TruoraLanguage.spanish.languageBundleName, "es")
+    }
+
+    func testLanguageBundleName_portuguese() {
+        XCTAssertEqual(TruoraLanguage.portuguese.languageBundleName, "pt")
+    }
+
+    // MARK: - Locale Tests
+
+    func testLocale_english() {
+        XCTAssertEqual(TruoraLanguage.english.locale.identifier, "en")
+    }
+
+    func testLocale_spanish() {
+        XCTAssertEqual(TruoraLanguage.spanish.locale.identifier, "es")
+    }
+
+    func testLocale_portuguese() {
+        XCTAssertEqual(TruoraLanguage.portuguese.locale.identifier, "pt")
+    }
 }

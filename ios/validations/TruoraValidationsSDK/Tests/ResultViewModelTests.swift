@@ -107,7 +107,7 @@ import XCTest
         // Given
         let result = ValidationResult(
             validationId: "test-id",
-            status: .failed,
+            status: .failure,
             confidence: nil
         )
 
@@ -213,7 +213,7 @@ import XCTest
         // Given
         let result = ValidationResult(
             validationId: "test-id",
-            status: .failed,
+            status: .failure,
             confidence: nil
         )
         viewModel.showResult(result)
@@ -233,25 +233,6 @@ import XCTest
         let result = ValidationResult(
             validationId: "test-id",
             status: .pending,
-            confidence: nil
-        )
-        viewModel.showResult(result)
-
-        // Allow async dispatch to complete
-        let expectation = self.expectation(description: "Wait for dispatch")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // Then
-            XCTAssertEqual(self.viewModel.validationResultType, ValidationResultType.completed)
-            expectation.fulfill()
-        }
-        waitForExpectations(timeout: 0.5)
-    }
-
-    func testValidationResultTypeForProcessingResult() {
-        // Given
-        let result = ValidationResult(
-            validationId: "test-id",
-            status: .processing,
             confidence: nil
         )
         viewModel.showResult(result)

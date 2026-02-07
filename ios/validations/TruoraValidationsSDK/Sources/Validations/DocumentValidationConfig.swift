@@ -29,6 +29,7 @@ public class Document {
     private var _shouldWaitForResults: Bool = false
     private var _useAutocapture: Bool = true
     private var _timeoutSeconds: Int = 60
+    private var _finishViewConfig: FinishViewConfiguration?
 
     public required init() {}
 
@@ -50,6 +51,10 @@ public class Document {
 
     public var timeoutSeconds: Int {
         _timeoutSeconds
+    }
+
+    public var finishViewConfig: FinishViewConfiguration? {
+        _finishViewConfig
     }
 
     /// Sets the country code for document validation.
@@ -77,11 +82,16 @@ public class Document {
 
     /// Sets whether to wait and show the validation results to the user.
     ///
+    /// - Note: Setting this to `false` clears any previously set `FinishViewConfiguration`,
+    ///   since finish view visibility requires waiting for results.
     /// - Parameter enabled: true to show results view, false to skip it (default: false)
     /// - Returns: This Document for method chaining
     @discardableResult
     public func enableWaitForResults(_ enabled: Bool) -> Document {
         _shouldWaitForResults = enabled
+        if !enabled {
+            _finishViewConfig = nil
+        }
         return self
     }
 
@@ -103,6 +113,18 @@ public class Document {
     @discardableResult
     public func setTimeout(_ seconds: Int) -> Document {
         _timeoutSeconds = max(seconds, 0)
+        return self
+    }
+
+    /// Configures the visibility of finish view screens after polling completes.
+    /// Setting this implicitly enables `shouldWaitForResults`.
+    ///
+    /// - Parameter config: Configuration controlling success/failure screen visibility
+    /// - Returns: This Document for method chaining
+    @discardableResult
+    public func setFinishViewConfiguration(_ config: FinishViewConfiguration) -> Document {
+        _finishViewConfig = config
+        _shouldWaitForResults = true
         return self
     }
 }

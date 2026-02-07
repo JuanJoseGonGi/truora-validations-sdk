@@ -40,52 +40,75 @@ extension PassiveCaptureInteractor: PassiveCapturePresenterToInteractor {
         }
 
         #if DEBUG
-        // Bypass upload in offline mode (DEBUG only)
-        if TruoraValidationsSDK.isOfflineMode {
-            print("🟢 PassiveCaptureInteractor: Offline mode, mocking successful upload")
-            Task {
-                await self.presenter?.videoUploadCompleted(validationId: self.validationId)
-            }
-            return
-        }
+        if handleOfflineMode() { return }
         #endif
 
-        guard !videoData.isEmpty else {
-            print("❌ PassiveCaptureInteractor: Video data is empty")
-            Task {
-                await presenter.videoUploadFailed(
-                    .sdk(SDKError(type: .uploadFailed, details: "Video data is empty"))
-                )
-            }
-            return
-        }
-
-        guard let apiClient = ValidationConfig.shared.apiClient else {
-            print("❌ PassiveCaptureInteractor: API client not configured")
-            Task {
-                await presenter.videoUploadFailed(
-                    .sdk(SDKError(type: .invalidConfiguration, details: "API client not configured"))
-                )
-            }
-            return
-        }
-
-        guard let uploadUrl else {
-            Task {
-                await presenter.videoUploadFailed(
-                    .sdk(SDKError(type: .uploadFailed, details: "No upload URL provided"))
-                )
-            }
+        let validated = validateUploadPreconditions(
+            videoData: videoData,
+            presenter: presenter
+        )
+        guard let validated else {
             return
         }
 
         uploadTask = Task {
             await performVideoUploadTask(
                 videoData: videoData,
-                apiClient: apiClient,
-                uploadUrl: uploadUrl
+                apiClient: validated.apiClient,
+                uploadUrl: validated.uploadUrl
             )
         }
+    }
+
+    #if DEBUG
+    private func handleOfflineMode() -> Bool {
+        guard TruoraValidationsSDK.isOfflineMode else { return false }
+        print("🟢 PassiveCaptureInteractor: Offline mode, mocking successful upload")
+        Task { await self.presenter?.videoUploadCompleted(validationId: self.validationId) }
+        return true
+    }
+    #endif
+
+    private func validateUploadPreconditions(
+        videoData: Data,
+        presenter: PassiveCaptureInteractorToPresenter
+    ) -> (apiClient: TruoraAPIClient, uploadUrl: String)? {
+        guard !videoData.isEmpty else {
+            print("❌ PassiveCaptureInteractor: Video data is empty")
+            let details = "Video data is empty"
+            reportUploadError(presenter: presenter, type: .uploadFailed, details: details)
+            return nil
+        }
+
+        guard let apiClient = ValidationConfig.shared.apiClient else {
+            print("❌ PassiveCaptureInteractor: API client not configured")
+            let details = "API client not configured"
+            reportUploadError(presenter: presenter, type: .invalidConfiguration, details: details)
+            return nil
+        }
+
+        guard let uploadUrl else {
+            let details = "No upload URL provided"
+            reportUploadError(presenter: presenter, type: .uploadFailed, details: details)
+            return nil
+        }
+
+        if UploadUrlValidator.isExpired(uploadUrl) {
+            print("❌ PassiveCaptureInteractor: Upload URL has expired (validation timeout)")
+            let details = "Validation expired. The time limit was exceeded."
+            reportUploadError(presenter: presenter, type: .validationError, details: details)
+            return nil
+        }
+
+        return (apiClient, uploadUrl)
+    }
+
+    private func reportUploadError(
+        presenter: PassiveCaptureInteractorToPresenter,
+        type: SDKErrorType,
+        details: String
+    ) {
+        Task { await presenter.videoUploadFailed(.sdk(SDKError(type: type, details: details))) }
     }
 
     private func performVideoUploadTask(

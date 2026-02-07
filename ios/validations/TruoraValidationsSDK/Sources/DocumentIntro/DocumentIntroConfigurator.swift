@@ -39,6 +39,7 @@ enum DocumentIntroConfigurator {
 
         let config = ValidationConfig.shared.uiConfig
         let swiftUIView = DocumentIntroView(viewModel: viewModel, config: config)
+            .sdkLocaleEnvironment(locale: ValidationConfig.shared.uiConfig.language?.locale ?? Locale.current)
         return UIHostingController(rootView: swiftUIView)
     }
 }

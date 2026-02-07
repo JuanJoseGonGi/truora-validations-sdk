@@ -52,7 +52,9 @@ struct TruoraFooterView: View {
                 action: action
             )
         }
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, 16)
+        .padding(.bottom, 16)
     }
 }
 

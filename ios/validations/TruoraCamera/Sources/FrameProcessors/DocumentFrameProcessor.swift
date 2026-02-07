@@ -28,11 +28,19 @@ class DocumentFrameProcessor: FrameProcessor {
             self?.delegate?.detectionsReceived(detectionResults)
         }
 
-        detector.onError = { [weak self] error in
-            let cameraError = CameraError.frameDetectionError(
-                error.localizedDescription
-            )
-            self?.delegate?.reportError(error: cameraError)
+        detector.onError = { error in
+            // Frame detection errors are transient and should not interrupt user experience.
+            // Individual frame failures are normal (e.g., motion blur, bad lighting) and
+            // the camera will continue processing subsequent frames.
+            #if DEBUG
+            print("⚠️ DocumentFrameProcessor: Frame detection error (non-fatal): \(error.localizedDescription)")
+            #endif
+        }
+
+        detector.onModelLoadFailed = { [weak self] error in
+            // Model failed to load - notify delegate to fall back to manual capture
+            // Error is passed for debugging purposes but UI should not show it to user
+            self?.delegate?.autocaptureUnavailable(error: error)
         }
     }
 }

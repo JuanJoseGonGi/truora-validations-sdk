@@ -494,7 +494,7 @@ import XCTest
 }
 
 extension MockDocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
-    func photoUploadCompleted(side: DocumentCaptureSide) {
+    func photoUploadCompleted(side: DocumentCaptureSide) async {
         photoUploadCompletedCalled = true
         lastCompletedSide = side
         photoUploadCompletedExpectation?.fulfill()
@@ -507,21 +507,21 @@ extension MockDocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
         photoUploadFailedExpectation?.fulfill()
     }
 
-    func imageEvaluationStarted(side: DocumentCaptureSide, previewData: Data) {
+    func imageEvaluationStarted(side: DocumentCaptureSide, previewData: Data) async {
         imageEvaluationStartedCalled = true
         lastEvaluationSide = side
         lastEvaluationPreviewData = previewData
         imageEvaluationStartedExpectation?.fulfill()
     }
 
-    func imageEvaluationSucceeded(side: DocumentCaptureSide, previewData: Data) {
+    func imageEvaluationSucceeded(side: DocumentCaptureSide, previewData: Data) async {
         imageEvaluationSucceededCalled = true
         lastEvaluationSide = side
         lastEvaluationPreviewData = previewData
         imageEvaluationSucceededExpectation?.fulfill()
     }
 
-    func imageEvaluationFailed(side: DocumentCaptureSide, previewData: Data, reason: String?) {
+    func imageEvaluationFailed(side: DocumentCaptureSide, previewData: Data, reason: String?) async {
         imageEvaluationFailedCalled = true
         lastEvaluationSide = side
         lastEvaluationPreviewData = previewData

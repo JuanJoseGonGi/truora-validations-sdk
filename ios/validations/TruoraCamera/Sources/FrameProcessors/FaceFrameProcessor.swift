@@ -28,11 +28,13 @@ class FaceFrameProcessor: FrameProcessor {
             self?.delegate?.detectionsReceived(detectionResults)
         }
 
-        detector.onError = { [weak self] error in
-            let cameraError = CameraError.frameDetectionError(
-                error.localizedDescription
-            )
-            self?.delegate?.reportError(error: cameraError)
+        detector.onError = { error in
+            // Frame detection errors are transient and should not interrupt user experience.
+            // Individual frame failures are normal (e.g., motion blur, bad lighting) and
+            // the camera will continue processing subsequent frames.
+            #if DEBUG
+            print("⚠️ FaceFrameProcessor: Frame detection error (non-fatal): \(error.localizedDescription)")
+            #endif
         }
     }
 }

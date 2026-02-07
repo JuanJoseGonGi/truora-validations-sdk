@@ -2,12 +2,12 @@ import Foundation
 
 /// Represents the result of a validation operation
 /// - complete: Validation completed successfully with a result of type T
-/// - failure: Validation failed with a TruoraException
-/// - capture: Media was captured during validation
+/// - failure: Validation failed with a TruoraException, with an optional partial result
+/// - canceled: Validation was canceled by the user, with an optional partial result
 public enum TruoraValidationResult<T> {
     case complete(T)
-    case failure(TruoraException)
-    case capture(CapturedMedia)
+    case failure(TruoraException, T?)
+    case canceled(T?)
 }
 
 // MARK: - Equatable conformance (when T is Equatable)
@@ -17,10 +17,10 @@ extension TruoraValidationResult: Equatable where T: Equatable {
         switch (lhs, rhs) {
         case (.complete(let lhsValue), .complete(let rhsValue)):
             lhsValue == rhsValue
-        case (.failure(let lhsError), .failure(let rhsError)):
-            lhsError == rhsError
-        case (.capture(let lhsMedia), .capture(let rhsMedia)):
-            lhsMedia == rhsMedia
+        case (.failure(let lhsError, let lhsValue), .failure(let rhsError, let rhsValue)):
+            lhsError == rhsError && lhsValue == rhsValue
+        case (.canceled(let lhsValue), .canceled(let rhsValue)):
+            lhsValue == rhsValue
         default:
             false
         }
@@ -33,11 +33,13 @@ extension TruoraValidationResult: CustomStringConvertible {
     public var description: String {
         switch self {
         case .complete(let value):
-            "TruoraValidationResult.complete(\(value))"
-        case .failure(let error):
-            "TruoraValidationResult.failure(\(error.localizedDescription))"
-        case .capture(let media):
-            "TruoraValidationResult.capture(\(media))"
+            return "TruoraValidationResult.complete(\(value))"
+        case .failure(let error, let value):
+            let errorDesc = error.localizedDescription
+            let valueDesc = String(describing: value)
+            return "TruoraValidationResult.failure(\(errorDesc), \(valueDesc))"
+        case .canceled(let value):
+            return "TruoraValidationResult.canceled(\(String(describing: value)))"
         }
     }
 }
@@ -57,9 +59,9 @@ public extension TruoraValidationResult {
         return false
     }
 
-    /// Returns true if the result is a capture
-    var isCapture: Bool {
-        if case .capture = self { return true }
+    /// Returns true if the result is a cancellation
+    var isCanceled: Bool {
+        if case .canceled = self { return true }
         return false
     }
 
@@ -71,13 +73,19 @@ public extension TruoraValidationResult {
 
     /// Extracts the error if this is a failure
     var error: TruoraException? {
-        if case .failure(let error) = self { return error }
+        if case .failure(let error, _) = self { return error }
         return nil
     }
 
-    /// Extracts the captured media if available
-    var capturedMedia: CapturedMedia? {
-        if case .capture(let media) = self { return media }
+    /// Extracts the partial validation result if this is a failure
+    var failureValue: T? {
+        if case .failure(_, let value) = self { return value }
+        return nil
+    }
+
+    /// Extracts the partial validation result if this is a cancellation
+    var canceledValue: T? {
+        if case .canceled(let value) = self { return value }
         return nil
     }
 }

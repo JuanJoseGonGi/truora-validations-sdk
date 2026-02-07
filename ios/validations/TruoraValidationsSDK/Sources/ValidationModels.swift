@@ -15,24 +15,51 @@ public struct ValidationResult: Codable, Equatable {
     public let confidence: Double?
     public let metadata: [String: Int]? // Changed from [String: Any] for Codable compatibility
 
+    /// Full validation detail from the API response.
+    /// Available when the result comes from polling (not for canceled/pending results).
+    public let detail: ValidationDetail?
+
     public init(
         validationId: String,
         status: ValidationStatus,
         confidence: Double? = nil,
-        metadata: [String: Int]? = nil
+        metadata: [String: Int]? = nil,
+        detail: ValidationDetail? = nil
     ) {
         self.validationId = validationId
         self.status = status
         self.confidence = confidence
         self.metadata = metadata
+        self.detail = detail
+    }
+}
+
+// MARK: - ValidationResult Helpers
+
+public extension ValidationResult {
+    /// Returns the document front image URL for use as a face reference
+    /// in a subsequent face validation via `ReferenceFace.from(url)`.
+    ///
+    /// Only available for document-type validations that have completed
+    /// processing. The URL is a presigned CloudFront link that expires
+    /// approximately 15 minutes after the API response.
+    ///
+    /// Checks `document_details.front_url` first, then falls back to
+    /// `user_response.input_files` looking for a URL containing `_front`.
+    ///
+    /// - Returns: The presigned front image URL, or `nil` if unavailable.
+    func getFaceReferenceImage() -> String? {
+        if let frontUrl = detail?.details?.documentDetails?.frontUrl {
+            return frontUrl
+        }
+        return detail?.userResponse?.inputFiles?.first { $0.contains("_front") }
     }
 }
 
 public enum ValidationStatus: String, Codable {
     case pending
     case success
-    case failed
-    case processing
+    case failure
 }
 
 // MARK: - Enrollment Models

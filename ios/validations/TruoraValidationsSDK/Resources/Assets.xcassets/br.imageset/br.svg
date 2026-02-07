@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="30" height="22" viewBox="0 0 30 22">
+  <defs>
+    <clipPath id="flagClip">
+      <path d="M4,0L26,0A4,4 0,0 1,30 4L30,17.429A4,4 0,0 1,26 21.429L4,21.429A4,4 0,0 1,0 17.429L0,4A4,4 0,0 1,4 0z" />
+    </clipPath>
+    <clipPath id="circleClip">
+      <circle cx="15" cy="10.714" r="5" />
+    </clipPath>
+  </defs>
+  <path d="M4,0L26,0A4,4 0,0 1,30 4L30,17.429A4,4 0,0 1,26 21.429L4,21.429A4,4 0,0 1,0 17.429L0,4A4,4 0,0 1,4 0z"
+    fill="#ffffff" />
+  <g clip-path="url(#flagClip)">
+    <rect x="0" y="0" width="30" height="21.429" fill="#05AB41" />
+    <path
+      d="M4.587,11.834C3.775,11.308 3.775,10.12 4.587,9.595L14.276,3.326C14.716,3.04 15.283,3.04 15.724,3.326L25.413,9.595C26.225,10.12 26.225,11.308 25.413,11.834L15.724,18.103C15.283,18.388 14.716,18.388 14.276,18.103L4.587,11.834Z"
+      fill="#FDD216" fill-rule="evenodd" />
+    <circle cx="15" cy="10.714" r="5" fill="#053087" />
+    <g clip-path="url(#circleClip)">
+      <path d="M9.408,9.407C10.193,8.772 12.727,9.374 15.091,10.005C17.456,10.635 19.922,11.958 20.55,12.733"
+        stroke="#ffffff" stroke-width="2.66667" fill="none" stroke-linecap="square" />
+    </g>
+  </g>
+</svg>

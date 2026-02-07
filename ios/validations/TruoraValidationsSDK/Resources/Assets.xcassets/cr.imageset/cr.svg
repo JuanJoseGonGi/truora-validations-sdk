@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="30" height="22" viewBox="0 0 30 22">
+  <defs>
+    <clipPath id="flagClip">
+      <path
+        d="M4,0.5L26,0.5A3.5,3.5 0,0 1,29.5 4L29.5,17.429A3.5,3.5 0,0 1,26 20.929L4,20.929A3.5,3.5 0,0 1,0.5 17.429L0.5,4A3.5,3.5 0,0 1,4 0.5z" />
+    </clipPath>
+  </defs>
+  <path
+    d="M4,0.5L26,0.5A3.5,3.5 0,0 1,29.5 4L29.5,17.429A3.5,3.5 0,0 1,26 20.929L4,20.929A3.5,3.5 0,0 1,0.5 17.429L0.5,4A3.5,3.5 0,0 1,4 0.5z"
+    fill="#ffffff" stroke="#F5F5F5" stroke-width="1" />
+  <g clip-path="url(#flagClip)">
+    <path d="M0,4.286H30V0H0V4.286Z" fill="#06358F" fill-rule="evenodd" />
+    <path d="M0,21.428H30V17.143H0V21.428Z" fill="#06358F" fill-rule="evenodd" />
+    <path d="M0,14.286H30V7.143H0V14.286Z" fill="#E61F37" fill-rule="evenodd" />
+  </g>
+</svg>

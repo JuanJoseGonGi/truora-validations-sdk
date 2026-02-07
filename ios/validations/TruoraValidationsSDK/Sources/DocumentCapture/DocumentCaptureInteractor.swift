@@ -50,9 +50,10 @@ extension DocumentCaptureInteractor: DocumentCapturePresenterToInteractor {
 
         guard let apiClient = ValidationConfig.shared.apiClient else {
             Task {
+                let details = "API client not configured"
                 await presenter.photoUploadFailed(
                     side: side,
-                    error: .sdk(SDKError(type: .invalidConfiguration, details: "API client not configured"))
+                    error: .sdk(SDKError(type: .invalidConfiguration, details: details))
                 )
             }
             return
@@ -68,6 +69,20 @@ extension DocumentCaptureInteractor: DocumentCapturePresenterToInteractor {
                 await presenter.photoUploadFailed(
                     side: side,
                     error: .sdk(SDKError(type: .uploadFailed, details: "No upload URL provided"))
+                )
+            }
+            return
+        }
+
+        // Check if upload URL has expired (validation timeout)
+        if UploadUrlValidator.isExpired(uploadUrl) {
+            Task {
+                await presenter.photoUploadFailed(
+                    side: side,
+                    error: .sdk(SDKError(
+                        type: .validationError,
+                        details: "Validation expired. The time limit was exceeded."
+                    ))
                 )
             }
             return
@@ -99,9 +114,10 @@ extension DocumentCaptureInteractor: DocumentCapturePresenterToInteractor {
 
         guard let apiClient = ValidationConfig.shared.apiClient else {
             Task {
+                let details = "API client not configured"
                 await presenter.imageEvaluationErrored(
                     side: side,
-                    error: .sdk(SDKError(type: .invalidConfiguration, details: "API client not configured"))
+                    error: .sdk(SDKError(type: .invalidConfiguration, details: details))
                 )
             }
             return
@@ -164,13 +180,15 @@ private extension DocumentCaptureInteractor {
         validationId: String
     ) throws -> NativeImageEvaluationRequest {
         guard let image = UIImage(data: photoData) else {
-            throw TruoraException.sdk(SDKError(type: .internalError, details: "Unable to decode image data"))
+            let details = "Unable to decode image data"
+            throw TruoraException.sdk(SDKError(type: .internalError, details: details))
         }
 
         let scaled = scaleImage(image, maxDimension: 1024)
 
         guard let jpegData = scaled.jpegData(compressionQuality: 0.7) else {
-            throw TruoraException.sdk(SDKError(type: .internalError, details: "Unable to encode image as JPEG"))
+            let details = "Unable to encode image as JPEG"
+            throw TruoraException.sdk(SDKError(type: .internalError, details: details))
         }
 
         let base64Image = jpegData.base64EncodedString()
@@ -246,14 +264,13 @@ private extension DocumentCaptureInteractor {
 
                 let response = try await apiClient.evaluateImage(request: request)
 
-                guard !Task.isCancelled else {
-                    return
-                }
+                guard !Task.isCancelled else { return }
 
-                // Check if status is explicitly success
-                let isSuccess = response.status == "success"
-                if isSuccess {
-                    await self.presenter?.imageEvaluationSucceeded(side: side, previewData: photoData)
+                if response.status == "success" {
+                    await self.presenter?.imageEvaluationSucceeded(
+                        side: side,
+                        previewData: photoData
+                    )
                 } else {
                     await self.presenter?.imageEvaluationFailed(
                         side: side,
@@ -262,41 +279,32 @@ private extension DocumentCaptureInteractor {
                     )
                 }
             } catch is CancellationError {
-                // No-op
-            } catch let truoraError as TruoraException {
-                // Preserve TruoraException errors thrown from evaluation logic
-                guard !Task.isCancelled else {
-                    return
-                }
-                await self.presenter?.imageEvaluationErrored(side: side, error: truoraError)
-            } catch let apiError as TruoraAPIError {
-                // Wrap API errors - use network case to preserve error info for retry logic
-                guard !Task.isCancelled else {
-                    return
-                }
-                let errorMessage = apiError.errorDescription ?? "Image evaluation API error: \(apiError)"
-                await self.presenter?.imageEvaluationErrored(
-                    side: side,
-                    error: .network(
-                        message: errorMessage,
-                        underlyingError: apiError
-                    )
-                )
+                // No-op: Task was cancelled, ignore error
             } catch {
-                // Wrap other errors (e.g., Swift runtime errors)
-                guard !Task.isCancelled else {
-                    return
-                }
-                await self.presenter?.imageEvaluationErrored(
-                    side: side,
-                    error: .sdk(
-                        SDKError(
-                            type: .internalError,
-                            details: "Image evaluation failed: \(error.localizedDescription)"
-                        )
-                    )
-                )
+                // Handle all other errors (TruoraException, TruoraAPIError, and generic errors)
+                // Error type checking is preserved in handleEvaluationError for retry logic
+                guard !Task.isCancelled else { return }
+                await self.handleEvaluationError(error, side: side)
             }
         }
+    }
+
+    private func handleEvaluationError(_ error: Error, side: DocumentCaptureSide) async {
+        let truoraError: TruoraException
+        if let existing = error as? TruoraException {
+            truoraError = existing
+        } else if let apiError = error as? TruoraAPIError {
+            let fallbackMsg = "Image evaluation API error: \(apiError)"
+            let errorMessage = apiError.errorDescription ?? fallbackMsg
+            truoraError = .network(message: errorMessage, underlyingError: apiError)
+        } else {
+            truoraError = .sdk(
+                SDKError(
+                    type: .internalError,
+                    details: "Image evaluation failed: \(error.localizedDescription)"
+                )
+            )
+        }
+        await presenter?.imageEvaluationErrored(side: side, error: truoraError)
     }
 }

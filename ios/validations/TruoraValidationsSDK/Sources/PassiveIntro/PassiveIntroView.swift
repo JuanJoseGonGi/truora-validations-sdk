@@ -33,8 +33,12 @@ struct PassiveIntroView: View {
 
                 // Footer
                 TruoraFooterView(
-                    securityTip: TruoraValidationsSDKStrings.passiveInstructionsSecurityTip,
-                    buttonText: TruoraValidationsSDKStrings.passiveInstructionsStartVerification,
+                    securityTip: TruoraLocalization.string(
+                        forKey: LocalizationKeys.passiveInstructionsSecurityTip
+                    ),
+                    buttonText: TruoraLocalization.string(
+                        forKey: LocalizationKeys.passiveInstructionsStartVerification
+                    ),
                     isLoading: viewModel.isLoading,
                     buttonAccessibilityIdentifier: "intro_start_button"
                 ) {
@@ -44,16 +48,19 @@ struct PassiveIntroView: View {
 
             // Loading overlay
             if viewModel.isLoading {
-                LoadingOverlayView(message: TruoraValidationsSDKStrings.passiveCaptureLoadingTitle)
+                LoadingOverlayView(
+                    message: TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureLoadingTitle)
+                )
             }
         }
         .environmentObject(theme)
+        .background(theme.colors.surface.extendingIntoSafeArea())
         .navigationBarHidden(true)
         .alert(isPresented: $viewModel.showError) {
             Alert(
-                title: Text(NSLocalizedString("common_error", bundle: .truoraModule, comment: "")),
+                title: Text(TruoraLocalization.string(forKey: LocalizationKeys.commonError)),
                 message: Text(viewModel.errorMessage ?? ""),
-                dismissButton: .default(Text(NSLocalizedString("common_ok", bundle: .truoraModule, comment: "")))
+                dismissButton: .default(Text(TruoraLocalization.string(forKey: LocalizationKeys.commonOk)))
             )
         }
         .onAppear {

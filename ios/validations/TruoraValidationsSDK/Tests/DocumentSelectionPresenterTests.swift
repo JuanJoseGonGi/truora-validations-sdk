@@ -120,6 +120,35 @@ import XCTest
         XCTAssertEqual(ValidationConfig.shared.documentConfig.documentType, "national-id")
     }
 
+    func testContinueTapped_preservesFinishViewConfig() async {
+        // Given — pre-configure documentConfig with finishViewConfig
+        let finishConfig = FinishViewConfiguration(success: .hide, failure: .show)
+        let preConfigured = Document()
+            .setFinishViewConfiguration(finishConfig)
+        ValidationConfig.shared.setValidation(.document(preConfigured))
+
+        let cameraChecker = MockCameraPermissionChecker(status: .authorized, requestAccessResult: nil)
+        sut = DocumentSelectionPresenter(
+            view: mockView,
+            interactor: mockInteractor,
+            router: mockRouter,
+            cameraPermissionChecker: cameraChecker
+        )
+        await sut.viewDidLoad()
+
+        // When
+        await sut.countrySelected(.co)
+        await sut.documentSelected(.nationalId)
+        await sut.continueTapped()
+
+        // Then — finishViewConfig should be preserved
+        let docConfig = ValidationConfig.shared.documentConfig
+        XCTAssertEqual(docConfig.country, "co")
+        XCTAssertEqual(docConfig.documentType, "national-id")
+        XCTAssertEqual(docConfig.finishViewConfig, finishConfig)
+        XCTAssertTrue(docConfig.shouldWaitForResults)
+    }
+
     func testCancelTapped_callsRouterHandleCancellation() async {
         let cameraChecker = MockCameraPermissionChecker(status: .authorized, requestAccessResult: nil)
         sut = DocumentSelectionPresenter(
@@ -201,7 +230,7 @@ import XCTest
     private(set) var handleCancellationCalled = false
     private(set) var navigateToDocumentIntroCalled = false
 
-    override func handleCancellation() {
+    override func handleCancellation(loadingType: ResultLoadingType) {
         handleCancellationCalled = true
     }
 

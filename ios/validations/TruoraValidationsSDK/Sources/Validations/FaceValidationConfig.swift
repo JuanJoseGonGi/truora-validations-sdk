@@ -17,6 +17,7 @@ public class Face {
     private var _shouldWaitForResults: Bool = false
     private var _useAutocapture: Bool = true
     private var _timeoutSeconds: Int = 60
+    private var _finishViewConfig: FinishViewConfiguration?
 
     public required init() {}
 
@@ -38,6 +39,10 @@ public class Face {
 
     public var timeoutSeconds: Int {
         _timeoutSeconds
+    }
+
+    public var finishViewConfig: FinishViewConfiguration? {
+        _finishViewConfig
     }
 
     /// Sets the reference face image to compare against.
@@ -63,11 +68,16 @@ public class Face {
 
     /// Sets whether to wait and show the validation results to the user.
     ///
+    /// - Note: Setting this to `false` clears any previously set `FinishViewConfiguration`,
+    ///   since finish view visibility requires waiting for results.
     /// - Parameter enabled: true to show results view, false to skip it (default: false)
     /// - Returns: This Face for method chaining
     @discardableResult
     public func enableWaitForResults(_ enabled: Bool) -> Face {
         _shouldWaitForResults = enabled
+        if !enabled {
+            _finishViewConfig = nil
+        }
         return self
     }
 
@@ -89,6 +99,18 @@ public class Face {
     @discardableResult
     public func setTimeout(_ seconds: Int) -> Face {
         _timeoutSeconds = max(seconds, 0)
+        return self
+    }
+
+    /// Configures the visibility of finish view screens after polling completes.
+    /// Setting this implicitly enables `shouldWaitForResults`.
+    ///
+    /// - Parameter config: Configuration controlling success/failure screen visibility
+    /// - Returns: This Face for method chaining
+    @discardableResult
+    public func setFinishViewConfiguration(_ config: FinishViewConfiguration) -> Face {
+        _finishViewConfig = config
+        _shouldWaitForResults = true
         return self
     }
 }

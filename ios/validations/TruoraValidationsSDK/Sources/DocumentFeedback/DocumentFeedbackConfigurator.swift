@@ -32,6 +32,7 @@ enum DocumentFeedbackConfigurator {
             viewModel: viewModel,
             config: config
         )
+        .sdkLocaleEnvironment(locale: ValidationConfig.shared.uiConfig.language?.locale ?? Locale.current)
         let hostingController = UIHostingController(rootView: swiftUIView)
         hostingController.modalPresentationStyle = .fullScreen
         return hostingController

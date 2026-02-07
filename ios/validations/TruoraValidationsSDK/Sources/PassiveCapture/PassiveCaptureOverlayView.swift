@@ -28,6 +28,12 @@ struct PassiveCaptureOverlayView: View {
     private let maxThumbnailSize: CGFloat = 90 // iPad maximum per Figma
     private let feedbackOffsetFromOvalBottom: CGFloat = -40 // Overlap into oval bottom
 
+    // Countdown header top padding: keep text below Dynamic Island, more room on small phones
+    private let countdownHeaderBaseTopPadding: CGFloat = 16
+    private let countdownHeaderMinTopPaddingSmallPhone: CGFloat = 58
+    private let countdownHeaderMinTopPaddingRegular: CGFloat = 70
+    private let countdownSmallPhoneHeightThreshold: CGFloat = 700
+
     var body: some View {
         GeometryReader { geometry in
             let screenWidth = geometry.size.width
@@ -55,11 +61,18 @@ struct PassiveCaptureOverlayView: View {
                     )
                 }
 
-                // Countdown header at top of screen
+                // Countdown header at top - padding so text stays below Dynamic Island
+                // Use max() because when overlay ignores safe area, safeAreaInsets.top can be 0
                 if state == .countdown {
+                    let topInset = geometry.safeAreaInsets.top
+                    let screenHeight = geometry.size.height
+                    let minTopPadding: CGFloat = screenHeight < countdownSmallPhoneHeightThreshold
+                        ? countdownHeaderMinTopPaddingSmallPhone
+                        : countdownHeaderMinTopPaddingRegular
+                    let headerTopPadding = max(countdownHeaderBaseTopPadding + topInset, minTopPadding)
                     VStack {
                         PassiveCaptureCountdownHeaderView()
-                            .padding(.top, 16)
+                            .padding(.top, headerTopPadding)
                         Spacer()
                     }
                 }
@@ -100,6 +113,7 @@ struct PassiveCaptureOverlayView: View {
                 }
             }
         }
+        .extendingIntoSafeArea()
     }
 }
 

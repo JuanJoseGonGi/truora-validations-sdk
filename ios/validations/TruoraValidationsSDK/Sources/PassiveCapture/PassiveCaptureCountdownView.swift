@@ -16,7 +16,7 @@ struct PassiveCaptureCountdownHeaderView: View {
     }
 
     var body: some View {
-        Text(TruoraValidationsSDKStrings.passiveCaptureStartInstruction)
+        Text(TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureStartInstruction))
             .font(.system(size: isIPad ? 36 : 17, weight: .semibold))
             .foregroundColor(.white)
             .multilineTextAlignment(.center)

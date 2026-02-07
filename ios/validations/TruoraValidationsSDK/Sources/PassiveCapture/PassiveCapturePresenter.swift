@@ -18,6 +18,7 @@ private enum CameraLifecycleState {
     case recording // Actively recording
 }
 
+@MainActor
 class PassiveCapturePresenter {
     weak var view: PassiveCapturePresenterToView?
     var interactor: PassiveCapturePresenterToInteractor?
@@ -37,6 +38,23 @@ class PassiveCapturePresenter {
     private let timeProvider: TimeProvider
     private let useAutocapture: Bool
 
+    private var wasRecordingBeforeHelp: Bool = false
+    private var stateAtHelp: PassiveCaptureState?
+    private var feedbackAtHelp: FeedbackType = .none
+
+    private var wasRecordingAtSuspend: Bool = false
+    private var stateAtSuspend: PassiveCaptureState?
+    private var uploadStateAtSuspend: UploadState = .none
+    private var wasHelpOpenAtSuspend: Bool = false
+
+    private enum PendingCameraReadyAction {
+        case none
+        case resumeFromSuspendWasRecordingAuto
+        case resumeFromSuspendWasRecordingManual
+    }
+
+    private var pendingCameraReadyAction: PendingCameraReadyAction = .none
+
     // Thread-safe timing properties using NSLock
     // for low-overhead synchronization
     private let timingLock = NSLock()
@@ -45,16 +63,25 @@ class PassiveCapturePresenter {
     static let manualTimeoutSeconds: TimeInterval = 4.0
     static let requiredDetectionTime: TimeInterval = 1.0
 
+    // Face centering thresholds (normalized [0,1] coordinates)
+    static let minFaceHeight: CGFloat = 0.20
+    static let maxFaceHeight: CGFloat = 0.85
+    static let centerDistanceThreshold: CGFloat = 0.25
+
+    private let validationId: String
+
     init(
         view: PassiveCapturePresenterToView,
         interactor: PassiveCapturePresenterToInteractor?,
         router: ValidationRouter,
+        validationId: String,
         useAutocapture: Bool = true,
         timeProvider: TimeProvider = RealTimeProvider()
     ) {
         self.view = view
         self.interactor = interactor
         self.router = router
+        self.validationId = validationId
         self.useAutocapture = useAutocapture
         self.timeProvider = timeProvider
         // Set initial state based on autocapture setting to avoid flash of countdown
@@ -114,10 +141,7 @@ class PassiveCapturePresenter {
         currentFeedback = .showFace
 
         // Start manual timeout window (4s) while we wait for a face
-        timingLock.lock()
-
-        videoProcessingStartTime = timeProvider.now
-        timingLock.unlock()
+        startProcessingTimer()
 
         // Reset face detection timer so we require a fresh consecutive second
         resetFaceDetectionTimer()
@@ -134,9 +158,7 @@ class PassiveCapturePresenter {
         currentFeedback = .recording
 
         // Set video processing start time (thread-safe)
-        timingLock.lock()
-        videoProcessingStartTime = timeProvider.now
-        timingLock.unlock()
+        startProcessingTimer()
 
         await updateUI()
 
@@ -147,50 +169,86 @@ class PassiveCapturePresenter {
     /// Checks if manual capture timeout has been reached (thread-safe)
     /// Returns true if 4 seconds have passed since video processing started
     private func hasManualTimeout() -> Bool {
-        timingLock.lock()
-        defer { timingLock.unlock() }
+        timingLock.withLock {
+            guard let startTime = videoProcessingStartTime else {
+                return false
+            }
 
-        guard let startTime = videoProcessingStartTime else {
-            return false
+            let elapsed = timeProvider.now.timeIntervalSince(startTime)
+            return elapsed >= Self.manualTimeoutSeconds
         }
-
-        let elapsed = timeProvider.now.timeIntervalSince(startTime)
-        return elapsed >= Self.manualTimeoutSeconds
     }
 
     /// Resets the video processing timer (thread-safe)
     private func resetProcessingTimer() {
+        timingLock.withLock {
+            videoProcessingStartTime = nil
+        }
+    }
+
+    /// Starts the video processing timer (thread-safe)
+    private func startProcessingTimer() {
         timingLock.lock()
-        videoProcessingStartTime = nil
+        videoProcessingStartTime = timeProvider.now
         timingLock.unlock()
     }
 
     /// Starts the face detection timer (thread-safe)
     private func startFaceDetectionTimer() {
-        timingLock.lock()
-        faceDetectionStartTime = timeProvider.now
-        timingLock.unlock()
+        timingLock.withLock {
+            faceDetectionStartTime = timeProvider.now
+        }
     }
 
     /// Resets the face detection timer (thread-safe)
     private func resetFaceDetectionTimer() {
-        timingLock.lock()
-        faceDetectionStartTime = nil
-        timingLock.unlock()
+        timingLock.withLock {
+            faceDetectionStartTime = nil
+        }
     }
 
     /// Checks if sufficient consecutive face detection time has elapsed (thread-safe)
     /// Returns true if 1 second has passed since face detection started
     private func hasSufficientFaceDetection() -> Bool {
-        timingLock.lock()
-        defer { timingLock.unlock() }
+        timingLock.withLock {
+            guard let startTime = faceDetectionStartTime else {
+                return false
+            }
 
-        guard let startTime = faceDetectionStartTime else {
+            let elapsed = timeProvider.now.timeIntervalSince(startTime)
+            return elapsed >= Self.requiredDetectionTime
+        }
+    }
+
+    /// Checks if the detected face is centered on the oval guide with
+    /// appropriate size. The oval is centered in the overlay which uses
+    /// extendingIntoSafeArea(), so its center is at (0.5, 0.5) in
+    /// normalized screen coordinates. Vision framework returns normalized
+    /// coordinates with Y-origin at bottom-left, but since the oval center
+    /// is at 0.5 on both axes, the distance calculation is symmetric.
+    private func isFaceCenteredOnOval(_ face: DetectionResult) -> Bool {
+        let bbox = face.boundingBox
+        let faceHeight = bbox.height
+        let faceCenterX = bbox.midX
+        let faceCenterY = bbox.midY
+
+        // Check face size (height-based since faces are taller than wide)
+        guard faceHeight >= Self.minFaceHeight,
+              faceHeight <= Self.maxFaceHeight else {
             return false
         }
 
-        let elapsed = timeProvider.now.timeIntervalSince(startTime)
-        return elapsed >= Self.requiredDetectionTime
+        // Oval center is at (0.5, 0.5) in the full-screen overlay
+        let ovalCenterX: CGFloat = 0.5
+        let ovalCenterY: CGFloat = 0.5
+
+        // Euclidean distance from face center to oval center
+        let distance = sqrt(
+            pow(faceCenterX - ovalCenterX, 2)
+                + pow(faceCenterY - ovalCenterY, 2)
+        )
+
+        return distance <= Self.centerDistanceThreshold
     }
 
     /// Transitions to manual mode with error message (used when autocapture times out)
@@ -229,9 +287,10 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
             return
         }
 
-        // If upload in progress, don't restart camera
+        // If upload in progress, don't try to re-setup; upload flow controls the camera.
+        // Background/foreground behavior is handled via appWillResignActive/appDidBecomeActive.
         guard uploadState != .uploading, uploadState != .success else {
-            print("🟢 PassiveCapturePresenter: viewWillAppear - skipping restart (upload in progress)")
+            print("🟢 PassiveCapturePresenter: viewWillAppear - skipping upload restart")
             return
         }
 
@@ -277,6 +336,9 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         resetFaceDetectionTimer()
         resetProcessingTimer()
 
+        // Reset recording button state
+        await view?.resetRecordingInProgress()
+
         await updateUI()
     }
 
@@ -285,12 +347,25 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         lifecycleState = .ready
         showSettingsPrompt = false
         await updateUI()
-        if useAutocapture {
-            print("🟢 PassiveCapturePresenter: Camera ready, starting countdown")
-            await startCountdown()
-        } else {
-            print("🟢 PassiveCapturePresenter: Camera ready, autocapture disabled - going to manual mode")
+
+        switch pendingCameraReadyAction {
+        case .resumeFromSuspendWasRecordingAuto:
+            pendingCameraReadyAction = .none
+            // Restart at detection (no countdown) and let stable face trigger recording.
+            await beginWaitingForFace()
+        case .resumeFromSuspendWasRecordingManual:
+            pendingCameraReadyAction = .none
+            // Restart manual and immediately start recording again.
             await transitionToManualWithoutError()
+            await startRecording()
+        case .none:
+            if useAutocapture {
+                print("🟢 PassiveCapturePresenter: Camera ready, starting countdown")
+                await startCountdown()
+            } else {
+                print("🟢 PassiveCapturePresenter: Camera ready, autocapture disabled")
+                await transitionToManualWithoutError()
+            }
         }
     }
 
@@ -346,6 +421,14 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         return true
     }
 
+    /// Resets the face detection timer and updates feedback if not recording.
+    private func resetTimerAndUpdateFeedback(_ feedback: FeedbackType) async {
+        resetFaceDetectionTimer()
+        guard lifecycleState != .recording else { return }
+        currentFeedback = feedback
+        await updateUI()
+    }
+
     func detectionsReceived(_ results: [DetectionResult]) async {
         guard await validateCurrentStateAndResetTimer() else { return }
 
@@ -358,22 +441,19 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         }
 
         guard !faces.isEmpty else {
-            resetFaceDetectionTimer()
-            // Only update feedback if not currently recording
-            guard lifecycleState != .recording else { return }
-            currentFeedback = .showFace
-            await updateUI()
-
+            await resetTimerAndUpdateFeedback(.showFace)
             return
         }
 
         guard faces.count == 1 else {
-            resetFaceDetectionTimer()
-            // Only update feedback if not currently recording
-            guard lifecycleState != .recording else { return }
-            currentFeedback = .multiplePeople
-            await updateUI()
+            await resetTimerAndUpdateFeedback(.multiplePeople)
+            return
+        }
 
+        // Single face detected - check if centered on the oval
+        guard isFaceCenteredOnOval(faces[0]) else {
+            print("🟠 Face not centered on oval, showing CENTER_FACE feedback")
+            await resetTimerAndUpdateFeedback(.centerFace)
             return
         }
 
@@ -410,6 +490,90 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         resetProcessingTimer()
     }
 
+    func appWillResignActive() async {
+        // Snapshot state so we can resume correctly.
+        wasRecordingAtSuspend = (lifecycleState == .recording)
+        stateAtSuspend = currentState
+        uploadStateAtSuspend = uploadState
+        wasHelpOpenAtSuspend = showHelpDialog
+
+        // Stop time-based flows; on resume we require fresh detections.
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+        resetFaceDetectionTimer()
+        resetProcessingTimer()
+
+        // If uploading, do not tear down camera; keep it paused/frozen and let upload continue.
+        if uploadState == .uploading || uploadState == .success {
+            await view?.pauseCamera()
+            return
+        }
+
+        // If we were recording, stop it without producing media.
+        if lifecycleState == .recording {
+            await view?.pauseVideo()
+            lifecycleState = .ready
+        }
+
+        // Pause session (do not tear down) to preserve preview layer state.
+        await view?.pauseCamera()
+    }
+
+    func appDidBecomeActive() async {
+        // If uploading (or already completed), do not attempt to restart camera.
+        if uploadState == .uploading || uploadState == .success {
+            return
+        }
+
+        // If the view isn't visible anymore, viewWillAppear/viewDidLoad will handle restart.
+        guard lifecycleState != .uninitialized else { return }
+
+        // If camera was stopped while app was inactive (e.g., upload failed/completed but we didn't
+        // navigate away), restart it now.
+        if lifecycleState == .stopped, !isSettingUpCamera {
+            isSettingUpCamera = true
+            await view?.setupCamera()
+            return
+        }
+
+        // If recording was interrupted by backgrounding, restart flow as requested.
+        if wasRecordingAtSuspend {
+            // Avoid overwriting an existing pending action if we get multiple
+            // suspend/resume cycles while setup is still in flight.
+            guard pendingCameraReadyAction == .none, !isSettingUpCamera else {
+                return
+            }
+
+            wasRecordingAtSuspend = false
+            if useAutocapture {
+                pendingCameraReadyAction = .resumeFromSuspendWasRecordingAuto
+            } else {
+                pendingCameraReadyAction = .resumeFromSuspendWasRecordingManual
+            }
+
+            // Clean restart to ensure recording can start reliably.
+            await view?.stopCamera()
+            lifecycleState = .stopped
+            isSettingUpCamera = true
+            await view?.setupCamera()
+            return
+        }
+
+        // Otherwise, just resume the paused session and keep UI/state as-is.
+        await view?.resumeCamera()
+
+        // If help was open during suspend, keep it open (no auto-restart).
+        if wasHelpOpenAtSuspend {
+            showHelpDialog = true
+            await updateUI()
+        }
+
+        // Clear one-shot suspend snapshot flags.
+        wasHelpOpenAtSuspend = false
+        stateAtSuspend = nil
+        uploadStateAtSuspend = .none
+    }
+
     func cameraPermissionDenied() async {
         isSettingUpCamera = false
         print("❌ PassiveCapturePresenter: Camera permission denied")
@@ -421,23 +585,9 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
     func handleCaptureEvent(_ event: PassiveCaptureEvent) async {
         switch event {
         case .helpRequested:
-            await view?.pauseVideo()
-            showHelpDialog = true
-            await updateUI()
+            await handleHelpRequested()
         case .helpDismissed:
-            showHelpDialog = false
-            // Reset recording state
-            lifecycleState = .ready
-
-            if useAutocapture {
-                // Start fresh from countdown (camera is still running, just reset the flow)
-                await startCountdown()
-            } else {
-                // When autocapture is disabled, stay in manual state
-                currentState = .manual
-                currentFeedback = .none
-                await updateUI()
-            }
+            await handleHelpDismissed()
         case .manualRecordingRequested:
             await handleManualRecordingRequested()
         case .openSettingsRequested:
@@ -453,6 +603,62 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         default:
             break
         }
+    }
+
+    private func handleHelpRequested() async {
+        stateAtHelp = currentState
+        feedbackAtHelp = currentFeedback
+
+        // Pause any timed flows while help is visible.
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+        resetFaceDetectionTimer()
+
+        wasRecordingBeforeHelp = (lifecycleState == .recording)
+        if lifecycleState == .recording {
+            await view?.pauseVideo()
+            lifecycleState = .ready
+        }
+        showHelpDialog = true
+        await updateUI()
+    }
+
+    private func handleHelpDismissed() async {
+        showHelpDialog = false
+        if wasRecordingBeforeHelp {
+            wasRecordingBeforeHelp = false
+            lifecycleState = .ready
+            if useAutocapture {
+                // Restart at detection and let stable face trigger recording.
+                await beginWaitingForFace()
+            } else {
+                // Return to manual and restart recording automatically.
+                currentState = .manual
+                currentFeedback = .none
+                await updateUI()
+                await startRecording()
+            }
+        } else {
+            // Restore a sane state after dismissing help.
+            if useAutocapture {
+                switch stateAtHelp {
+                case .countdown:
+                    await startCountdown()
+                case .recording:
+                    await beginWaitingForFace()
+                case .manual:
+                    await transitionToManualWithoutError()
+                case .none:
+                    currentFeedback = feedbackAtHelp
+                    await updateUI()
+                }
+            } else {
+                await transitionToManualWithoutError()
+            }
+        }
+
+        stateAtHelp = nil
+        feedbackAtHelp = .none
     }
 
     private func handleManualRecordingRequested() async {
@@ -480,10 +686,12 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
 extension PassiveCapturePresenter: PassiveCaptureInteractorToPresenter {
     func videoUploadCompleted(validationId: String) async {
         uploadState = .success
+        await view?.resetRecordingInProgress()
         await updateUI()
 
         // Stop camera before navigating to results
         await view?.stopCamera()
+        lifecycleState = .stopped
 
         // Small delay before navigation
         try? await timeProvider.sleep(nanoseconds: 500_000_000)
@@ -500,11 +708,43 @@ extension PassiveCapturePresenter: PassiveCaptureInteractorToPresenter {
 
     func videoUploadFailed(_ error: TruoraException) async {
         uploadState = .none
+        await view?.resetRecordingInProgress()
         await updateUI()
 
         // Stop camera before dismissing flow
         await view?.stopCamera()
+        lifecycleState = .stopped
+
+        // Validation timeout - navigate to result screen to show failure
+        if isValidationError(error) {
+            guard let router else {
+                print("Router is nil, cannot navigate to result after validation timeout")
+                return
+            }
+            do {
+                try await router.navigateToResult(
+                    validationId: validationId,
+                    loadingType: .face
+                )
+            } catch let navError {
+                print("Navigation to result failed during validation timeout: \(navError)")
+                await router.handleError(
+                    TruoraException.sdk(
+                        SDKError(
+                            type: .internalError,
+                            details: "Navigation failed: \(navError.localizedDescription)"
+                        )
+                    )
+                )
+            }
+            return
+        }
 
         await router?.handleError(error)
+    }
+
+    private func isValidationError(_ error: TruoraException) -> Bool {
+        guard case .sdk(let sdkError) = error else { return false }
+        return sdkError.type == .validationError
     }
 }

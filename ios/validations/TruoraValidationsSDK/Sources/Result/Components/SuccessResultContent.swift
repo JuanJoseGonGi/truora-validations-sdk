@@ -25,14 +25,14 @@ struct SuccessResultContent: View {
                 .frame(maxWidth: .infinity)
 
             VStack(alignment: .leading, spacing: 12) {
-                Text(TruoraValidationsSDKStrings.successResultTitle)
+                Text(TruoraLocalization.string(forKey: LocalizationKeys.successResultTitle))
                     .font(theme.typography.titleLarge)
                     .fontWeight(.bold)
                     .foregroundColor(theme.colors.onSurface)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text(TruoraValidationsSDKStrings.successResultDescription(date))
+                Text(TruoraLocalization.string(forKey: LocalizationKeys.successResultDescription, arguments: date))
                     .font(theme.typography.bodyLarge)
                     .foregroundColor(theme.colors.onSurface)
                     .multilineTextAlignment(.leading)

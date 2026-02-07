@@ -26,7 +26,7 @@ import XCTest
         // Then
         XCTAssertTrue(result.isComplete, "Should be complete")
         XCTAssertFalse(result.isFailure, "Should not be failure")
-        XCTAssertFalse(result.isCapture, "Should not be capture")
+        XCTAssertFalse(result.isCanceled, "Should not be canceled")
         XCTAssertEqual(result.completionValue?.validationId, "test-id", "Should have completion value")
     }
 
@@ -35,30 +35,40 @@ import XCTest
         let error = TruoraException.sdk(SDKError(type: .invalidConfiguration, details: "Test error"))
 
         // When
-        let result: TruoraValidationResult<ValidationResult> = .failure(error)
+        let result: TruoraValidationResult<ValidationResult> = .failure(error, nil)
 
         // Then
         XCTAssertFalse(result.isComplete, "Should not be complete")
         XCTAssertTrue(result.isFailure, "Should be failure")
-        XCTAssertFalse(result.isCapture, "Should not be capture")
+        XCTAssertFalse(result.isCanceled, "Should not be canceled")
         XCTAssertNotNil(result.error, "Should have error")
+        XCTAssertNil(result.failureValue, "Should not have failure value")
     }
 
-    func testCaptureCase() {
+    func testFailureCaseWithPartialResult() {
         // Given
-        let media = CapturedMedia(
-            type: .photo,
-            timestamp: Date()
+        let error = TruoraException.sdk(
+            SDKError(type: .validationResultsTimedOut, details: "Timed out")
+        )
+        let partialResult = ValidationResult(
+            validationId: "partial-id",
+            status: .pending,
+            confidence: nil,
+            metadata: nil
         )
 
         // When
-        let result: TruoraValidationResult<ValidationResult> = .capture(media)
+        let result: TruoraValidationResult<ValidationResult> = .failure(error, partialResult)
 
         // Then
-        XCTAssertFalse(result.isComplete, "Should not be complete")
-        XCTAssertFalse(result.isFailure, "Should not be failure")
-        XCTAssertTrue(result.isCapture, "Should be capture")
-        XCTAssertNotNil(result.capturedMedia, "Should have captured media")
+        XCTAssertTrue(result.isFailure, "Should be failure")
+        XCTAssertNotNil(result.error, "Should have error")
+        XCTAssertNotNil(result.failureValue, "Should have failure value")
+        XCTAssertEqual(
+            result.failureValue?.validationId,
+            "partial-id",
+            "Should match partial result"
+        )
     }
 
     // MARK: - Convenience Property Tests
@@ -88,7 +98,7 @@ import XCTest
     func testCompletionValueForNonComplete() {
         // Given
         let result: TruoraValidationResult<ValidationResult> = .failure(
-            .sdk(SDKError(type: .processCancelledByUser))
+            .sdk(SDKError(type: .validationCanceledByUser)), nil
         )
 
         // When
@@ -101,7 +111,7 @@ import XCTest
     func testErrorForFailure() {
         // Given
         let error = TruoraException.network(message: "Network failed", underlyingError: nil)
-        let result: TruoraValidationResult<ValidationResult> = .failure(error)
+        let result: TruoraValidationResult<ValidationResult> = .failure(error, nil)
 
         // When
         let extractedError = result.error
@@ -132,35 +142,6 @@ import XCTest
         XCTAssertNil(error, "Should not have error")
     }
 
-    func testCapturedMediaForCapture() {
-        // Given
-        let media = CapturedMedia(
-            type: .video,
-            timestamp: Date()
-        )
-        let result: TruoraValidationResult<ValidationResult> = .capture(media)
-
-        // When
-        let extractedMedia = result.capturedMedia
-
-        // Then
-        XCTAssertNotNil(extractedMedia, "Should have captured media")
-        XCTAssertEqual(extractedMedia?.type, .video, "Should match media type")
-    }
-
-    func testCapturedMediaForNonCapture() {
-        // Given
-        let result: TruoraValidationResult<ValidationResult> = .failure(
-            .sdk(SDKError(type: .processCancelledByUser))
-        )
-
-        // When
-        let media = result.capturedMedia
-
-        // Then
-        XCTAssertNil(media, "Should not have captured media")
-    }
-
     // MARK: - Equatable Tests
 
     func testEqualityForComplete() {
@@ -178,27 +159,37 @@ import XCTest
     func testEqualityForFailure() {
         // Given - Create two separate instances with same error content
         let validation1: TruoraValidationResult<ValidationResult> = .failure(
-            .sdk(SDKError(type: .processCancelledByUser))
+            .sdk(SDKError(type: .validationCanceledByUser)), nil
         )
         let validation2: TruoraValidationResult<ValidationResult> = .failure(
-            .sdk(SDKError(type: .processCancelledByUser))
+            .sdk(SDKError(type: .validationCanceledByUser)), nil
         )
 
         // Then - Should be equal based on error content, not reference
         XCTAssertEqual(validation1, validation2, "Should be equal for same error content")
     }
 
-    func testEqualityForCapture() {
+    func testEqualityForFailureWithPartialResult() {
         // Given
-        let timestamp = Date()
-        let media1 = CapturedMedia(type: .photo, timestamp: timestamp)
-        let media2 = CapturedMedia(type: .photo, timestamp: timestamp)
-
-        let validation1: TruoraValidationResult<ValidationResult> = .capture(media1)
-        let validation2: TruoraValidationResult<ValidationResult> = .capture(media2)
+        let partialResult = ValidationResult(
+            validationId: "id",
+            status: .pending,
+            confidence: nil,
+            metadata: nil
+        )
+        let validation1: TruoraValidationResult<ValidationResult> = .failure(
+            .sdk(SDKError(type: .validationResultsTimedOut)), partialResult
+        )
+        let validation2: TruoraValidationResult<ValidationResult> = .failure(
+            .sdk(SDKError(type: .validationResultsTimedOut)), partialResult
+        )
 
         // Then
-        XCTAssertEqual(validation1, validation2, "Should be equal for same captured media")
+        XCTAssertEqual(
+            validation1,
+            validation2,
+            "Should be equal for same error and partial result"
+        )
     }
 
     func testInequalityBetweenDifferentCases() {
@@ -206,15 +197,14 @@ import XCTest
         let validationResult = ValidationResult(validationId: "id", status: .success, confidence: 0.9, metadata: nil)
         let complete: TruoraValidationResult<ValidationResult> = .complete(validationResult)
         let failure: TruoraValidationResult<ValidationResult> = .failure(
-            .sdk(SDKError(type: .processCancelledByUser))
+            .sdk(SDKError(type: .validationCanceledByUser)), nil
         )
-        let media = CapturedMedia(type: .photo, timestamp: Date())
-        let capture: TruoraValidationResult<ValidationResult> = .capture(media)
+        let canceled: TruoraValidationResult<ValidationResult> = .canceled(nil)
 
         // Then
         XCTAssertNotEqual(complete, failure, "Complete should not equal failure")
-        XCTAssertNotEqual(complete, capture, "Complete should not equal capture")
-        XCTAssertNotEqual(failure, capture, "Failure should not equal capture")
+        XCTAssertNotEqual(complete, canceled, "Complete should not equal canceled")
+        XCTAssertNotEqual(failure, canceled, "Failure should not equal canceled")
     }
 
     // MARK: - CustomStringConvertible Tests
@@ -239,7 +229,7 @@ import XCTest
     func testDescriptionForFailure() {
         // Given
         let result: TruoraValidationResult<ValidationResult> = .failure(
-            .sdk(SDKError(type: .processCancelledByUser))
+            .sdk(SDKError(type: .validationCanceledByUser)), nil
         )
 
         // When
@@ -249,15 +239,74 @@ import XCTest
         XCTAssertTrue(description.contains("failure"), "Description should contain 'failure'")
     }
 
-    func testDescriptionForCapture() {
+    // MARK: - Canceled Tests
+
+    func testIsCanceledForCanceled() {
         // Given
-        let media = CapturedMedia(type: .photo, timestamp: Date())
-        let result: TruoraValidationResult<ValidationResult> = .capture(media)
+        let result: TruoraValidationResult<ValidationResult> = .canceled(nil)
+
+        // When/Then
+        XCTAssertTrue(result.isCanceled, "Should be canceled")
+        XCTAssertFalse(result.isComplete, "Should not be complete")
+        XCTAssertFalse(result.isFailure, "Should not be failure")
+    }
+
+    func testCanceledValueWithValue() {
+        // Given
+        let validationResult = ValidationResult(
+            validationId: "partial-id",
+            status: .pending,
+            confidence: nil,
+            metadata: nil
+        )
+        let result: TruoraValidationResult<ValidationResult> = .canceled(validationResult)
+
+        // When
+        let value = result.canceledValue
+
+        // Then
+        XCTAssertNotNil(value, "Should have canceled value")
+        XCTAssertEqual(value?.validationId, "partial-id", "Should match validation id")
+    }
+
+    func testCanceledValueWithNil() {
+        // Given
+        let result: TruoraValidationResult<ValidationResult> = .canceled(nil)
+
+        // When
+        let value = result.canceledValue
+
+        // Then
+        XCTAssertNil(value, "Should not have canceled value")
+    }
+
+    func testEqualityForCanceled() {
+        // Given
+        let validation1: TruoraValidationResult<ValidationResult> = .canceled(nil)
+        let validation2: TruoraValidationResult<ValidationResult> = .canceled(nil)
+
+        // Then
+        XCTAssertEqual(validation1, validation2, "Should be equal for same canceled values")
+    }
+
+    func testEqualityForCanceledWithValue() {
+        // Given
+        let validationResult = ValidationResult(validationId: "id", status: .pending, confidence: nil, metadata: nil)
+        let validation1: TruoraValidationResult<ValidationResult> = .canceled(validationResult)
+        let validation2: TruoraValidationResult<ValidationResult> = .canceled(validationResult)
+
+        // Then
+        XCTAssertEqual(validation1, validation2, "Should be equal for same canceled values")
+    }
+
+    func testDescriptionForCanceled() {
+        // Given
+        let result: TruoraValidationResult<ValidationResult> = .canceled(nil)
 
         // When
         let description = result.description
 
         // Then
-        XCTAssertTrue(description.contains("capture"), "Description should contain 'capture'")
+        XCTAssertTrue(description.contains("canceled"), "Description should contain 'canceled'")
     }
 }

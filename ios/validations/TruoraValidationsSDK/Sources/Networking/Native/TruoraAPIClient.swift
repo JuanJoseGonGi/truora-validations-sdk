@@ -42,10 +42,19 @@ public enum TruoraAPIError: Error, LocalizedError {
 public class TruoraAPIClient {
     private let apiKey: String
     private let baseUrl = "https://api.validations.truora.com/v1"
+    private let sessionConfig: TruoraSessionConfiguration
     private let session: URLSession
 
-    public init(apiKey: String, session: URLSession = .shared) {
+    public init(apiKey: String, sessionConfig: TruoraSessionConfiguration = .default) {
         self.apiKey = apiKey
+        self.sessionConfig = sessionConfig
+        self.session = sessionConfig.createSession()
+    }
+
+    /// Creates a client with a custom URLSession (for testing).
+    init(apiKey: String, sessionConfig: TruoraSessionConfiguration = .default, session: URLSession) {
+        self.apiKey = apiKey
+        self.sessionConfig = sessionConfig
         self.session = session
     }
 
@@ -64,7 +73,7 @@ public class TruoraAPIClient {
         let parameters = encodeToFormData(request)
         urlRequest.httpBody = parameters.data(using: .utf8)
 
-        let (data, response) = try await session.data(for: urlRequest)
+        let (data, response) = try await sessionConfig.perform(urlRequest, using: session)
         try validateResponse(response, data: data)
 
         do {
@@ -83,7 +92,7 @@ public class TruoraAPIClient {
         urlRequest.httpMethod = "GET"
         urlRequest.addValue(apiKey, forHTTPHeaderField: "Truora-API-Key")
 
-        let (data, response) = try await session.data(for: urlRequest)
+        let (data, response) = try await sessionConfig.perform(urlRequest, using: session)
         try validateResponse(response, data: data)
 
         do {
@@ -108,7 +117,26 @@ public class TruoraAPIClient {
         let parameters = encodeEnrollmentToFormData(request)
         urlRequest.httpBody = parameters.data(using: .utf8)
 
-        let (data, response) = try await session.data(for: urlRequest)
+        let (data, response) = try await sessionConfig.perform(urlRequest, using: session)
+        try validateResponse(response, data: data)
+
+        do {
+            return try JSONDecoder().decode(NativeEnrollmentResponse.self, from: data)
+        } catch {
+            throw TruoraAPIError.decodingError(error)
+        }
+    }
+
+    func getEnrollment(enrollmentId: String) async throws -> NativeEnrollmentResponse {
+        guard let url = URL(string: "\(baseUrl)/enrollments/\(enrollmentId)") else {
+            throw TruoraAPIError.invalidURL
+        }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "GET"
+        urlRequest.addValue(apiKey, forHTTPHeaderField: "Truora-API-Key")
+
+        let (data, response) = try await sessionConfig.perform(urlRequest, using: session)
         try validateResponse(response, data: data)
 
         do {
@@ -130,7 +158,7 @@ public class TruoraAPIClient {
         urlRequest.addValue(contentType, forHTTPHeaderField: "Content-Type")
         urlRequest.httpBody = fileData
 
-        let (data, response) = try await session.data(for: urlRequest)
+        let (data, response) = try await sessionConfig.perform(urlRequest, using: session)
         try validateResponse(response, data: data)
     }
 
@@ -152,7 +180,7 @@ public class TruoraAPIClient {
             throw TruoraAPIError.decodingError(error)
         }
 
-        let (data, response) = try await session.data(for: urlRequest)
+        let (data, response) = try await sessionConfig.perform(urlRequest, using: session)
         try validateResponse(response, data: data)
 
         do {
@@ -192,6 +220,7 @@ public class TruoraAPIClient {
 
         queryItems.append(URLQueryItem(name: "type", value: request.type))
         queryItems.append(URLQueryItem(name: "account_id", value: request.accountId))
+        queryItems.append(URLQueryItem(name: "user_authorized", value: String(request.userAuthorized)))
 
         if let country = request.country {
             queryItems.append(URLQueryItem(name: "country", value: country))

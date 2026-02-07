@@ -10,7 +10,8 @@ import XCTest
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [ApiKeyURLProtocolStub.self]
         session = URLSession(configuration: config)
-        sut = ApiKeyGeneratorClient(session: session)
+        // Use noRetry config for tests to avoid retry delays
+        sut = ApiKeyGeneratorClient(sessionConfig: .noRetry, session: session)
     }
 
     override func tearDown() {

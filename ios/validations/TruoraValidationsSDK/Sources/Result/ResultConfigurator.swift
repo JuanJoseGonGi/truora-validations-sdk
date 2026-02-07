@@ -12,19 +12,21 @@ enum ResultConfigurator {
     @MainActor static func buildModule(
         router: ValidationRouter,
         validationId: String,
-        loadingType: ResultLoadingType = .face
+        loadingType: ResultLoadingType = .face,
+        isCanceled: Bool = false
     ) throws -> UIViewController {
         let interactor = ResultInteractor(
             validationId: validationId,
             loadingType: loadingType
         )
 
-        let viewModel = ResultViewModel()
+        let viewModel = ResultViewModel(loadingType: loadingType)
         let presenter = ResultPresenter(
             view: viewModel,
             interactor: interactor,
             router: router,
-            loadingType: loadingType
+            loadingType: loadingType,
+            isCanceled: isCanceled
         )
 
         viewModel.presenter = presenter
@@ -32,6 +34,7 @@ enum ResultConfigurator {
 
         let config = ValidationConfig.shared.uiConfig
         let swiftUIView = ResultView(viewModel: viewModel, config: config)
+            .sdkLocaleEnvironment(locale: config.language?.locale ?? Locale.current)
         let hostingController = UIHostingController(rootView: swiftUIView)
         hostingController.modalPresentationStyle = .fullScreen
 

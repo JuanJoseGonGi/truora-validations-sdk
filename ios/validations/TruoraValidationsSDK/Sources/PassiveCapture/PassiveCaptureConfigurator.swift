@@ -21,6 +21,7 @@ enum PassiveCaptureConfigurator {
             view: viewModel,
             interactor: nil,
             router: router,
+            validationId: validationId,
             useAutocapture: useAutocapture
         )
 
@@ -34,6 +35,7 @@ enum PassiveCaptureConfigurator {
 
         let uiConfig = ValidationConfig.shared.uiConfig
         let swiftUIView = PassiveCaptureView(viewModel: viewModel, config: uiConfig)
+            .sdkLocaleEnvironment(locale: ValidationConfig.shared.uiConfig.language?.locale ?? Locale.current)
         let hostingController = UIHostingController(rootView: swiftUIView)
         hostingController.view.backgroundColor = .clear // Ensure transparent background
         hostingController.modalPresentationStyle = .fullScreen

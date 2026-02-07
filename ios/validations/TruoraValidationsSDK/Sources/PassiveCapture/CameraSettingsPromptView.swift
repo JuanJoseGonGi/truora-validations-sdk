@@ -15,31 +15,34 @@ struct CameraSettingsPromptView: View {
     var body: some View {
         ZStack {
             Color.black.opacity(0.5)
+                .extendingIntoSafeArea()
                 .onTapGesture { onDismiss() }
 
             VStack(spacing: 24) {
-                Text(TruoraValidationsSDKStrings.cameraPermissionDeniedTitle)
+                Text(TruoraLocalization.string(forKey: LocalizationKeys.cameraPermissionDeniedTitle))
                     .font(theme.typography.titleLarge)
                     .fontWeight(.bold)
                     .foregroundColor(theme.colors.onSurface)
                     .multilineTextAlignment(.center)
 
-                Text(TruoraValidationsSDKStrings.cameraPermissionDeniedDescription)
+                Text(TruoraLocalization.string(forKey: LocalizationKeys.cameraPermissionDeniedDescription))
                     .font(theme.typography.bodyMedium)
                     .foregroundColor(theme.colors.onSurface)
                     .multilineTextAlignment(.center)
 
                 VStack(spacing: 12) {
                     TruoraPrimaryButton(
-                        title: TruoraValidationsSDKStrings.cameraPermissionOpenSettings,
+                        title: TruoraLocalization.string(forKey: LocalizationKeys.cameraPermissionOpenSettings),
                         isLoading: false,
                         action: onOpenSettings
                     )
 
                     Button(action: onDismiss) {
-                        Text(TruoraValidationsSDKStrings.passiveCaptureTryAgain) // Reusing try again or cancel
-                            .font(theme.typography.bodyMedium)
-                            .foregroundColor(theme.colors.primary)
+                        Text(
+                            TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureTryAgain)
+                        )
+                        .font(theme.typography.bodyMedium)
+                        .foregroundColor(theme.colors.primary)
                     }
                 }
             }

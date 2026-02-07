@@ -62,7 +62,8 @@ private extension DocumentIntroInteractor {
             threshold: nil,
             subvalidations: nil,
             documentType: documentType,
-            timeout: nil
+            timeout: nil,
+            userAuthorized: true
         )
     }
 

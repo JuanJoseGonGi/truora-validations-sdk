@@ -36,8 +36,8 @@ import UIKit
         Task { await presenter?.retryTapped() }
     }
 
-    func dismissTapped() {
-        Task { await presenter?.dismissed() }
+    func cancelTapped() {
+        Task { await presenter?.cancelTapped() }
     }
 }
 
@@ -56,13 +56,17 @@ struct DocumentFeedbackView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            TruoraHeaderView { viewModel.dismissTapped() }
+            TruoraHeaderView {
+                viewModel.cancelTapped()
+            }
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .top, spacing: 14) {
-                        FeedbackIconView(feedback: viewModel.feedback, errorColor: theme.colors.error)
-                            .frame(width: 60, height: 60)
+                        FeedbackIconView(
+                            feedback: viewModel.feedback, errorColor: theme.colors.error
+                        )
+                        .frame(width: 60, height: 60)
 
                         Text(feedbackTitle(for: viewModel.feedback))
                             .font(.system(size: 19, weight: .bold))
@@ -98,7 +102,7 @@ struct DocumentFeedbackView: View {
                     }
                 }
                 .frame(maxWidth: 810, alignment: .leading)
-                .padding(.horizontal, 18)
+                .padding(.horizontal, 16)
                 .padding(.vertical, 16)
             }
 
@@ -110,7 +114,7 @@ struct DocumentFeedbackView: View {
 
                     TruoraFooterView(
                         securityTip: nil,
-                        buttonText: TruoraValidationsSDKStrings.documentFeedbackRetry,
+                        buttonText: TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackRetry),
                         isLoading: false
                     ) {
                         viewModel.retryTapped()
@@ -123,39 +127,56 @@ struct DocumentFeedbackView: View {
                             .scaledToFit()
                             .frame(height: 24)
                     }
-                    .padding(.horizontal, 18)
+                    .padding(.horizontal, 16)
                 }
             }
         }
-        .background(Color.white)
         .environmentObject(theme)
+        .background(theme.colors.surface.extendingIntoSafeArea())
         .navigationBarHidden(true)
         .onAppear { viewModel.onAppear() }
     }
 
     private func feedbackTitle(for feedback: FeedbackScenario) -> String {
         switch feedback {
-        case .blurryImage, .lowLight: TruoraValidationsSDKStrings.documentFeedbackBlurryTitle
-        case .imageWithReflection: TruoraValidationsSDKStrings.documentFeedbackGlareTitle
-        case .faceNotFound: TruoraValidationsSDKStrings.documentFeedbackFaceNotFoundTitle
-        case .documentNotFound, .frontOfDocumentNotFound, .backOfDocumentNotFound:
-            TruoraValidationsSDKStrings.documentFeedbackNoDocumentTitle
+        case .blurryImage, .lowLight:
+            TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackBlurryTitle)
+        case .imageWithReflection:
+            TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackGlareTitle)
+        case .faceNotFound:
+            TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackFaceNotFoundTitle)
+        case .documentNotFound:
+            TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackNoDocumentTitle)
+        case .frontOfDocumentNotFound:
+            TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackFrontNotFoundTitle)
+        case .backOfDocumentNotFound:
+            TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackBackNotFoundTitle)
         }
     }
 
     private func feedbackDescription(for feedback: FeedbackScenario) -> String {
         switch feedback {
-        case .blurryImage, .lowLight: TruoraValidationsSDKStrings.documentFeedbackBlurryDescription
-        case .imageWithReflection: TruoraValidationsSDKStrings.documentFeedbackGlareDescription
-        case .faceNotFound: TruoraValidationsSDKStrings.documentFeedbackFaceNotFoundDescription
-        case .documentNotFound, .frontOfDocumentNotFound, .backOfDocumentNotFound:
-            TruoraValidationsSDKStrings.documentFeedbackNoDocumentDescription
+        case .blurryImage, .lowLight:
+            TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackBlurryDescription)
+        case .imageWithReflection:
+            TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackGlareDescription)
+        case .faceNotFound:
+            TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackFaceNotFoundDescription)
+        case .documentNotFound:
+            TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackNoDocumentDescription)
+        case .frontOfDocumentNotFound:
+            TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackFrontNotFoundDescription)
+        case .backOfDocumentNotFound:
+            TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackBackNotFoundDescription)
         }
     }
 
     @ViewBuilder
     private var retriesText: some View {
-        let fullText = TruoraValidationsSDKStrings.documentFeedbackRetriesLeft(String(viewModel.retriesLeft))
+        let fullText = TruoraLocalization.string(
+            forKey: LocalizationKeys.documentFeedbackRetriesLeft,
+            arguments: String(viewModel.retriesLeft)
+        )
         let numberString = String(viewModel.retriesLeft)
 
         if let range = fullText.range(of: numberString) {
@@ -192,8 +213,9 @@ private struct FeedbackIconView: View {
         case .blurryImage, .lowLight: "eye.slash"
         case .imageWithReflection: "sun.max.fill"
         case .faceNotFound: "person.fill.questionmark"
-        case .documentNotFound, .frontOfDocumentNotFound, .backOfDocumentNotFound:
-            "doc.text.magnifyingglass"
+        case .documentNotFound: "doc.text.magnifyingglass"
+        case .frontOfDocumentNotFound: "doc.text.magnifyingglass"
+        case .backOfDocumentNotFound: "doc.text.magnifyingglass"
         }
     }
 
@@ -207,7 +229,8 @@ private struct FeedbackIconView: View {
                     SwiftUI.Image(systemName: iconName)
                         .resizable()
                         .scaledToFit()
-                        .foregroundColor(Color(red: 0.0, green: 0.01, blue: 0.18)) // Dark navy #01022E
+                        .foregroundColor(Color(red: 0.0, green: 0.01, blue: 0.18))
+                        // Dark navy #01022E
                         .padding(12)
                 )
 
@@ -279,6 +302,28 @@ private func createPlaceholderImageData() -> Data? {
             feedback: .documentNotFound,
             capturedImageData: createPlaceholderImageData(),
             retriesLeft: 3
+        ),
+        config: nil
+    )
+}
+
+#Preview("Front Of Document Not Found") {
+    DocumentFeedbackView(
+        viewModel: DocumentFeedbackViewModel(
+            feedback: .frontOfDocumentNotFound,
+            capturedImageData: createPlaceholderImageData(),
+            retriesLeft: 2
+        ),
+        config: nil
+    )
+}
+
+#Preview("Back Of Document Not Found") {
+    DocumentFeedbackView(
+        viewModel: DocumentFeedbackViewModel(
+            feedback: .backOfDocumentNotFound,
+            capturedImageData: createPlaceholderImageData(),
+            retriesLeft: 1
         ),
         config: nil
     )

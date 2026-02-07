@@ -37,4 +37,12 @@ extension DocumentFeedbackPresenter: DocumentFeedbackViewToPresenter {
     func dismissed() async {
         await router?.dismissDocumentFeedback()
     }
+
+    func cancelTapped() async {
+        guard let router else { return }
+
+        // Dismiss the feedback modal then trigger cancellation flow
+        await router.dismissDocumentFeedback()
+        await router.handleCancellation(loadingType: .document)
+    }
 }

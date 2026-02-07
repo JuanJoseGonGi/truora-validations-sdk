@@ -22,7 +22,7 @@ private extension Bundle {
     /// Cached to avoid repeated lookups during frame processing.
     static let truoraCameraResources: Bundle = {
         #if COCOAPODS
-        /// CocoaPods - look for the resource bundle by name
+        // CocoaPods - look for the resource bundle by name
         let frameworkBundle = Bundle(for: DocumentDetector.self)
         if let resourceBundleURL = frameworkBundle.url(forResource: "TruoraCameraResources", withExtension: "bundle"),
            let resourceBundle = Bundle(url: resourceBundleURL) {
@@ -37,13 +37,30 @@ private extension Bundle {
     }()
 }
 
-enum IDError: Error {
+enum IDError: Error, LocalizedError {
     case modelNotFound(String)
     case modelDownloadFailed(String)
     case modelNotReady
     case invalidInput
     case preprocessingFailed
     case detectionFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .modelNotFound(let name):
+            "Document detection model not found: \(name)"
+        case .modelDownloadFailed(let name):
+            "Failed to download document detection model: \(name)"
+        case .modelNotReady:
+            "Document detection model is not ready"
+        case .invalidInput:
+            "Invalid input for document detection"
+        case .preprocessingFailed:
+            "Failed to preprocess image for document detection"
+        case .detectionFailed:
+            "Document detection failed"
+        }
+    }
 }
 
 class DocumentDetector {
@@ -51,15 +68,16 @@ class DocumentDetector {
     private let detectionQueue = DispatchQueue(label: "com.truora.document.detection")
 
     var onIDDetected: (([DetectionResult]) -> Void)?
+    /// Called when a detection error occurs during frame processing (e.g., invalid input, preprocessing failed)
     var onError: ((Error) -> Void)?
     var onModelReady: (() -> Void)?
+    /// Called when model loading fails (interpreter initialization error).
+    /// This is separate from onError because model loading failures should trigger a graceful
+    /// fallback to manual capture mode, rather than showing an error to the user.
+    var onModelLoadFailed: ((Error?) -> Void)?
 
     private let landmarkerInputWidth = 128
     private let landmarkerInputHeight = 128
-
-    /// On-Demand Resource request for the ML model
-    /// Kept as instance variable to maintain strong reference during download
-    private var modelResourceRequest: NSBundleResourceRequest?
 
     /// Lock for thread-safe access to isModelLoaded flag
     private let modelLoadedLock = NSLock()
@@ -79,9 +97,6 @@ class DocumentDetector {
         }
     }
 
-    /// ODR tag for the document detection model (must match Project.swift)
-    private static let modelODRTag = "ml-document-model"
-
     /// Preprocessor matching Python ResizePadLayer behavior
     private lazy var preprocessor: ResizePadPreprocessor = .init(
         targetSize: CGSize(width: landmarkerInputWidth, height: landmarkerInputHeight),
@@ -89,48 +104,7 @@ class DocumentDetector {
     )
 
     init() {
-        loadModelWithODR()
-    }
-
-    deinit {
-        // End accessing ODR resources when detector is deallocated
-        modelResourceRequest?.endAccessingResources()
-    }
-
-    // MARK: - On-Demand Resource Loading
-
-    /// Loads the ML model using On-Demand Resources
-    /// The model will be downloaded if not already cached on device
-    private func loadModelWithODR() {
-        let tags: Set<String> = [Self.modelODRTag]
-        modelResourceRequest = NSBundleResourceRequest(tags: tags)
-
-        // Set loading priority to high since we need it for detection
-        modelResourceRequest?.loadingPriority = NSBundleResourceRequestLoadingPriorityUrgent
-
-        modelResourceRequest?.beginAccessingResources { [weak self] error in
-            if let error {
-                DispatchQueue.main.async {
-                    self?.onError?(IDError.modelDownloadFailed(error.localizedDescription))
-                }
-                return
-            }
-
-            // Resources are now available, load the model
-            self?.loadModels()
-        }
-    }
-
-    /// Conditionally accesses ODR resources before loading model
-    /// Useful to check if model is already downloaded without triggering download
-    func checkModelAvailability(completion: @escaping (Bool) -> Void) {
-        let tags: Set<String> = [Self.modelODRTag]
-        let request = NSBundleResourceRequest(tags: tags)
-        // Capture request strongly in closure to prevent deallocation before completion
-        request.conditionallyBeginAccessingResources { available in
-            _ = request // Keep request alive until completion handler executes
-            completion(available)
-        }
+        loadModels()
     }
 
     private func loadModels() {
@@ -139,7 +113,6 @@ class DocumentDetector {
 
             do {
                 // Load document detection model from bundle
-                // After ODR download, the resource is available in Bundle.module
                 guard let landmarkerPath = Bundle.truoraCameraResources.path(
                     forResource: "general_int8", ofType: "tflite"
                 ) else {
@@ -157,8 +130,10 @@ class DocumentDetector {
                     self.onModelReady?()
                 }
             } catch {
+                // Model loading failed - notify for fallback to manual capture
+                print("❌ DocumentDetector: Model loading failed - \(error.localizedDescription)")
                 DispatchQueue.main.async {
-                    self.onError?(error)
+                    self.onModelLoadFailed?(error)
                 }
             }
         }

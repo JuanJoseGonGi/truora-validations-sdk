@@ -20,6 +20,7 @@ struct NativeValidationRequest: Codable {
     let subvalidations: [String]?
     let documentType: String?
     let timeout: Int?
+    let userAuthorized: Bool
 
     enum CodingKeys: String, CodingKey {
         case type
@@ -29,6 +30,7 @@ struct NativeValidationRequest: Codable {
         case subvalidations
         case documentType = "document_type"
         case timeout
+        case userAuthorized = "user_authorized"
     }
 }
 
@@ -61,6 +63,9 @@ struct NativeValidationDetailResponse: Codable {
     let accountId: String
     let type: String
     let details: NativeValidationDetails?
+    let failureStatus: String?
+    let validationInputs: NativeValidationInputs?
+    let userResponse: NativeUserResponse?
 
     enum CodingKeys: String, CodingKey {
         case validationId = "validation_id"
@@ -69,22 +74,259 @@ struct NativeValidationDetailResponse: Codable {
         case accountId = "account_id"
         case type
         case details
+        case failureStatus = "failure_status"
+        case validationInputs = "validation_inputs"
+        case userResponse = "user_response"
+    }
+
+    init(
+        validationId: String,
+        validationStatus: String,
+        creationDate: String,
+        accountId: String,
+        type: String,
+        details: NativeValidationDetails? = nil,
+        failureStatus: String? = nil,
+        validationInputs: NativeValidationInputs? = nil,
+        userResponse: NativeUserResponse? = nil
+    ) {
+        self.validationId = validationId
+        self.validationStatus = validationStatus
+        self.creationDate = creationDate
+        self.accountId = accountId
+        self.type = type
+        self.details = details
+        self.failureStatus = failureStatus
+        self.validationInputs = validationInputs
+        self.userResponse = userResponse
     }
 }
 
 struct NativeValidationDetails: Codable {
     let faceRecognitionValidations: NativeFaceRecognitionValidations?
+    let documentDetails: NativeDocumentDetails?
+    let documentValidations: NativeDocumentSubValidations?
+    let backgroundCheck: NativeBackgroundCheck?
 
     enum CodingKeys: String, CodingKey {
         case faceRecognitionValidations = "face_recognition_validations"
+        case documentDetails = "document_details"
+        case documentValidations = "document_validations"
+        case backgroundCheck = "background_check"
+    }
+
+    init(
+        faceRecognitionValidations: NativeFaceRecognitionValidations? = nil,
+        documentDetails: NativeDocumentDetails? = nil,
+        documentValidations: NativeDocumentSubValidations? = nil,
+        backgroundCheck: NativeBackgroundCheck? = nil
+    ) {
+        self.faceRecognitionValidations = faceRecognitionValidations
+        self.documentDetails = documentDetails
+        self.documentValidations = documentValidations
+        self.backgroundCheck = backgroundCheck
     }
 }
 
 struct NativeFaceRecognitionValidations: Codable {
     let confidenceScore: Double?
+    let similarityStatus: String?
+    let passiveLivenessStatus: String?
+    let enrollmentId: String?
+    let ageRange: NativeAgeRange?
+    let faceSearch: NativeFaceSearch?
 
     enum CodingKeys: String, CodingKey {
         case confidenceScore = "confidence_score"
+        case similarityStatus = "similarity_status"
+        case passiveLivenessStatus = "passive_liveness_status"
+        case enrollmentId = "enrollment_id"
+        case ageRange = "age_range"
+        case faceSearch = "face_search"
+    }
+
+    init(
+        confidenceScore: Double? = nil,
+        similarityStatus: String? = nil,
+        passiveLivenessStatus: String? = nil,
+        enrollmentId: String? = nil,
+        ageRange: NativeAgeRange? = nil,
+        faceSearch: NativeFaceSearch? = nil
+    ) {
+        self.confidenceScore = confidenceScore
+        self.similarityStatus = similarityStatus
+        self.passiveLivenessStatus = passiveLivenessStatus
+        self.enrollmentId = enrollmentId
+        self.ageRange = ageRange
+        self.faceSearch = faceSearch
+    }
+}
+
+struct NativeAgeRange: Codable {
+    let high: Int?
+    let low: Int?
+}
+
+struct NativeFaceSearch: Codable {
+    let status: String?
+    let confidenceScore: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case confidenceScore = "confidence_score"
+    }
+}
+
+struct NativeDocumentDetails: Codable {
+    let docId: String?
+    let country: String?
+    let documentType: String?
+    let documentNumber: String?
+    let name: String?
+    let lastName: String?
+    let dateOfBirth: String?
+    let gender: String?
+    let issueDate: String?
+    let expirationDate: String?
+    let expeditionPlace: String?
+    let birthPlace: String?
+    let height: String?
+    let rh: String?
+    let mimeType: String?
+    let clientId: String?
+    let creationDate: String?
+    let frontUrl: String?
+    let reverseUrl: String?
+
+    enum CodingKeys: String, CodingKey {
+        case docId = "doc_id"
+        case country
+        case documentType = "document_type"
+        case documentNumber = "document_number"
+        case name
+        case lastName = "last_name"
+        case dateOfBirth = "date_of_birth"
+        case gender
+        case issueDate = "issue_date"
+        case expirationDate = "expiration_date"
+        case expeditionPlace = "expedition_place"
+        case birthPlace = "birth_place"
+        case height, rh
+        case mimeType = "mime_type"
+        case clientId = "client_id"
+        case creationDate = "creation_date"
+        case frontUrl = "front_url"
+        case reverseUrl = "reverse_url"
+    }
+
+    // swiftlint:disable function_parameter_count
+    init(
+        docId: String? = nil,
+        country: String? = nil,
+        documentType: String? = nil,
+        documentNumber: String? = nil,
+        name: String? = nil,
+        lastName: String? = nil,
+        dateOfBirth: String? = nil,
+        gender: String? = nil,
+        issueDate: String? = nil,
+        expirationDate: String? = nil,
+        expeditionPlace: String? = nil,
+        birthPlace: String? = nil,
+        height: String? = nil,
+        rh: String? = nil,
+        mimeType: String? = nil,
+        clientId: String? = nil,
+        creationDate: String? = nil,
+        frontUrl: String? = nil,
+        reverseUrl: String? = nil
+    ) {
+        self.docId = docId
+        self.country = country
+        self.documentType = documentType
+        self.documentNumber = documentNumber
+        self.name = name
+        self.lastName = lastName
+        self.dateOfBirth = dateOfBirth
+        self.gender = gender
+        self.issueDate = issueDate
+        self.expirationDate = expirationDate
+        self.expeditionPlace = expeditionPlace
+        self.birthPlace = birthPlace
+        self.height = height
+        self.rh = rh
+        self.mimeType = mimeType
+        self.clientId = clientId
+        self.creationDate = creationDate
+        self.frontUrl = frontUrl
+        self.reverseUrl = reverseUrl
+    }
+    // swiftlint:enable function_parameter_count
+}
+
+struct NativeDocumentSubValidations: Codable {
+    let dataConsistency: [NativeSubValidationResult]?
+    let governmentDatabase: [NativeSubValidationResult]?
+    let imageAnalysis: [NativeSubValidationResult]?
+    let photocopyAnalysis: [NativeSubValidationResult]?
+    let manualAnalysis: [NativeSubValidationResult]?
+    let photoOfPhoto: [NativeSubValidationResult]?
+
+    enum CodingKeys: String, CodingKey {
+        case dataConsistency = "data_consistency"
+        case governmentDatabase = "government_database"
+        case imageAnalysis = "image_analysis"
+        case photocopyAnalysis = "photocopy_analysis"
+        case manualAnalysis = "manual_analysis"
+        case photoOfPhoto = "photo_of_photo"
+    }
+}
+
+struct NativeSubValidationResult: Codable {
+    let validationName: String?
+    let result: String?
+    let validationType: String?
+    let message: String?
+    let manuallyReviewed: Bool?
+    let createdAt: String?
+    let dataValidations: [String: String]?
+
+    enum CodingKeys: String, CodingKey {
+        case validationName = "validation_name"
+        case result
+        case validationType = "validation_type"
+        case message
+        case manuallyReviewed = "manually_reviewed"
+        case createdAt = "created_at"
+        case dataValidations = "data_validations"
+    }
+}
+
+struct NativeBackgroundCheck: Codable {
+    let checkId: String?
+    let checkUrl: String?
+
+    enum CodingKeys: String, CodingKey {
+        case checkId = "check_id"
+        case checkUrl = "check_url"
+    }
+}
+
+struct NativeValidationInputs: Codable {
+    let country: String?
+    let documentType: String?
+
+    enum CodingKeys: String, CodingKey {
+        case country
+        case documentType = "document_type"
+    }
+}
+
+struct NativeUserResponse: Codable {
+    let inputFiles: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case inputFiles = "input_files"
     }
 }
 

@@ -17,8 +17,8 @@
 # Swift version - updated for 2026 best practices
 --swiftversion 5.10
 
-# Disable rules that might conflict with SwiftLint
---disable redundantSelf,wrapMultilineStatementBraces
+# Disable rules that might conflict with SwiftLint or cause issues
+--disable redundantSelf,wrapMultilineStatementBraces,docComments
 
 # Additional formatting preferences
 --semicolons never

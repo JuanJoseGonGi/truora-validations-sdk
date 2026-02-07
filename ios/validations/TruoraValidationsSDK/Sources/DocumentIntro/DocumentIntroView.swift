@@ -71,8 +71,8 @@ struct DocumentIntroView: View {
                 // Footer
                 VStack(spacing: 0) {
                     TruoraFooterView(
-                        securityTip: TruoraValidationsSDKStrings.documentIntroSecurityTip,
-                        buttonText: TruoraValidationsSDKStrings.documentIntroStartCapture,
+                        securityTip: TruoraLocalization.string(forKey: LocalizationKeys.documentIntroSecurityTip),
+                        buttonText: TruoraLocalization.string(forKey: LocalizationKeys.documentIntroStartCapture),
                         isLoading: viewModel.isLoading
                     ) {
                         viewModel.start()
@@ -83,18 +83,19 @@ struct DocumentIntroView: View {
             // Loading overlay
             if viewModel.isLoading {
                 LoadingOverlayView(
-                    message: TruoraValidationsSDKStrings.documentIntroCreatingValidation
+                    message: TruoraLocalization.string(forKey: LocalizationKeys.documentIntroCreatingValidation)
                 )
             }
         }
         .environmentObject(theme)
+        .background(theme.colors.surface.extendingIntoSafeArea())
         .navigationBarHidden(true)
         .alert(isPresented: $viewModel.showError) {
             Alert(
-                title: Text(NSLocalizedString("common_error", bundle: .truoraModule, comment: "")),
+                title: Text(TruoraLocalization.string(forKey: LocalizationKeys.commonError)),
                 message: Text(viewModel.errorMessage ?? ""),
                 dismissButton: .default(
-                    Text(NSLocalizedString("common_ok", bundle: .truoraModule, comment: ""))
+                    Text(TruoraLocalization.string(forKey: LocalizationKeys.commonOk))
                 )
             )
         }
@@ -135,12 +136,12 @@ struct DocumentIntroContentView: View {
 
                 // Title & Subtitle - left-aligned per Figma
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(TruoraValidationsSDKStrings.documentIntroTitle)
+                    Text(TruoraLocalization.string(forKey: LocalizationKeys.documentIntroTitle))
                         .font(theme.typography.titleLarge)
                         .foregroundColor(theme.colors.onSurface)
                         .multilineTextAlignment(.leading)
 
-                    Text(TruoraValidationsSDKStrings.documentIntroSubtitle)
+                    Text(TruoraLocalization.string(forKey: LocalizationKeys.documentIntroSubtitle))
                         .font(theme.typography.bodyLarge)
                         .foregroundColor(theme.colors.onSurface)
                         .multilineTextAlignment(.leading)
