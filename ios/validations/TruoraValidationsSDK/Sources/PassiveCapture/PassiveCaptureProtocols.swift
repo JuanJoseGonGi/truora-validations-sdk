@@ -48,11 +48,14 @@ protocol PassiveCaptureViewToPresenter: AnyObject {
     func lastFrameCaptured(frameData: Data) async
     func detectionsReceived(_ results: [DetectionResult]) async
     func handleCaptureEvent(_ event: PassiveCaptureEvent) async
+    func cameraError(_ errorMessage: String) async
 }
 
 protocol PassiveCapturePresenterToInteractor: AnyObject {
     func setUploadUrl(_ uploadUrl: String?)
     func uploadVideo(_ videoData: Data)
+    func logFaceCaptureSucceeded() async
+    func logFaceCaptureFailed(errorMessage: String) async
 }
 
 @MainActor

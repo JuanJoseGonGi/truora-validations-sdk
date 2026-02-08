@@ -98,6 +98,7 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
     // MARK: - Properties
 
     private let config: LoggerConfiguration
+    private let initializationTime = Date()
     /// Lazy device info - computed on MainActor when first accessed
     @MainActor
     private lazy var deviceInfo: DeviceInfo = .init(
@@ -128,7 +129,11 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
         self.consoleOutput = ConsoleLogOutput()
 
         if config.enableApiOutput {
-            self.apiOutput = APILogOutput(apiKey: config.apiKey, endpoint: config.loggingEndpoint)
+            self.apiOutput = APILogOutput(
+                apiKey: config.apiKey,
+                endpoint: config.loggingEndpoint,
+                sdkVersion: config.sdkVersion
+            )
         } else {
             self.apiOutput = nil
         }
@@ -204,11 +209,13 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
         eventName: String,
         level: LogLevel,
         errorMessage: String?,
-        durationMs: Int64?,
         retention: RetentionPeriod,
         metadata: [String: Any]?,
         stackTrace: String?
     ) async {
+        // Auto-compute duration since logger initialization
+        let durationMs = Int64(Date().timeIntervalSince(initializationTime) * 1000)
+
         // Get context from ValidationConfig
         let context = await getValidationContext()
 
@@ -220,7 +227,6 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
             eventType: eventType,
             eventName: eventName,
             level: level,
-            success: nil,
             errorMessage: errorMessage,
             errorCode: nil,
             durationMs: durationMs,
@@ -233,7 +239,7 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
             osVersion: osVersion,
             sdkVersion: config.sdkVersion,
             platform: "ios",
-            metadata: convertMetadata(metadata),
+            metadata: convertMetadata(metadata) ?? [:],
             retention: retention
         )
 
@@ -255,7 +261,6 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
         eventName: String,
         level: LogLevel,
         errorMessage: String?,
-        durationMs: Int64?,
         retention: RetentionPeriod,
         metadata: [String: Any]?
     ) async {
@@ -264,7 +269,6 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
             eventName: eventName,
             level: level,
             errorMessage: errorMessage,
-            durationMs: durationMs,
             retention: retention,
             metadata: metadata,
             stackTrace: nil
@@ -275,7 +279,6 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
         eventName: String,
         level: LogLevel,
         errorMessage: String?,
-        durationMs: Int64?,
         retention: RetentionPeriod,
         metadata: [String: Any]?
     ) async {
@@ -284,7 +287,6 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
             eventName: eventName,
             level: level,
             errorMessage: errorMessage,
-            durationMs: durationMs,
             retention: retention,
             metadata: metadata,
             stackTrace: nil
@@ -294,7 +296,6 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
     public func logView(
         viewName: String,
         level: LogLevel,
-        durationMs: Int64?,
         retention: RetentionPeriod,
         metadata: [String: Any]?
     ) async {
@@ -306,7 +307,6 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
             eventName: "view_\(viewName)",
             level: level,
             errorMessage: nil,
-            durationMs: durationMs,
             retention: retention,
             metadata: mergedMetadata,
             stackTrace: nil
@@ -324,7 +324,6 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
             eventName: eventName,
             level: level,
             errorMessage: nil,
-            durationMs: nil,
             retention: retention,
             metadata: metadata,
             stackTrace: nil
@@ -335,16 +334,14 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
         eventName: String,
         level: LogLevel,
         errorMessage: String?,
-        durationMs: Int64?,
         retention: RetentionPeriod,
         metadata: [String: Any]?
     ) async {
         await logEvent(
-            eventType: .feedback,
+            eventType: .mlModel, // Map to supported ml_model type
             eventName: eventName,
             level: level,
             errorMessage: errorMessage,
-            durationMs: durationMs,
             retention: retention,
             metadata: metadata,
             stackTrace: nil
@@ -355,16 +352,14 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
         eventName: String,
         level: LogLevel,
         errorMessage: String?,
-        durationMs: Int64?,
         retention: RetentionPeriod,
         metadata: [String: Any]?
     ) async {
         await logEvent(
-            eventType: .sdk,
+            eventType: .device, // Map to supported device type
             eventName: eventName,
             level: level,
             errorMessage: errorMessage,
-            durationMs: durationMs,
             retention: retention,
             metadata: metadata,
             stackTrace: nil
@@ -376,7 +371,6 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
         eventName: String,
         exception: Error,
         level: LogLevel,
-        durationMs: Int64?,
         retention: RetentionPeriod,
         metadata: [String: Any]?
     ) async {
@@ -395,7 +389,6 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
             eventName: eventName,
             level: level,
             errorMessage: errorMessage,
-            durationMs: durationMs,
             retention: retention,
             metadata: metadata,
             stackTrace: stackTrace
@@ -476,20 +469,42 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
     private func getValidationContext() async -> ValidationContext {
         let config = await MainActor.run { ValidationConfig.shared }
         let accountId = await MainActor.run { config.accountId }
-        let enrollmentData = await MainActor.run { config.enrollmentData }
+        let validationId = await MainActor.run { config.validationId }
 
         return ValidationContext(
-            userId: enrollmentData?.enrollmentId,
-            validationId: nil,
+            userId: accountId,
+            validationId: validationId,
             validationType: nil,
             accountId: accountId
         )
     }
 
-    /// Convert Any metadata to String metadata
+    // GDPR Forbidden keys from backend spec (static to avoid recreating on every call)
+    private static let forbiddenKeys: Set<String> = [
+        "user_id", "userid", "user", "username", "email", "mail", "e_mail",
+        "phone", "phone_number", "phonenumber", "mobile", "name", "first_name",
+        "firstname", "last_name", "lastname", "address", "street", "city",
+        "postal_code", "postalcode", "imei", "serial_number", "serialnumber",
+        "mac_address", "macaddress", "device_id", "deviceid", "advertising_id",
+        "advertisingid", "adid", "android_id", "androidid", "ios_idfa", "idfa",
+        "idfv", "credit_card", "creditcard", "card_number", "cardnumber",
+        "account_number", "accountnumber", "ssn", "social_security",
+        "socialsecurity", "fingerprint", "face_data", "facedata", "biometric",
+        "retina", "password", "pwd", "token", "auth_token", "authtoken",
+        "ip_address", "ipaddress", "ip", "geolocation", "gps", "latitude",
+        "longitude", "lat", "lon", "lng"
+    ]
+
+    /// Convert Any metadata to String metadata and filter forbidden GDPR keys
     private func convertMetadata(_ metadata: [String: Any]?) -> [String: String]? {
         guard let metadata else { return nil }
-        return metadata.mapValues { "\($0)" }
+
+        return metadata.reduce(into: [String: String]()) { result, element in
+            let key = element.key.lowercased()
+            if !forbiddenKeys.contains(key) {
+                result[element.key] = "\(element.value)"
+            }
+        }
     }
 
     /// Execute with timeout (in seconds)

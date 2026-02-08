@@ -35,6 +35,9 @@ protocol DocumentSelectionViewToPresenter: AnyObject {
 
 protocol DocumentSelectionPresenterToInteractor: AnyObject {
     func fetchSupportedCountries()
+    func logViewRendered() async
+    func logContinueButtonClicked(selectedCountry: NativeCountry?, selectedDocument: NativeDocumentType?) async
+    func logCancelButtonClicked() async
 }
 
 // MARK: - Interactor to Presenter

@@ -11,10 +11,20 @@ class PassiveIntroInteractor {
     weak var presenter: PassiveIntroInteractorToPresenter?
     private var validationTask: Task<Void, Never>?
     private let enrollmentTask: Task<Void, Error>?
+    private let logger: TruoraLogger
 
-    init(presenter: PassiveIntroInteractorToPresenter?, enrollmentTask: Task<Void, Error>?) {
+    /// Constants for logging
+    private static let viewName = "face_intro"
+    private static let validationType = "face_validation"
+
+    init(
+        presenter: PassiveIntroInteractorToPresenter?,
+        enrollmentTask: Task<Void, Error>?,
+        logger: TruoraLogger
+    ) {
         self.presenter = presenter
         self.enrollmentTask = enrollmentTask
+        self.logger = logger
     }
 
     deinit {
@@ -123,5 +133,43 @@ extension PassiveIntroInteractor: PassiveIntroPresenterToInteractor {
         }
 
         try await task.value
+    }
+
+    // MARK: - Logging Methods
+
+    func logViewRendered() async {
+        await logger.logView(
+            viewName: "render_\(Self.viewName)_succeeded",
+            level: .info,
+            retention: .oneWeek,
+            metadata: [
+                "name": Self.viewName,
+                "validation_type": Self.validationType
+            ]
+        )
+    }
+
+    func logContinueButtonClicked() async {
+        await logger.logView(
+            viewName: "continue_button_clicked",
+            level: .info,
+            retention: .oneWeek,
+            metadata: [
+                "name": Self.viewName,
+                "validation_type": Self.validationType
+            ]
+        )
+    }
+
+    func logCancelButtonClicked() async {
+        await logger.logView(
+            viewName: "cancel_button_clicked",
+            level: .info,
+            retention: .oneWeek,
+            metadata: [
+                "name": Self.viewName,
+                "validation_type": Self.validationType
+            ]
+        )
     }
 }

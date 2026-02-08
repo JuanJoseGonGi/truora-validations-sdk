@@ -58,6 +58,9 @@ protocol DocumentCaptureViewToPresenter: AnyObject {
     /// Called when autocapture becomes unavailable (e.g., ML model fails).
     /// Silently transitions to manual capture without user interaction.
     func switchToManualCapture() async
+
+    /// Called when a camera error occurs (e.g., permission denied, session failure).
+    func cameraError(_ errorMessage: String) async
 }
 
 protocol DocumentCapturePresenterToInteractor: AnyObject {
@@ -70,6 +73,10 @@ protocol DocumentCapturePresenterToInteractor: AnyObject {
         documentType: String,
         validationId: String
     )
+    func logDocCaptureSucceeded(side: DocumentCaptureSide, validationId: String) async
+    func logDocCaptureFailed(side: DocumentCaptureSide, validationId: String, errorMessage: String) async
+    func logDocFeedbackSucceeded(validationId: String, result: String, reason: String?) async
+    func logDocFeedbackFailed(validationId: String, errorMessage: String) async
 }
 
 @MainActor

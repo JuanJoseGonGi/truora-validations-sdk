@@ -25,9 +25,11 @@ enum PassiveCaptureConfigurator {
             useAutocapture: useAutocapture
         )
 
+        let logger = try TruoraLoggerImplementation.shared
         let interactor = PassiveCaptureInteractor(
             presenter: presenter,
-            validationId: validationId
+            validationId: validationId,
+            logger: logger
         )
 
         presenter.interactor = interactor

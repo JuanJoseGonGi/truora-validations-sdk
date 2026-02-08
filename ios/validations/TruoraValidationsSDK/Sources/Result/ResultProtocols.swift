@@ -31,6 +31,8 @@ protocol ResultPresenterToInteractor: AnyObject {
     var validationId: String { get }
     func startPolling()
     func cancelPolling()
+    func logViewRendered() async
+    func logSdkExecutionFinished() async
 }
 
 // MARK: - Interactor -> Presenter

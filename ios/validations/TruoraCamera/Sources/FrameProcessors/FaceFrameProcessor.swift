@@ -10,11 +10,12 @@ import Foundation
 
 /// Face frame processor that wraps CoreMLFaceDetector and forwards results to delegate
 class FaceFrameProcessor: FrameProcessor {
-    private let detector = CoreMLFaceDetector()
+    private let detector: CoreMLFaceDetector
     private weak var delegate: CameraDelegate?
 
-    init(delegate: CameraDelegate?) {
+    init(delegate: CameraDelegate?, logger: MLLifecycleLogger? = nil) {
         self.delegate = delegate
+        self.detector = CoreMLFaceDetector(logger: logger)
         setupDetector()
     }
 

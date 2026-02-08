@@ -17,9 +17,16 @@ struct CameraViewWrapper: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> CameraView {
+        let mlLogger: MLLifecycleLogger? = {
+            guard let logger = try? TruoraLoggerImplementation.shared else {
+                return nil
+            }
+            return MLLifecycleLoggerAdapter(logger: logger)
+        }()
         let processor = FrameProcessorFactory.createProcessor(
             for: .face,
-            delegate: context.coordinator
+            delegate: context.coordinator,
+            logger: mlLogger
         )
         let cameraView = CameraView(frameProcessor: processor)
         cameraView.backgroundColor = .clear
@@ -124,7 +131,9 @@ struct CameraViewWrapper: UIViewRepresentable {
             if case .permissionDenied = error {
                 viewModel.cameraPermissionDenied()
             } else {
-                viewModel.showError("Camera error: \(error.localizedDescription)")
+                let errorMessage = error.localizedDescription
+                viewModel.cameraError(errorMessage)
+                viewModel.showError("Camera error: \(errorMessage)")
             }
         }
 

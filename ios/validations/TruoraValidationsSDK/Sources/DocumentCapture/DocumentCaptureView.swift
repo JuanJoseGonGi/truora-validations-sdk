@@ -198,9 +198,16 @@ struct DocumentCameraViewWrapper: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> CameraView {
+        let mlLogger: MLLifecycleLogger? = {
+            guard let logger = try? TruoraLoggerImplementation.shared else {
+                return nil
+            }
+            return MLLifecycleLoggerAdapter(logger: logger)
+        }()
         let processor = FrameProcessorFactory.createProcessor(
             for: .document,
-            delegate: context.coordinator
+            delegate: context.coordinator,
+            logger: mlLogger
         )
         let cameraView = CameraView(frameProcessor: processor)
         cameraView.backgroundColor = .clear
@@ -276,7 +283,9 @@ struct DocumentCameraViewWrapper: UIViewRepresentable {
         }
 
         func reportError(error: CameraError) {
-            viewModel.showError("Camera error: \(error.localizedDescription)")
+            let errorMessage = error.localizedDescription
+            Task { await viewModel.presenter?.cameraError(errorMessage) }
+            viewModel.showError("Camera error: \(errorMessage)")
         }
 
         func detectionsReceived(_ results: [DetectionResult]) {

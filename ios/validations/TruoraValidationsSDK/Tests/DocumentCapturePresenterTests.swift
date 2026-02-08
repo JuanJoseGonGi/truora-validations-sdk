@@ -121,9 +121,9 @@ import XCTest
         XCTAssertEqual(mockInteractor.lastPhotoData?.count, 4)
     }
 
-    func testPhotoCaptured_frontSide_withCountryAndDocumentType_evaluatesImageOnFirstAttempt() async {
+    func testPhotoCaptured_frontSide_withCountryAndDocumentType_evaluatesImageOnFirstAttempt() async throws {
         // Given
-        ValidationConfig.shared.setValidation(.document(Document().setCountry("PE").setDocumentType("national-id")))
+        try ValidationConfig.shared.setValidation(.document(Document().setCountry("PE").setDocumentType("national-id")))
         let photoData = Data([0x01, 0x02, 0x03, 0x04])
 
         // When
@@ -138,9 +138,9 @@ import XCTest
         XCTAssertEqual(mockInteractor.lastEvaluateValidationId, "test-validation-id")
     }
 
-    func testEvaluationFailure_incrementsAttempts_routesToFeedback_andThirdCaptureUploadsDirectly() async {
+    func testEvaluationFailure_incrementsAttempts_routesToFeedback_andThirdCaptureUploadsDirectly() async throws {
         // Given
-        ValidationConfig.shared.setValidation(.document(Document().setCountry("PE").setDocumentType("national-id")))
+        try ValidationConfig.shared.setValidation(.document(Document().setCountry("PE").setDocumentType("national-id")))
         let photoData = Data([0x01, 0x02, 0x03, 0x04])
 
         // 1st capture -> evaluate

@@ -66,6 +66,8 @@ enum IDError: Error, LocalizedError {
 class DocumentDetector {
     private var landmarkerInterpreter: Interpreter?
     private let detectionQueue = DispatchQueue(label: "com.truora.document.detection")
+    private weak var logger: MLLifecycleLogger?
+    private var hasLoggedFirstPrediction = false
 
     var onIDDetected: (([DetectionResult]) -> Void)?
     /// Called when a detection error occurs during frame processing (e.g., invalid input, preprocessing failed)
@@ -103,7 +105,8 @@ class DocumentDetector {
         outputDtype: .float32 // Range [0,1] matching Python model
     )
 
-    init() {
+    init(logger: MLLifecycleLogger? = nil) {
+        self.logger = logger
         loadModels()
     }
 
@@ -116,8 +119,15 @@ class DocumentDetector {
                 guard let landmarkerPath = Bundle.truoraCameraResources.path(
                     forResource: "general_int8", ofType: "tflite"
                 ) else {
-                    throw IDError.modelNotFound("general_int8.tflite")
+                    let loadError = IDError.modelNotFound("general_int8.tflite")
+                    self.logger?.logModelLoadFailed(
+                        modelName: "document_detector",
+                        errorMessage: loadError.localizedDescription
+                    )
+                    throw loadError
                 }
+
+                self.logger?.logModelLoadSucceeded(modelName: "document_detector")
 
                 var landmarkerOptions = Interpreter.Options()
                 landmarkerOptions.threadCount = 2
@@ -126,12 +136,18 @@ class DocumentDetector {
                 try self.landmarkerInterpreter?.allocateTensors()
                 self.isModelLoaded = true
 
+                self.logger?.logModelInitSucceeded(modelName: "document_detector")
+
                 DispatchQueue.main.async {
                     self.onModelReady?()
                 }
             } catch {
                 // Model loading failed - notify for fallback to manual capture
                 print("❌ DocumentDetector: Model loading failed - \(error.localizedDescription)")
+                self.logger?.logModelInitFailed(
+                    modelName: "document_detector",
+                    errorMessage: error.localizedDescription
+                )
                 DispatchQueue.main.async {
                     self.onModelLoadFailed?(error)
                 }
@@ -184,11 +200,20 @@ class DocumentDetector {
                 preprocessResult: result
             )
 
+            if !detectionResults.isEmpty, !self.hasLoggedFirstPrediction {
+                self.hasLoggedFirstPrediction = true
+                self.logger?.logModelPredictionFinished(modelName: "document_detector")
+            }
+
             DispatchQueue.main.async {
                 self.onIDDetected?(detectionResults)
             }
 
         } catch {
+            self.logger?.logModelPredictionFailed(
+                modelName: "document_detector",
+                errorMessage: error.localizedDescription
+            )
             DispatchQueue.main.async {
                 self.onError?(error)
             }

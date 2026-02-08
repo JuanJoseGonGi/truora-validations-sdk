@@ -30,10 +30,14 @@ class PassiveIntroPresenter {
 
 extension PassiveIntroPresenter: PassiveIntroViewToPresenter {
     func viewDidLoad() async {
-        // Initial setup if needed
+        // Log view rendered
+        await interactor?.logViewRendered()
     }
 
     func startTapped() async {
+        // Log continue button clicked
+        await interactor?.logContinueButtonClicked()
+
         guard let accountId = ValidationConfig.shared.accountId else {
             await view?.showError("Missing account ID")
             return
@@ -67,6 +71,9 @@ extension PassiveIntroPresenter: PassiveIntroViewToPresenter {
     }
 
     func cancelTapped() async {
+        // Log cancel button clicked
+        await interactor?.logCancelButtonClicked()
+
         validationTask?.cancel()
         await router?.handleCancellation(loadingType: .face)
     }
@@ -86,6 +93,7 @@ extension PassiveIntroPresenter: PassiveIntroInteractorToPresenter {
             let validationId = response.validationId
             let uploadUrl = response.instructions?.fileUploadLink
 
+            ValidationConfig.shared.updateValidationId(validationId)
             try await router.navigateToPassiveCapture(validationId: validationId, uploadUrl: uploadUrl)
         } catch {
             await view?.showError(error.localizedDescription)

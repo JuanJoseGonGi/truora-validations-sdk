@@ -30,6 +30,9 @@ protocol PassiveIntroViewToPresenter: AnyObject {
 protocol PassiveIntroPresenterToInteractor: AnyObject {
     func createValidation(accountId: String)
     func enrollmentCompleted() async throws
+    func logViewRendered() async
+    func logContinueButtonClicked() async
+    func logCancelButtonClicked() async
 }
 
 // MARK: - Interactor to Presenter

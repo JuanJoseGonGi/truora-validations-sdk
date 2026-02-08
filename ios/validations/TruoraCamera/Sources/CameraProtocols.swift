@@ -41,6 +41,18 @@ public enum DetectionCategory {
     case document(scores: [Float]?)
 }
 
+/// Lightweight logging protocol for ML model lifecycle events within TruoraCamera.
+/// Implemented by the parent module (TruoraValidationsSDK) to bridge to TruoraLogger.
+/// All methods are fire-and-forget; implementations should not block.
+public protocol MLLifecycleLogger: AnyObject {
+    func logModelLoadSucceeded(modelName: String)
+    func logModelLoadFailed(modelName: String, errorMessage: String)
+    func logModelInitSucceeded(modelName: String)
+    func logModelInitFailed(modelName: String, errorMessage: String)
+    func logModelPredictionFinished(modelName: String)
+    func logModelPredictionFailed(modelName: String, errorMessage: String)
+}
+
 /// Unified detection result structure for all detection types
 public struct DetectionResult {
     public let category: DetectionCategory

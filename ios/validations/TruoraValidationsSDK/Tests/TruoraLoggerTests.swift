@@ -206,7 +206,6 @@ final class MockTruoraLogger: TruoraLogger {
             eventType: eventType,
             eventName: eventName,
             level: level,
-            success: nil,
             errorMessage: errorMessage,
             errorCode: nil,
             durationMs: durationMs,
@@ -219,7 +218,7 @@ final class MockTruoraLogger: TruoraLogger {
             osVersion: "1.0",
             sdkVersion: "1.0.0",
             platform: "ios",
-            metadata: metadata?.mapValues { "\($0)" },
+            metadata: metadata?.mapValues { "\($0)" } ?? [:],
             retention: retention
         )
         loggedEvents.append(event)

@@ -61,6 +61,9 @@ final class ResultPresenter {
 
 extension ResultPresenter: ResultViewToPresenter {
     func viewDidLoad() async {
+        // Log view rendered
+        await interactor?.logViewRendered()
+
         // Handle cancellation case - show failure immediately, skip polling.
         // Design decision: Show failure screen instead of immediate dismissal to provide
         // visual feedback that the validation was canceled. This matches the user expectation
@@ -130,6 +133,9 @@ extension ResultPresenter: ResultInteractorToPresenter {
     func pollingCompleted(result: ValidationResult) async {
         finalResult = result
         print("🟢 ResultPresenter: Polling completed with status: \(result.status)")
+
+        // Log SDK execution finished
+        await interactor?.logSdkExecutionFinished()
 
         guard shouldWaitForResults else {
             // UI is already showing "Completed", just notify delegate

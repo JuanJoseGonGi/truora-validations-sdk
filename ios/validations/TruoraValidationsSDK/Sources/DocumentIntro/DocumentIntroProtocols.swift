@@ -29,6 +29,9 @@ protocol DocumentIntroViewToPresenter: AnyObject {
 
 protocol DocumentIntroPresenterToInteractor: AnyObject {
     func createValidation(accountId: String)
+    func logViewRendered() async
+    func logContinueButtonClicked() async
+    func logCancelButtonClicked() async
 }
 
 // MARK: - Interactor to Presenter

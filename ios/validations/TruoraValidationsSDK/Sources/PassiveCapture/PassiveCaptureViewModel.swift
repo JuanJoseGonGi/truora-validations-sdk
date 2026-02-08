@@ -78,6 +78,10 @@ import UIKit
     func detectionsReceived(_ results: [DetectionResult]) {
         Task { await presenter?.detectionsReceived(results) }
     }
+
+    func cameraError(_ errorMessage: String) {
+        Task { await presenter?.cameraError(errorMessage) }
+    }
 }
 
 // MARK: - PassiveCapturePresenterToView

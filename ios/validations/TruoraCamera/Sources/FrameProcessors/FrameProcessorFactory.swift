@@ -11,13 +11,14 @@ import Foundation
 public class FrameProcessorFactory {
     public static func createProcessor(
         for type: DetectionType,
-        delegate: CameraDelegate?
+        delegate: CameraDelegate?,
+        logger: MLLifecycleLogger? = nil
     ) -> FrameProcessor? {
         switch type {
         case .face:
-            FaceFrameProcessor(delegate: delegate)
+            FaceFrameProcessor(delegate: delegate, logger: logger)
         case .document:
-            DocumentFrameProcessor(delegate: delegate)
+            DocumentFrameProcessor(delegate: delegate, logger: logger)
         case .none:
             nil
         }

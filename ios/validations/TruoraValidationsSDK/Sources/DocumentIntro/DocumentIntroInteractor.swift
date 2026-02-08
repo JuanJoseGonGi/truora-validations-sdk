@@ -13,17 +13,24 @@ class DocumentIntroInteractor {
     private let country: String
     private let documentType: String
     private let createValidationHandler: ((NativeValidationRequest) async throws -> NativeValidationCreateResponse)?
+    private let logger: TruoraLogger
+
+    /// Constants for logging
+    private static let viewName = "doc_intro"
+    private static let validationType = "doc_validation"
 
     init(
         presenter: DocumentIntroInteractorToPresenter?,
         country: String,
         documentType: String,
-        createValidationHandler: ((NativeValidationRequest) async throws -> NativeValidationCreateResponse)? = nil
+        createValidationHandler: ((NativeValidationRequest) async throws -> NativeValidationCreateResponse)? = nil,
+        logger: TruoraLogger
     ) {
         self.presenter = presenter
         self.country = country
         self.documentType = documentType
         self.createValidationHandler = createValidationHandler
+        self.logger = logger
     }
 
     deinit {
@@ -48,6 +55,46 @@ extension DocumentIntroInteractor: DocumentIntroPresenterToInteractor {
                 await notifyFailure(error: error)
             }
         }
+    }
+
+    // MARK: - Logging Methods
+
+    func logViewRendered() async {
+        await logger.logView(
+            viewName: "render_\(Self.viewName)_succeeded",
+            level: .info,
+            retention: .oneWeek,
+            metadata: [
+                "name": Self.viewName,
+                "validation_type": Self.validationType
+            ]
+        )
+    }
+
+    func logContinueButtonClicked() async {
+        await logger.logView(
+            viewName: "continue_button_clicked",
+            level: .info,
+            retention: .oneWeek,
+            metadata: [
+                "name": Self.viewName,
+                "validation_type": Self.validationType,
+                "selected_country": country,
+                "selected_document": documentType
+            ]
+        )
+    }
+
+    func logCancelButtonClicked() async {
+        await logger.logView(
+            viewName: "cancel_button_clicked",
+            level: .info,
+            retention: .oneWeek,
+            metadata: [
+                "name": Self.viewName,
+                "validation_type": Self.validationType
+            ]
+        )
     }
 }
 

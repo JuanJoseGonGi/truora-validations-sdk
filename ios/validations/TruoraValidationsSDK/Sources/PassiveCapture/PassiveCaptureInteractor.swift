@@ -12,10 +12,19 @@ class PassiveCaptureInteractor {
     let validationId: String
     private var uploadUrl: String?
     private var uploadTask: Task<Void, Never>?
+    private let logger: TruoraLogger
 
-    init(presenter: PassiveCaptureInteractorToPresenter, validationId: String) {
+    /// Constants for logging
+    private static let validationType = "face_validation"
+
+    init(
+        presenter: PassiveCaptureInteractorToPresenter,
+        validationId: String,
+        logger: TruoraLogger
+    ) {
         self.presenter = presenter
         self.validationId = validationId
+        self.logger = logger
     }
 
     deinit {
@@ -143,5 +152,33 @@ extension PassiveCaptureInteractor: PassiveCapturePresenterToInteractor {
                 .sdk(SDKError(type: .uploadFailed, details: error.localizedDescription))
             )
         }
+    }
+
+    // MARK: - Logging Methods
+
+    func logFaceCaptureSucceeded() async {
+        await logger.logML(
+            eventName: "face_capture_succeeded",
+            level: .info,
+            errorMessage: nil,
+            retention: .oneWeek,
+            metadata: [
+                "validation_type": Self.validationType,
+                "validation_id": validationId
+            ]
+        )
+    }
+
+    func logFaceCaptureFailed(errorMessage: String) async {
+        await logger.logML(
+            eventName: "face_capture_failed",
+            level: .error,
+            errorMessage: errorMessage,
+            retention: .oneWeek,
+            metadata: [
+                "validation_type": Self.validationType,
+                "validation_id": validationId
+            ]
+        )
     }
 }

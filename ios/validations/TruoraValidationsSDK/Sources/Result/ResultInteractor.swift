@@ -14,15 +14,21 @@ final class ResultInteractor {
     private let loadingType: ResultLoadingType
     private var pollingTask: Task<Void, Never>?
     private let timeProvider: TimeProvider
+    private let logger: TruoraLogger
+
+    /// Constants for logging
+    private static let viewName = "result"
 
     init(
         validationId: String,
         loadingType: ResultLoadingType = .face,
-        timeProvider: TimeProvider = RealTimeProvider()
+        timeProvider: TimeProvider = RealTimeProvider(),
+        logger: TruoraLogger
     ) {
         self.validationId = validationId
         self.loadingType = loadingType
         self.timeProvider = timeProvider
+        self.logger = logger
     }
 
     deinit {
@@ -43,6 +49,33 @@ extension ResultInteractor: ResultPresenterToInteractor {
     func cancelPolling() {
         pollingTask?.cancel()
         pollingTask = nil
+    }
+
+    // MARK: - Logging Methods
+
+    func logViewRendered() async {
+        await logger.logView(
+            viewName: "render_\(Self.viewName)_succeeded",
+            level: .info,
+            retention: .oneWeek,
+            metadata: [
+                "name": Self.viewName
+            ]
+        )
+    }
+
+    func logSdkExecutionFinished() async {
+        let validationType = loadingType == .face
+            ? "face_validation" : "doc_validation"
+        await logger.logSdk(
+            eventName: "sdk_execution_finished",
+            level: .info,
+            errorMessage: nil,
+            retention: .oneMonth,
+            metadata: [
+                "\(validationType)_id": validationId
+            ]
+        )
     }
 }
 

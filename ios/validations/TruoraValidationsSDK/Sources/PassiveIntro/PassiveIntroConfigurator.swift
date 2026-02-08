@@ -15,7 +15,8 @@ enum PassiveIntroConfigurator {
         enrollmentTask: Task<Void, Error>? = nil
     ) throws -> UIViewController {
         let viewModel = PassiveIntroViewModel()
-        let interactor = PassiveIntroInteractor(presenter: nil, enrollmentTask: enrollmentTask)
+        let logger = try TruoraLoggerImplementation.shared
+        let interactor = PassiveIntroInteractor(presenter: nil, enrollmentTask: enrollmentTask, logger: logger)
         let presenter = PassiveIntroPresenter(
             view: viewModel,
             interactor: interactor,

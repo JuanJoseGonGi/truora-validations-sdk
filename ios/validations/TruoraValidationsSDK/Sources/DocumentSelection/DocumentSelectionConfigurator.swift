@@ -21,7 +21,11 @@ enum DocumentSelectionConfigurator {
             router: router
         )
 
-        let interactor = DocumentSelectionInteractor(presenter: presenter)
+        let logger = try TruoraLoggerImplementation.shared
+        let interactor = DocumentSelectionInteractor(
+            presenter: presenter,
+            logger: logger
+        )
 
         viewModel.presenter = presenter
         presenter.interactor = interactor

@@ -37,9 +37,6 @@ public struct SDKEvent: Codable, Sendable {
     /// Log severity level
     public let level: LogLevel
 
-    /// Optional success flag for binary outcomes
-    public let success: Bool?
-
     /// Error message if applicable
     public let errorMessage: String?
 
@@ -83,7 +80,7 @@ public struct SDKEvent: Codable, Sendable {
     // MARK: - Additional Context
 
     /// Flexible metadata dictionary for event-specific context
-    public let metadata: [String: String]?
+    public let metadata: [String: String]
 
     /// Data retention period
     public let retention: RetentionPeriod
@@ -96,7 +93,6 @@ public struct SDKEvent: Codable, Sendable {
         eventType: EventType,
         eventName: String,
         level: LogLevel,
-        success: Bool? = nil,
         errorMessage: String? = nil,
         errorCode: String? = nil,
         durationMs: Int64? = nil,
@@ -109,7 +105,7 @@ public struct SDKEvent: Codable, Sendable {
         osVersion: String,
         sdkVersion: String,
         platform: String = "ios",
-        metadata: [String: String]? = nil,
+        metadata: [String: String] = [:],
         retention: RetentionPeriod
     ) {
         self.eventId = eventId
@@ -117,7 +113,6 @@ public struct SDKEvent: Codable, Sendable {
         self.eventType = eventType
         self.eventName = String(eventName.prefix(35)) // Enforce max 35 chars
         self.level = level
-        self.success = success
         self.errorMessage = errorMessage
         self.errorCode = errorCode
         self.durationMs = durationMs
@@ -142,7 +137,6 @@ public struct SDKEvent: Codable, Sendable {
         case eventType = "event_type"
         case eventName = "event_name"
         case level
-        case success
         case errorMessage = "error_message"
         case errorCode = "error_code"
         case durationMs = "duration_ms"
@@ -189,7 +183,6 @@ public extension SDKEvent {
             "retention": retention.rawValue
         ]
 
-        if let success { dict["success"] = success }
         if let errorMessage { dict["error_message"] = errorMessage }
         if let errorCode { dict["error_code"] = errorCode }
         if let durationMs { dict["duration_ms"] = durationMs }
@@ -198,7 +191,7 @@ public extension SDKEvent {
         if let validationId { dict["validation_id"] = validationId }
         if let validationType { dict["validation_type"] = validationType }
         if let accountId { dict["account_id"] = accountId }
-        if let metadata { dict["metadata"] = metadata }
+        dict["metadata"] = metadata
 
         return dict
     }

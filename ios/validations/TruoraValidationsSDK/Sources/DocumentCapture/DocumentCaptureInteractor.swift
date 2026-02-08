@@ -17,13 +17,19 @@ final class DocumentCaptureInteractor {
     private var uploadTask: Task<Void, Never>?
     private var evaluationTask: Task<Void, Never>?
     private let uploadFileHandler: ((String, Data) async throws -> Void)?
+    private let logger: TruoraLogger
+
+    /// Constants for logging
+    private static let validationType = "doc_validation"
 
     init(
         presenter: DocumentCaptureInteractorToPresenter,
-        uploadFileHandler: ((String, Data) async throws -> Void)? = nil
+        uploadFileHandler: ((String, Data) async throws -> Void)? = nil,
+        logger: TruoraLogger
     ) {
         self.presenter = presenter
         self.uploadFileHandler = uploadFileHandler
+        self.logger = logger
     }
 }
 
@@ -87,7 +93,6 @@ extension DocumentCaptureInteractor: DocumentCapturePresenterToInteractor {
             }
             return
         }
-
         performUpload(uploadUrl: uploadUrl, photoData: photoData, side: side, apiClient: apiClient)
     }
 
@@ -168,6 +173,71 @@ extension DocumentCaptureInteractor: DocumentCapturePresenterToInteractor {
                 )
             }
         }
+    }
+
+    // MARK: - Logging Methods
+
+    func logDocCaptureSucceeded(side: DocumentCaptureSide, validationId: String) async {
+        let eventName = side == .front
+            ? "doc_front_capture_succeeded"
+            : "doc_reverse_capture_succeeded"
+        await logger.logML(
+            eventName: eventName,
+            level: .info,
+            errorMessage: nil,
+            retention: .oneWeek,
+            metadata: [
+                "validation_type": Self.validationType,
+                "validation_id": validationId
+            ]
+        )
+    }
+
+    func logDocCaptureFailed(side: DocumentCaptureSide, validationId: String, errorMessage: String) async {
+        let eventName = side == .front
+            ? "doc_front_capture_failed"
+            : "doc_reverse_capture_failed"
+        await logger.logML(
+            eventName: eventName,
+            level: .error,
+            errorMessage: errorMessage,
+            retention: .oneWeek,
+            metadata: [
+                "validation_type": Self.validationType,
+                "validation_id": validationId
+            ]
+        )
+    }
+
+    func logDocFeedbackSucceeded(validationId: String, result: String, reason: String?) async {
+        var metadata: [String: Any] = [
+            "result": result,
+            "validation_type": Self.validationType,
+            "validation_id": validationId
+        ]
+        if let reason {
+            metadata["reason"] = reason
+        }
+        await logger.logFeedback(
+            eventName: "doc_feedback_succeeded",
+            level: .info,
+            errorMessage: nil,
+            retention: .oneMonth,
+            metadata: metadata
+        )
+    }
+
+    func logDocFeedbackFailed(validationId: String, errorMessage: String) async {
+        await logger.logFeedback(
+            eventName: "doc_feedback_failed",
+            level: .error,
+            errorMessage: errorMessage,
+            retention: .oneMonth,
+            metadata: [
+                "validation_type": Self.validationType,
+                "validation_id": validationId
+            ]
+        )
     }
 }
 

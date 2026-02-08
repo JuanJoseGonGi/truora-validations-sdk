@@ -257,6 +257,10 @@ final class DocumentCapturePresenter {
     private static let minDocumentWidth: CGFloat = 0.5
     private static let maxDocumentWidth: CGFloat = 0.9
 
+    /// Constants for logging
+    private static let viewName = "doc_capture"
+    private static let validationType = "doc_validation"
+
     init(
         view: DocumentCapturePresenterToView,
         interactor: DocumentCapturePresenterToInteractor?,
@@ -493,6 +497,84 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
 
     func cameraReady() async {
         lifecycleState = .ready
+
+        // Log view and camera events concurrently (independent operations)
+        async let logView: Void = logViewRendered()
+        async let logCamera: Void = logCameraOpened()
+        _ = await (logView, logCamera)
+    }
+
+    // MARK: - Logging Methods
+
+    private func logViewRendered() async {
+        guard let logger = try? TruoraLoggerImplementation.shared else {
+            return
+        }
+        await logger.logView(
+            viewName: "render_\(Self.viewName)_succeeded",
+            level: .info,
+            retention: .oneWeek,
+            metadata: [
+                "name": Self.viewName,
+                "validation_type": Self.validationType
+            ]
+        )
+    }
+
+    private func logCameraOpened() async {
+        guard let logger = try? TruoraLoggerImplementation.shared else {
+            return
+        }
+        await logger.logCamera(
+            eventName: "camera_successfully_opened",
+            level: .info,
+            errorMessage: nil,
+            retention: .oneWeek,
+            metadata: [
+                "validation_type": Self.validationType,
+                "selected_camera": "back"
+            ]
+        )
+    }
+
+    private func logCameraOpenFailed(errorMessage: String) async {
+        guard let logger = try? TruoraLoggerImplementation.shared else {
+            return
+        }
+        await logger.logCamera(
+            eventName: "open_camera_failed",
+            level: .error,
+            errorMessage: errorMessage,
+            retention: .oneWeek,
+            metadata: [
+                "validation_type": Self.validationType,
+                "selected_camera": "back"
+            ]
+        )
+    }
+
+    private func logCameraCrashed(errorMessage: String) async {
+        guard let logger = try? TruoraLoggerImplementation.shared else {
+            return
+        }
+        await logger.logCamera(
+            eventName: "camera_crashed",
+            level: .fatal,
+            errorMessage: errorMessage,
+            retention: .oneMonth,
+            metadata: [
+                "validation_type": Self.validationType,
+                "selected_camera": "back"
+            ]
+        )
+    }
+
+    func cameraError(_ errorMessage: String) async {
+        if lifecycleState == .uninitialized || lifecycleState == .stopped {
+            await logCameraOpenFailed(errorMessage: errorMessage)
+        } else {
+            await logCameraCrashed(errorMessage: errorMessage)
+        }
     }
 
     func viewWillDisappear() async {
@@ -708,6 +790,9 @@ extension DocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
         showLoadingScreen = false
         await view?.resetCaptureInProgress()
 
+        // Log doc capture succeeded
+        await interactor?.logDocCaptureSucceeded(side: side, validationId: validationId)
+
         switch side {
         case .front:
             frontPhotoStatus = .success
@@ -761,6 +846,10 @@ extension DocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
         feedbackType = useAutocapture ? .searching : .scanningManual
         lifecycleState = .ready
 
+        // Log doc capture failed
+        let errorMessage = error.errorDescription ?? "Unknown error"
+        await interactor?.logDocCaptureFailed(side: side, validationId: validationId, errorMessage: errorMessage)
+
         if side == .front {
             frontPhotoStatus = nil
         } else if side == .back {
@@ -810,6 +899,9 @@ extension DocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
         showLoadingScreen = true
         feedbackType = .scanning
 
+        // Log feedback succeeded
+        await interactor?.logDocFeedbackSucceeded(validationId: validationId, result: "valid", reason: nil)
+
         if side == .front {
             frontPhotoStatus = .loading
             await updateUI(frontPhotoDataUpdate: previewData)
@@ -828,6 +920,10 @@ extension DocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
         showLoadingScreen = false
         await view?.resetCaptureInProgress()
         lifecycleState = .stopped
+
+        // Log feedback failed
+        let errorMessage = reason ?? "Document validation failed"
+        await interactor?.logDocFeedbackFailed(validationId: validationId, errorMessage: errorMessage)
 
         // Reset detection timers for retry
         detectionState.resetDocumentDetectionTimer()

@@ -51,11 +51,16 @@ final class DocumentSelectionPresenter {
         switch status {
         case .authorized:
             isCameraAuthorized = true
+            await logCameraPermissionGranted()
         case .notDetermined:
             cameraPermissionChecker.requestAccess { [weak self] granted in
                 guard let self else { return }
                 self.isCameraAuthorized = granted
-                if !granted {
+                if granted {
+                    Task {
+                        await self.logCameraPermissionGranted()
+                    }
+                } else {
                     Task {
                         await self.view?.displayCameraPermissionAlert()
                     }
@@ -67,6 +72,19 @@ final class DocumentSelectionPresenter {
         }
     }
 
+    private func logCameraPermissionGranted() async {
+        guard let logger = try? TruoraLoggerImplementation.shared else {
+            return
+        }
+        await logger.logCamera(
+            eventName: "camera_permissions_granted",
+            level: .info,
+            errorMessage: nil,
+            retention: .oneWeek,
+            metadata: ["selected_camera": "back"]
+        )
+    }
+
     private func clearErrorsIfNeeded() async {
         await view?.setErrors(isCountryError: false, isDocumentError: false)
     }
@@ -74,6 +92,9 @@ final class DocumentSelectionPresenter {
 
 extension DocumentSelectionPresenter: DocumentSelectionViewToPresenter {
     func viewDidLoad() async {
+        // Log view rendered
+        await interactor?.logViewRendered()
+
         interactor?.fetchSupportedCountries()
         await preflightCameraPermission()
         await checkForPreConfiguredValues()
@@ -114,6 +135,12 @@ extension DocumentSelectionPresenter: DocumentSelectionViewToPresenter {
     }
 
     func continueTapped() async {
+        // Log continue button clicked
+        await interactor?.logContinueButtonClicked(
+            selectedCountry: selectedCountry,
+            selectedDocument: selectedDocument
+        )
+
         let isCountryValid = selectedCountry != nil
         let isDocumentValid = selectedDocument != nil
         await view?.setErrors(isCountryError: !isCountryValid, isDocumentError: !isDocumentValid)
@@ -134,9 +161,9 @@ extension DocumentSelectionPresenter: DocumentSelectionViewToPresenter {
         let documentConfig = ValidationConfig.shared.documentConfig
             .setCountry(selectedCountry.rawValue)
             .setDocumentType(selectedDocument.rawValue)
-        ValidationConfig.shared.setValidation(.document(documentConfig))
 
         do {
+            try ValidationConfig.shared.setValidation(.document(documentConfig))
             try await router.navigateToDocumentIntro()
         } catch {
             // Routing error is not recoverable from here; surface actionable alert anyway.
@@ -145,6 +172,9 @@ extension DocumentSelectionPresenter: DocumentSelectionViewToPresenter {
     }
 
     func cancelTapped() async {
+        // Log cancel button clicked
+        await interactor?.logCancelButtonClicked()
+
         await router?.handleCancellation(loadingType: .document)
     }
 }

@@ -82,16 +82,21 @@ public class Document {
 
     /// Sets whether to wait and show the validation results to the user.
     ///
-    /// - Note: Setting this to `false` clears any previously set `FinishViewConfiguration`,
-    ///   since finish view visibility requires waiting for results.
+    /// - Precondition: Cannot be set to `false` when a `FinishViewConfiguration`
+    ///   is already set, because finish view visibility requires waiting for results.
+    ///   Remove `setFinishViewConfiguration()` first or keep `waitForResults` enabled.
     /// - Parameter enabled: true to show results view, false to skip it (default: false)
     /// - Returns: This Document for method chaining
     @discardableResult
     public func enableWaitForResults(_ enabled: Bool) -> Document {
-        _shouldWaitForResults = enabled
-        if !enabled {
-            _finishViewConfig = nil
+        if !enabled, _finishViewConfig != nil {
+            preconditionFailure(
+                "enableWaitForResults(false) cannot be called when "
+                    + "finishViewConfiguration is set. Remove "
+                    + "setFinishViewConfiguration() first."
+            )
         }
+        _shouldWaitForResults = enabled
         return self
     }
 
@@ -117,8 +122,10 @@ public class Document {
     }
 
     /// Configures the visibility of finish view screens after polling completes.
-    /// Setting this implicitly enables `shouldWaitForResults`.
     ///
+    /// - Important: Requires `waitForResults` to be `true` (or not explicitly disabled).
+    ///   The SDK will throw an `invalidConfiguration` error at start time if both
+    ///   `finishViewConfiguration` is set and `waitForResults` is `false`.
     /// - Parameter config: Configuration controlling success/failure screen visibility
     /// - Returns: This Document for method chaining
     @discardableResult

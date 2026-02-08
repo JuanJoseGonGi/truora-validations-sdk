@@ -24,8 +24,10 @@ enum DocumentCaptureConfigurator {
             validationId: validationId
         )
 
+        let logger = try TruoraLoggerImplementation.shared
         let interactor = DocumentCaptureInteractor(
-            presenter: presenter
+            presenter: presenter,
+            logger: logger
         )
 
         // Configure upload URLs immediately (presenter also validates via router on load).

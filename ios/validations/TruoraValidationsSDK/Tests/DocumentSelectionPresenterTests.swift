@@ -120,12 +120,18 @@ import XCTest
         XCTAssertEqual(ValidationConfig.shared.documentConfig.documentType, "national-id")
     }
 
-    func testContinueTapped_preservesFinishViewConfig() async {
+    // Note: Invalid configuration (finishViewConfig set with waitForResults disabled)
+    // is prevented at the builder level via preconditionFailure in
+    // enableWaitForResults(false). The throw in ValidationConfig.setValidation
+    // is a defense-in-depth measure that cannot be triggered through the
+    // public builder API, so it is not directly testable here.
+
+    func testContinueTapped_preservesFinishViewConfig() async throws {
         // Given — pre-configure documentConfig with finishViewConfig
         let finishConfig = FinishViewConfiguration(success: .hide, failure: .show)
         let preConfigured = Document()
             .setFinishViewConfiguration(finishConfig)
-        ValidationConfig.shared.setValidation(.document(preConfigured))
+        try ValidationConfig.shared.setValidation(.document(preConfigured))
 
         let cameraChecker = MockCameraPermissionChecker(status: .authorized, requestAccessResult: nil)
         sut = DocumentSelectionPresenter(

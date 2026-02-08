@@ -27,10 +27,14 @@ class DocumentIntroPresenter {
 
 extension DocumentIntroPresenter: DocumentIntroViewToPresenter {
     func viewDidLoad() async {
-        // Initial setup if needed
+        // Log view rendered
+        await interactor?.logViewRendered()
     }
 
     func startTapped() async {
+        // Log continue button clicked
+        await interactor?.logContinueButtonClicked()
+
         guard let accountId = ValidationConfig.shared.accountId else {
             await view?.showError("Missing account ID")
             return
@@ -46,6 +50,9 @@ extension DocumentIntroPresenter: DocumentIntroViewToPresenter {
     }
 
     func cancelTapped() async {
+        // Log cancel button clicked
+        await interactor?.logCancelButtonClicked()
+
         await router?.handleCancellation(loadingType: .document)
     }
 }
@@ -63,6 +70,8 @@ extension DocumentIntroPresenter: DocumentIntroInteractorToPresenter {
         let validationId = response.validationId
         let frontUploadUrl = response.instructions?.frontUrl
         let reverseUploadUrl = response.instructions?.reverseUrl
+
+        ValidationConfig.shared.updateValidationId(validationId)
 
         guard let frontUploadUrl, !frontUploadUrl.isEmpty else {
             await view?.showError("Missing front upload URL")

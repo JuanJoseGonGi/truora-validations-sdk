@@ -53,18 +53,22 @@ import XCTest
         XCTAssertTrue(sut.shouldWaitForResults, "Should implicitly enable wait for results")
     }
 
-    func testEnableWaitForResultsFalseClearsFinishViewConfig() {
-        // Given
-        _ = sut.setFinishViewConfiguration(FinishViewConfiguration(success: .hide, failure: .show))
-        XCTAssertNotNil(sut.finishViewConfig, "Precondition: config is set")
-
-        // When
+    func testEnableWaitForResultsFalseWithoutFinishViewConfig_succeeds() {
+        // When — disabling waitForResults without finishViewConfig is valid
         _ = sut.enableWaitForResults(false)
 
         // Then
-        XCTAssertNil(sut.finishViewConfig, "Should clear finish view config")
         XCTAssertFalse(sut.shouldWaitForResults)
+        XCTAssertNil(sut.finishViewConfig)
     }
+
+    // Note: enableWaitForResults(false) after setFinishViewConfiguration
+    // triggers a preconditionFailure, which cannot be tested with XCTest
+    // since it terminates the process. The precondition protects against
+    // developer misconfiguration at the call site.
+    // ValidationConfig.setValidation also throws invalidConfiguration as a
+    // defense-in-depth check, but that path is unreachable through the
+    // public builder API since the precondition fires first.
 
     func testMethodChainingWithFinishViewConfig() {
         // Given

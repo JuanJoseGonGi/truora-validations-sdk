@@ -18,13 +18,13 @@ public protocol TruoraLogger: Sendable {
     // MARK: - Generic Event Logging
 
     /// Log a generic SDK event with full control over all parameters.
+    /// Duration is auto-computed from logger initialization time.
     ///
     /// - Parameters:
     ///   - eventType: The category of event (CAMERA, ML_MODEL, VIEW, etc.)
     ///   - eventName: Snake_case name (max 35 characters)
     ///   - level: Severity level (DEBUG, INFO, WARN, ERROR, FATAL)
     ///   - errorMessage: Optional error description
-    ///   - durationMs: Optional timing in milliseconds
     ///   - retention: Data retention period
     ///   - metadata: Optional key-value context
     ///   - stackTrace: Optional stack trace for errors
@@ -33,7 +33,6 @@ public protocol TruoraLogger: Sendable {
         eventName: String,
         level: LogLevel,
         errorMessage: String?,
-        durationMs: Int64?,
         retention: RetentionPeriod,
         metadata: [String: Any]?,
         stackTrace: String?
@@ -46,7 +45,6 @@ public protocol TruoraLogger: Sendable {
         eventName: String,
         level: LogLevel,
         errorMessage: String?,
-        durationMs: Int64?,
         retention: RetentionPeriod,
         metadata: [String: Any]?
     ) async
@@ -56,7 +54,6 @@ public protocol TruoraLogger: Sendable {
         eventName: String,
         level: LogLevel,
         errorMessage: String?,
-        durationMs: Int64?,
         retention: RetentionPeriod,
         metadata: [String: Any]?
     ) async
@@ -65,7 +62,6 @@ public protocol TruoraLogger: Sendable {
     func logView(
         viewName: String,
         level: LogLevel,
-        durationMs: Int64?,
         retention: RetentionPeriod,
         metadata: [String: Any]?
     ) async
@@ -83,7 +79,6 @@ public protocol TruoraLogger: Sendable {
         eventName: String,
         level: LogLevel,
         errorMessage: String?,
-        durationMs: Int64?,
         retention: RetentionPeriod,
         metadata: [String: Any]?
     ) async
@@ -93,7 +88,6 @@ public protocol TruoraLogger: Sendable {
         eventName: String,
         level: LogLevel,
         errorMessage: String?,
-        durationMs: Int64?,
         retention: RetentionPeriod,
         metadata: [String: Any]?
     ) async
@@ -107,7 +101,6 @@ public protocol TruoraLogger: Sendable {
     ///   - eventName: The event name
     ///   - exception: The error/exception to log
     ///   - level: Severity level (typically ERROR or FATAL)
-    ///   - durationMs: Optional timing
     ///   - retention: Data retention period
     ///   - metadata: Optional context
     func logException(
@@ -115,7 +108,6 @@ public protocol TruoraLogger: Sendable {
         eventName: String,
         exception: Error,
         level: LogLevel,
-        durationMs: Int64?,
         retention: RetentionPeriod,
         metadata: [String: Any]?
     ) async
@@ -145,7 +137,6 @@ public extension TruoraLogger {
             eventName: eventName,
             level: .info,
             errorMessage: nil,
-            durationMs: nil,
             retention: .oneWeek,
             metadata: metadata,
             stackTrace: nil
@@ -164,7 +155,6 @@ public extension TruoraLogger {
             eventName: eventName,
             level: .error,
             errorMessage: errorMessage,
-            durationMs: nil,
             retention: .oneWeek,
             metadata: metadata,
             stackTrace: nil

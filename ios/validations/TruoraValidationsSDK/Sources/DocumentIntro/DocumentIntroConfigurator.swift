@@ -28,10 +28,13 @@ enum DocumentIntroConfigurator {
             interactor: nil,
             router: router
         )
+
+        let logger = try TruoraLoggerImplementation.shared
         let interactor = DocumentIntroInteractor(
             presenter: presenter,
             country: documentConfig.country,
-            documentType: documentConfig.documentType
+            documentType: documentConfig.documentType,
+            logger: logger
         )
 
         viewModel.presenter = presenter

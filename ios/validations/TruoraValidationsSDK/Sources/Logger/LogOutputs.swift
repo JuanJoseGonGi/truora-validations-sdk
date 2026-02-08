@@ -23,45 +23,51 @@ actor ConsoleLogOutput {
 
 /// API output for sending to Truora endpoint
 actor APILogOutput {
-    private let apiKey: String
-    private let endpoint: String
     private let client: SdkLogClient
+    private let sdkVersion: String
 
-    init(apiKey: String, endpoint: String) {
-        self.apiKey = apiKey
-        self.endpoint = endpoint
+    init(apiKey: String, endpoint: String, sdkVersion: String) {
+        self.sdkVersion = sdkVersion
         // Configuration is validated in LoggerConfiguration, so this should not fail
         // swiftlint:disable:next force_try
         self.client = try! SdkLogClient(
             baseUrl: endpoint,
             apiKey: apiKey,
-            sdkVersion: "2.1.0" // NOTE: Inject actual SDK version
+            sdkVersion: sdkVersion
         )
     }
 
     func output(events: [SDKEvent]) async -> Bool {
-        guard let firstEvent = events.first else { return true } // Empty is success
+        guard !events.isEmpty else { return true }
 
-        // Construct SDKLog batch
-        let sdkLog = SDKLog(
-            sdkVersion: firstEvent.sdkVersion,
-            platform: firstEvent.platform,
+        // Build batch: sdkVersion from actor config, platform hardcoded,
+        // device/validation context extracted from the first event.
+        let firstEvent = events[0]
+
+        let logBatch = SDKLog(
+            sdkVersion: sdkVersion,
+            platform: "ios",
+            timestamp: Int64(Date().timeIntervalSince1970 * 1000),
             deviceModel: firstEvent.deviceModel,
             osVersion: firstEvent.osVersion,
-            // Context fields from first event
-            processId: nil as String?, // Not in event
-            flowId: nil as String?, // Not in event
+            processId: nil,
+            flowId: nil,
             validationId: firstEvent.validationId,
             accountId: firstEvent.accountId,
+            clientId: nil,
             events: events
         )
 
         do {
-            _ = try await client.log(sdkLog)
+            _ = try await client.log(logBatch)
+            #if DEBUG
+            print("🟢 [TruoraLogger] Sent \(events.count) events")
+            #endif
             return true
         } catch {
             #if DEBUG
-            print("🔴 [TruoraLogger] Failed to send events: \(error)")
+            let desc = error.localizedDescription
+            print("❌ [TruoraLogger] Failed to send: \(desc)")
             #endif
             return false
         }

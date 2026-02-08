@@ -16,6 +16,7 @@ final class ValidationConfig: ObservableObject {
     private(set) var apiClient: TruoraAPIClient?
     private(set) var delegate: ((TruoraValidationResult<ValidationResult>) -> Void)?
     private(set) var accountId: String?
+    private(set) var validationId: String?
     private(set) var enrollmentData: EnrollmentData?
     private(set) var uiConfig: UIConfig
     private(set) var faceConfig: Face
@@ -99,17 +100,45 @@ final class ValidationConfig: ObservableObject {
         apiClient = TruoraAPIClient(apiKey: apiKey)
     }
 
-    func setValidation(_ type: ValidationType) {
+    func setValidation(_ type: ValidationType) throws {
         switch type {
         case .face(let face):
+            try validateFinishViewConfig(
+                finishViewConfig: face.finishViewConfig,
+                shouldWaitForResults: face.shouldWaitForResults
+            )
             self.faceConfig = face
         case .document(let document):
+            try validateFinishViewConfig(
+                finishViewConfig: document.finishViewConfig,
+                shouldWaitForResults: document.shouldWaitForResults
+            )
             self.documentConfig = document
+        }
+    }
+
+    private func validateFinishViewConfig(
+        finishViewConfig: FinishViewConfiguration?,
+        shouldWaitForResults: Bool
+    ) throws {
+        if finishViewConfig != nil, !shouldWaitForResults {
+            let details = "finishViewConfiguration requires waitForResults to be enabled. "
+                + "Either remove setFinishViewConfiguration() or call "
+                + "enableWaitForResults(true)."
+            print("❌ ValidationConfig: \(details)")
+            throw TruoraException.sdk(SDKError(
+                type: .invalidConfiguration,
+                details: details
+            ))
         }
     }
 
     func updateEnrollmentData(_ enrollmentData: EnrollmentData) {
         self.enrollmentData = enrollmentData
+    }
+
+    func updateValidationId(_ validationId: String) {
+        self.validationId = validationId
     }
 
     func reset() {
@@ -118,6 +147,7 @@ final class ValidationConfig: ObservableObject {
         apiClient = nil
         delegate = nil
         accountId = nil
+        validationId = nil
         enrollmentData = nil
         // Note: Swift ARC automatically handles cleanup of old UIConfig/Face/Document instances
         // and their nested objects (e.g., ReferenceFace's temp file cleanup via deinit)

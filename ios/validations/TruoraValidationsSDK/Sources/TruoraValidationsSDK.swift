@@ -40,6 +40,9 @@ public class TruoraValidationsSDK {
         baseUrl: String? = nil,
         completion: ((TruoraValidationResult<ValidationResult>) -> Void)? = nil
     ) async throws {
+        // Initialize logger before starting validation
+        try await initializeLogger(apiKey: apiKey)
+
         try await ValidationConfig.shared.configure(
             apiKey: apiKey,
             accountId: accountId,
@@ -53,9 +56,24 @@ public class TruoraValidationsSDK {
         try ValidationRouter.presentFlow(navController: navController, from: viewController)
     }
 
+    /// Initializes the logger singleton.
+    /// Called automatically when starting a validation flow.
+    private func initializeLogger(apiKey: String) async throws {
+        guard !TruoraLoggerImplementation.isInitialized else {
+            return // Already initialized
+        }
+
+        let sdkVersion = Bundle(for: TruoraValidationsSDK.self)
+            .object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
+
+        let config = LoggerConfiguration.production(apiKey: apiKey, sdkVersion: sdkVersion)
+        try await TruoraLoggerImplementation.initialize(with: config)
+    }
+
     /// Cleans up SDK resources
-    public func reset() {
+    public func reset() async {
         ValidationConfig.shared.reset()
+        await TruoraLoggerImplementation.reset()
     }
 
     // MARK: - TruoraValidation
@@ -92,6 +110,9 @@ public class TruoraValidationsSDK {
             do {
                 let apiKey = try await resolveApiKey()
 
+                // Initialize logger before starting validation
+                try await TruoraValidationsSDK.shared.initializeLogger(apiKey: apiKey)
+
                 try await ValidationConfig.shared.configure(
                     apiKey: apiKey,
                     accountId: userId,
@@ -100,7 +121,7 @@ public class TruoraValidationsSDK {
                     uiConfig: uiConfig
                 )
 
-                ValidationConfig.shared.setValidation(self.type)
+                try ValidationConfig.shared.setValidation(self.type)
 
                 let navController = try ValidationRouter.createRootNavigationController(of: type)
 

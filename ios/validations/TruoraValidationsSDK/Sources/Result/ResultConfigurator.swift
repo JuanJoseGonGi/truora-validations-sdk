@@ -15,9 +15,11 @@ enum ResultConfigurator {
         loadingType: ResultLoadingType = .face,
         isCanceled: Bool = false
     ) throws -> UIViewController {
+        let logger = try TruoraLoggerImplementation.shared
         let interactor = ResultInteractor(
             validationId: validationId,
-            loadingType: loadingType
+            loadingType: loadingType,
+            logger: logger
         )
 
         let viewModel = ResultViewModel(loadingType: loadingType)

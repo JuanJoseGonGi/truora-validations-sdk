@@ -29,10 +29,10 @@ public struct SDKLog: Codable, Sendable {
     public let timestamp: Int64
 
     /// Device model (e.g., "iPhone15,2")
-    public let deviceModel: String?
+    public let deviceModel: String
 
     /// OS version (e.g., "17.1")
-    public let osVersion: String?
+    public let osVersion: String
 
     /// Process ID for tracking
     public let processId: String?
@@ -58,8 +58,8 @@ public struct SDKLog: Codable, Sendable {
         sdkVersion: String,
         platform: String,
         timestamp: Int64 = Int64(Date().timeIntervalSince1970 * 1000),
-        deviceModel: String? = nil,
-        osVersion: String? = nil,
+        deviceModel: String,
+        osVersion: String,
         processId: String? = nil,
         flowId: String? = nil,
         validationId: String? = nil,

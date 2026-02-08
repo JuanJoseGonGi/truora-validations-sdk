@@ -38,6 +38,10 @@ class PassiveCapturePresenter {
     private let timeProvider: TimeProvider
     private let useAutocapture: Bool
 
+    /// Constants for logging
+    private static let viewName = "face_capture"
+    private static let validationType = "face_validation"
+
     private var wasRecordingBeforeHelp: Bool = false
     private var stateAtHelp: PassiveCaptureState?
     private var feedbackAtHelp: FeedbackType = .none
@@ -280,6 +284,95 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         await updateUI()
     }
 
+    // MARK: - Logging Methods
+
+    private func logViewRendered() async {
+        guard let logger = try? TruoraLoggerImplementation.shared else {
+            return
+        }
+        await logger.logView(
+            viewName: "render_\(Self.viewName)_succeeded",
+            level: .info,
+            retention: .oneWeek,
+            metadata: [
+                "name": Self.viewName,
+                "validation_type": Self.validationType
+            ]
+        )
+    }
+
+    private func logCameraOpened() async {
+        guard let logger = try? TruoraLoggerImplementation.shared else {
+            return
+        }
+        await logger.logCamera(
+            eventName: "camera_successfully_opened",
+            level: .info,
+            errorMessage: nil,
+            retention: .oneWeek,
+            metadata: [
+                "validation_type": Self.validationType,
+                "selected_camera": "front"
+            ]
+        )
+    }
+
+    private func logCameraOpenFailed(errorMessage: String) async {
+        guard let logger = try? TruoraLoggerImplementation.shared else {
+            return
+        }
+        await logger.logCamera(
+            eventName: "open_camera_failed",
+            level: .error,
+            errorMessage: errorMessage,
+            retention: .oneWeek,
+            metadata: [
+                "validation_type": Self.validationType,
+                "selected_camera": "front"
+            ]
+        )
+    }
+
+    private func logCameraPermissionGranted() async {
+        guard let logger = try? TruoraLoggerImplementation.shared else {
+            return
+        }
+        await logger.logCamera(
+            eventName: "camera_permissions_granted",
+            level: .info,
+            errorMessage: nil,
+            retention: .oneWeek,
+            metadata: [
+                "validation_type": Self.validationType,
+                "selected_camera": "front"
+            ]
+        )
+    }
+
+    private func logCameraCrashed(errorMessage: String) async {
+        guard let logger = try? TruoraLoggerImplementation.shared else {
+            return
+        }
+        await logger.logCamera(
+            eventName: "camera_crashed",
+            level: .fatal,
+            errorMessage: errorMessage,
+            retention: .oneMonth,
+            metadata: [
+                "validation_type": Self.validationType,
+                "selected_camera": "front"
+            ]
+        )
+    }
+
+    func cameraError(_ errorMessage: String) async {
+        if lifecycleState == .uninitialized || lifecycleState == .stopped {
+            await logCameraOpenFailed(errorMessage: errorMessage)
+        } else {
+            await logCameraCrashed(errorMessage: errorMessage)
+        }
+    }
+
     func viewWillAppear() async {
         // On initial load, skip restart logic as it's handled by viewDidLoad
         guard lifecycleState != .uninitialized else {
@@ -300,6 +393,7 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
 
         switch status {
         case .authorized:
+            await logCameraPermissionGranted()
             if lifecycleState == .stopped, !isSettingUpCamera {
                 print("✅ Permission granted, restarting camera...")
                 isSettingUpCamera = true
@@ -346,6 +440,12 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         isSettingUpCamera = false
         lifecycleState = .ready
         showSettingsPrompt = false
+
+        // Log view and camera events concurrently (independent operations)
+        async let logView: Void = logViewRendered()
+        async let logCamera: Void = logCameraOpened()
+        _ = await (logView, logCamera)
+
         await updateUI()
 
         switch pendingCameraReadyAction {
@@ -579,6 +679,7 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         print("❌ PassiveCapturePresenter: Camera permission denied")
         print("🔔 Showing settings prompt to user")
         showSettingsPrompt = true
+        await logCameraOpenFailed(errorMessage: "Camera permission denied")
         await updateUI()
     }
 
@@ -687,6 +788,10 @@ extension PassiveCapturePresenter: PassiveCaptureInteractorToPresenter {
     func videoUploadCompleted(validationId: String) async {
         uploadState = .success
         await view?.resetRecordingInProgress()
+
+        // Log successful face capture
+        await interactor?.logFaceCaptureSucceeded()
+
         await updateUI()
 
         // Stop camera before navigating to results
@@ -709,6 +814,11 @@ extension PassiveCapturePresenter: PassiveCaptureInteractorToPresenter {
     func videoUploadFailed(_ error: TruoraException) async {
         uploadState = .none
         await view?.resetRecordingInProgress()
+
+        // Log failed face capture
+        let errorMessage = error.errorDescription ?? "Unknown error"
+        await interactor?.logFaceCaptureFailed(errorMessage: errorMessage)
+
         await updateUI()
 
         // Stop camera before dismissing flow

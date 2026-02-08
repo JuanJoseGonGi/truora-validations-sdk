@@ -10,11 +10,12 @@ import Foundation
 
 /// Document frame processor that wraps DocumentDetector id detection model and forwards results to delegate
 class DocumentFrameProcessor: FrameProcessor {
-    private let detector = DocumentDetector()
+    private let detector: DocumentDetector
     private weak var delegate: CameraDelegate?
 
-    init(delegate: CameraDelegate?) {
+    init(delegate: CameraDelegate?, logger: MLLifecycleLogger? = nil) {
         self.delegate = delegate
+        self.detector = DocumentDetector(logger: logger)
         setupDetector()
     }
 

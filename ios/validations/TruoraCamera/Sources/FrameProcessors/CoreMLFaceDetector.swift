@@ -14,12 +14,19 @@ import Vision
 /// CoreML face detector using Vision Framework
 class CoreMLFaceDetector {
     private let confidenceThreshold: Float = 0.5 // only for testing purpose
+    private weak var logger: MLLifecycleLogger?
+    private var hasLoggedFirstPrediction = false
+    private let predictionLogLock = NSLock()
 
     var onFacesDetected: (([DetectionResult]) -> Void)?
 
     var onError: ((Error) -> Void)?
 
-    init() {
+    init(logger: MLLifecycleLogger? = nil) {
+        self.logger = logger
+        // Vision framework is bundled with iOS — no model file to load.
+        // Log init succeeded since the detector is ready immediately.
+        logger?.logModelInitSucceeded(modelName: "face_detector")
         #if DEBUG
         print("CoreML Face Detector initialized")
         #endif
@@ -36,6 +43,10 @@ class CoreMLFaceDetector {
 
         let request = VNDetectFaceRectanglesRequest { [weak self] request, error in
             if let error {
+                self?.logger?.logModelPredictionFailed(
+                    modelName: "face_detector",
+                    errorMessage: error.localizedDescription
+                )
                 DispatchQueue.main.async {
                     self?.onError?(error)
                 }
@@ -58,6 +69,14 @@ class CoreMLFaceDetector {
                 )
             }
 
+            if !faces.isEmpty {
+                self?.predictionLogLock.withLock {
+                    guard self?.hasLoggedFirstPrediction == false else { return }
+                    self?.hasLoggedFirstPrediction = true
+                    self?.logger?.logModelPredictionFinished(modelName: "face_detector")
+                }
+            }
+
             DispatchQueue.main.async {
                 self?.onFacesDetected?(faces)
             }
@@ -77,6 +96,10 @@ class CoreMLFaceDetector {
         do {
             try handler.perform([request])
         } catch {
+            logger?.logModelPredictionFailed(
+                modelName: "face_detector",
+                errorMessage: error.localizedDescription
+            )
             DispatchQueue.main.async { [weak self] in
                 self?.onError?(error)
             }
