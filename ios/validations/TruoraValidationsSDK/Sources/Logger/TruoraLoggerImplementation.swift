@@ -501,7 +501,7 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
 
         return metadata.reduce(into: [String: String]()) { result, element in
             let key = element.key.lowercased()
-            if !TruoraLoggerImplementation.forbiddenKeys.contains(key) {
+            if !Self.forbiddenKeys.contains(key) {
                 result[element.key] = "\(element.value)"
             }
         }
