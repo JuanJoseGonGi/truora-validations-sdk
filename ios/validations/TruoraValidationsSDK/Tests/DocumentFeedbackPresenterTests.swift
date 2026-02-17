@@ -16,7 +16,7 @@ import XCTest
     override func setUp() {
         super.setUp()
         mockView = MockDocumentFeedbackView()
-        let navController = UINavigationController()
+        let navController = TruoraNavigationController()
         mockRouter = MockDocumentFeedbackRouter(navigationController: navController)
 
         sut = DocumentFeedbackPresenter(
@@ -69,7 +69,7 @@ import XCTest
     func testWeakReferences_allowViewDeallocation() {
         autoreleasepool {
             var view: MockDocumentFeedbackView? = MockDocumentFeedbackView()
-            let navController = UINavigationController()
+            let navController = TruoraNavigationController()
             let router = MockDocumentFeedbackRouter(navigationController: navController)
             let presenter = DocumentFeedbackPresenter(view: view!, router: router)
 
@@ -85,7 +85,7 @@ import XCTest
         autoreleasepool {
             let view = MockDocumentFeedbackView()
             var router: MockDocumentFeedbackRouter? = {
-                let navController = UINavigationController()
+                let navController = TruoraNavigationController()
                 return MockDocumentFeedbackRouter(navigationController: navController)
             }()
             let presenter = DocumentFeedbackPresenter(view: view, router: router!)

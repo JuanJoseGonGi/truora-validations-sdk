@@ -143,22 +143,59 @@ enum LocalizationKeys {
         "country_\(isoCode)"
     }
 
-    // MARK: - Document types (labels)
+    // MARK: - Document types (generic labels)
 
     static let documentTypeNationalId = "document_type_national_id"
     static let documentTypeIdentityCard = "document_type_identity_card"
     static let documentTypeForeignId = "document_type_foreign_id"
     static let documentTypePpt = "document_type_ppt"
     static let documentTypeDriverLicense = "document_type_driver_license"
-    static let docBrCnh = "doc_br_cnh"
     static let documentTypePassport = "document_type_passport"
     static let documentTypeInvoice = "document_type_invoice"
     static let documentTypeTaxId = "document_type_tax_id"
     static let documentTypePtp = "document_type_ptp"
     static let documentTypeRut = "document_type_rut"
     static let documentTypeNativeNationalId = "document_type_native_national_id"
+
+    // MARK: - Country-specific document labels
+
+    // Mexico
+    static let docMxNationalId = "doc_mx_national_id"
+    static let docMxForeignId = "doc_mx_foreign_id"
+
+    // Brazil
+    static let docBrCnh = "doc_br_cnh"
     static let docBrGeneralReg = "doc_br_general_reg"
+    static let docBrNationalId = "doc_br_national_id"
+
+    // Colombia
+    static let docCoNationalId = "doc_co_national_id"
+    static let docCoForeignId = "doc_co_foreign_id"
+    static let docCoPpt = "doc_co_ppt"
     static let docCoTempId = "doc_co_temp_id"
+    static let docCoPtp = "doc_co_ptp"
+
+    // Chile
+    static let docClNationalId = "doc_cl_national_id"
+
+    // Peru
+    static let docPeNationalId = "doc_pe_national_id"
+    static let docPeForeignId = "doc_pe_foreign_id"
+    static let docPePtp = "doc_pe_ptp"
+
+    // Venezuela
+    static let docVeNationalId = "doc_ve_national_id"
+
+    // Argentina
+    static let docArNationalId = "doc_ar_national_id"
+
+    // El Salvador
+    static let docSvNationalId = "doc_sv_national_id"
+    static let docSvForeignId = "doc_sv_foreign_id"
+
+    // Costa Rica
+    static let docCrNationalId = "doc_cr_national_id"
+    static let docCrForeignId = "doc_cr_foreign_id"
 
     // MARK: - Document descriptions (by country/type)
 
@@ -169,7 +206,6 @@ enum LocalizationKeys {
     static let descCoValidIssued = "desc_co_valid_issued"
     static let descCoPassport = "desc_co_passport"
     static let descCoTempId = "desc_co_temp_id"
-    static let docCoPpt = "doc_co_ppt"
     static let descCoTaxId = "desc_co_tax_id"
     static let descClForeignId = "desc_cl_foreign_id"
     static let descClPassport = "desc_cl_passport"

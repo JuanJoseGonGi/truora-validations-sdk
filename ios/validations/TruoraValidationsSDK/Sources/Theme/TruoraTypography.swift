@@ -9,7 +9,9 @@ import SwiftUI
 import UIKit
 
 struct TruoraTypography {
+    let displayLarge: Font
     let titleLarge: Font
+    let titleMedium: Font
     let titleSmall: Font
     let bodyLarge: Font
     let bodyMedium: Font
@@ -18,19 +20,21 @@ struct TruoraTypography {
     init() {
         let isIPad = UIDevice.current.userInterfaceIdiom == .pad
 
-        // Typography from Figma specs:
-        // iPhone: Title 24pt bold, Body 16pt medium
-        // iPad: Title 40pt semibold, Body 30pt regular, Lock 18pt, Button 24pt
+        // Design specs: iPhone uses compact sizes; iPad uses larger for readability.
         if isIPad {
+            self.displayLarge = .system(size: 120, weight: .semibold)
             self.titleLarge = .system(size: 40, weight: .semibold)
-            self.titleSmall = .system(size: 24, weight: .medium)
+            self.titleMedium = .system(size: 36, weight: .semibold)
+            self.titleSmall = .system(size: 24, weight: .semibold)
             self.bodyLarge = .system(size: 30, weight: .regular)
-            self.bodyMedium = .system(size: 18, weight: .regular)
+            self.bodyMedium = .system(size: 24, weight: .regular)
             self.bodySmall = .system(size: 18, weight: .regular)
         } else {
-            self.titleLarge = .system(size: 24, weight: .bold)
-            self.titleSmall = .system(size: 20, weight: .semibold)
-            self.bodyLarge = .system(size: 16, weight: .medium)
+            self.displayLarge = .system(size: 96, weight: .semibold)
+            self.titleLarge = .system(size: 20, weight: .semibold)
+            self.titleMedium = .system(size: 18, weight: .semibold)
+            self.titleSmall = .system(size: 14, weight: .semibold)
+            self.bodyLarge = .system(size: 16, weight: .regular)
             self.bodyMedium = .system(size: 14, weight: .regular)
             self.bodySmall = .system(size: 12, weight: .regular)
         }

@@ -13,7 +13,7 @@ final class ResultPresenter {
     weak var router: ValidationRouter?
 
     private let validationId: String
-    private let shouldWaitForResults: Bool
+    private let waitForResults: Bool
     private let finishViewConfig: FinishViewConfiguration?
     private let loadingType: ResultLoadingType
     private let timeProvider: TimeProvider
@@ -40,8 +40,8 @@ final class ResultPresenter {
         self.timeProvider = timeProvider
 
         let configWaitForResults = switch loadingType {
-        case .face: ValidationConfig.shared.faceConfig.shouldWaitForResults
-        case .document: ValidationConfig.shared.documentConfig.shouldWaitForResults
+        case .face: ValidationConfig.shared.faceConfig.waitForResults
+        case .document: ValidationConfig.shared.documentConfig.waitForResults
         }
 
         self.finishViewConfig = switch loadingType {
@@ -49,7 +49,7 @@ final class ResultPresenter {
         case .document: ValidationConfig.shared.documentConfig.finishViewConfig
         }
 
-        self.shouldWaitForResults = configWaitForResults
+        self.waitForResults = configWaitForResults
     }
 
     deinit {
@@ -80,7 +80,7 @@ extension ResultPresenter: ResultViewToPresenter {
             return
         }
 
-        if shouldWaitForResults {
+        if waitForResults {
             // Show loading and wait for result
             await view?.showLoading()
             interactor?.startPolling()
@@ -104,7 +104,7 @@ extension ResultPresenter: ResultViewToPresenter {
             return
         }
 
-        if shouldWaitForResults {
+        if waitForResults {
             guard let result = finalResult else {
                 print("⚠️ ResultPresenter: Done tapped but no result yet")
                 return
@@ -137,7 +137,7 @@ extension ResultPresenter: ResultInteractorToPresenter {
         // Log SDK execution finished
         await interactor?.logSdkExecutionFinished()
 
-        guard shouldWaitForResults else {
+        guard waitForResults else {
             // UI is already showing "Completed", just notify delegate
             await notifyDelegate(with: result)
             return
@@ -164,7 +164,7 @@ extension ResultPresenter: ResultInteractorToPresenter {
         )
         finalResult = failedResult
 
-        guard shouldWaitForResults else {
+        guard waitForResults else {
             await notifyDelegateError(error)
             return
         }
@@ -204,7 +204,7 @@ private extension ResultPresenter {
         try? await timeProvider.sleep(nanoseconds: 100_000_000)
 
         await MainActor.run {
-            ValidationConfig.shared.delegate?(.complete(result))
+            ValidationConfig.shared.delegate?(.completed(result))
         }
     }
 
@@ -218,7 +218,7 @@ private extension ResultPresenter {
         try? await timeProvider.sleep(nanoseconds: 100_000_000)
 
         await MainActor.run {
-            ValidationConfig.shared.delegate?(.failure(error, nil))
+            ValidationConfig.shared.delegate?(.error(error))
         }
     }
 

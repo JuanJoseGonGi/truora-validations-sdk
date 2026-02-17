@@ -60,7 +60,7 @@ struct ManualCaptureButton: View {
 
                 // Button text
                 Text(title)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(theme.typography.bodyLarge)
                     .foregroundColor(theme.colors.layoutGray900)
             }
             .padding(.horizontal, 16)

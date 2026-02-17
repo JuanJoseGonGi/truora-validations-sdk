@@ -221,6 +221,10 @@ public class TruoraAPIClient {
         queryItems.append(URLQueryItem(name: "type", value: request.type))
         queryItems.append(URLQueryItem(name: "account_id", value: request.accountId))
         queryItems.append(URLQueryItem(name: "user_authorized", value: String(request.userAuthorized)))
+        queryItems.append(URLQueryItem(
+            name: "check_manual_review_availability",
+            value: String(request.checkManualReviewAvailability)
+        ))
 
         if let country = request.country {
             queryItems.append(URLQueryItem(name: "country", value: country))

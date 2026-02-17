@@ -53,7 +53,7 @@ struct PassiveCaptureFeedbackView: View {
     @ViewBuilder
     private var feedbackContent: some View {
         let baseView = Text(feedbackText)
-            .font(.system(size: 16, weight: .semibold))
+            .font(theme.typography.titleSmall)
             .foregroundColor(theme.colors.tint)
             .tracking(0.25)
             .multilineTextAlignment(.center)

@@ -133,6 +133,65 @@ import XCTest
         // Then
         XCTAssertNotNil(ValidationConfig.shared.delegate)
     }
+
+    // MARK: - Passport Autocapture Validation Tests
+
+    func testSetValidation_passportWithDefaultAutocapture_shouldSucceed() {
+        // Given — Document with passport type, default autocapture (true).
+        // The developer did NOT explicitly call useAutocapture(true), so
+        // defense-in-depth should allow this (autocapture disabled at runtime).
+        let document = Document()
+            .setDocumentType("passport")
+
+        // When/Then — should not throw (matches Android behavior)
+        XCTAssertNoThrow(
+            try ValidationConfig.shared.setValidation(.document(document))
+        )
+        XCTAssertEqual(ValidationConfig.shared.documentConfig.documentType, "passport")
+    }
+
+    // Note: The case where passport + explicit useAutocapture(true) reaches
+    // validateAutocaptureConfig is unreachable through the public API because
+    // preconditionFailure fires first in setDocumentType() or useAutocapture().
+    // The defense-in-depth validation exists as a safety net for internal changes.
+
+    func testSetValidation_passportWithAutocaptureDisabled_shouldSucceed() {
+        // Given
+        let document = Document()
+            .setDocumentType("passport")
+            .useAutocapture(false)
+
+        // When/Then — should not throw
+        XCTAssertNoThrow(
+            try ValidationConfig.shared.setValidation(.document(document))
+        )
+        XCTAssertEqual(ValidationConfig.shared.documentConfig.documentType, "passport")
+        XCTAssertFalse(ValidationConfig.shared.documentConfig.useAutocapture)
+    }
+
+    func testSetValidation_nonPassportWithAutocapture_shouldSucceed() {
+        // Given
+        let document = Document()
+            .setDocumentType("national-id")
+            .useAutocapture(true)
+
+        // When/Then — should not throw
+        XCTAssertNoThrow(
+            try ValidationConfig.shared.setValidation(.document(document))
+        )
+        XCTAssertEqual(ValidationConfig.shared.documentConfig.documentType, "national-id")
+        XCTAssertTrue(ValidationConfig.shared.documentConfig.useAutocapture)
+    }
+
+    func testSetValidation_documentWithNoType_shouldSucceed() {
+        // Given — no document type set (user will select later)
+        let document = Document()
+
+        // When/Then — should not throw even though autocapture defaults to true
+        XCTAssertNoThrow(
+            try ValidationConfig.shared.setValidation(.document(document))
+        )
+    }
 }
 
 // MARK: - Test Helpers
@@ -147,10 +206,10 @@ import XCTest
     var closure: (TruoraValidationResult<ValidationResult>) -> Void {
         { [unowned self] result in
             switch result {
-            case .complete(let validationResult):
+            case .completed(let validationResult):
                 self.completionCalled = true
                 self.lastResult = validationResult
-            case .failure(let err, _):
+            case .error(let err):
                 self.failureCalled = true
                 self.lastError = err
             case .canceled:

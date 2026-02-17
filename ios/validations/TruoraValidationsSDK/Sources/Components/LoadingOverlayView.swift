@@ -9,6 +9,7 @@ import SwiftUI
 
 struct LoadingOverlayView: View {
     let message: String
+    @EnvironmentObject var theme: TruoraTheme
 
     var body: some View {
         ZStack {
@@ -24,7 +25,7 @@ struct LoadingOverlayView: View {
 
                 Text(message)
                     .foregroundColor(.white)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(theme.typography.bodyLarge)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -35,4 +36,5 @@ struct LoadingOverlayView: View {
 
 #Preview {
     LoadingOverlayView(message: "Loading...")
+        .environmentObject(TruoraTheme(config: nil))
 }

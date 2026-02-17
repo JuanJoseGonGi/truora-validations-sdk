@@ -24,7 +24,7 @@ import XCTest
         super.setUp()
         mockView = MockPassiveIntroView()
         mockInteractor = MockPassiveIntroInteractor()
-        let navController = UINavigationController()
+        let navController = TruoraNavigationController()
         mockRouter = MockPassiveIntroRouter(navigationController: navController)
 
         sut = PassiveIntroPresenter(

@@ -20,7 +20,7 @@ struct CameraSettingsPromptView: View {
 
             VStack(spacing: 24) {
                 Text(TruoraLocalization.string(forKey: LocalizationKeys.cameraPermissionDeniedTitle))
-                    .font(theme.typography.titleLarge)
+                    .font(theme.typography.bodyLarge)
                     .fontWeight(.bold)
                     .foregroundColor(theme.colors.onSurface)
                     .multilineTextAlignment(.center)

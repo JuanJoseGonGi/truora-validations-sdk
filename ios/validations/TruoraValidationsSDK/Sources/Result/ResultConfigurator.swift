@@ -36,7 +36,7 @@ enum ResultConfigurator {
 
         let config = ValidationConfig.shared.uiConfig
         let swiftUIView = ResultView(viewModel: viewModel, config: config)
-            .sdkLocaleEnvironment(locale: config.language?.locale ?? Locale.current)
+            .sdkLocaleEnvironment(locale: TruoraLocalization.currentLocale)
         let hostingController = UIHostingController(rootView: swiftUIView)
         hostingController.modalPresentationStyle = .fullScreen
 

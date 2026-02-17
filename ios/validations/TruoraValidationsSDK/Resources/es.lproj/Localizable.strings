@@ -186,6 +186,8 @@
 "doc_co_ptp" = "PPT (VEN)";
 "doc_sv_national_id" = "Documento Único de Identidad (DUI)";
 "doc_sv_foreign_id" = "Carnet de residencia";
+"doc_cr_national_id" = "Cédula de ciudadanía";
+"doc_cr_foreign_id" = "Cédula de extranjería";
 
 /* Document Descriptions */
 "desc_original_valid" = "Original y vigente";

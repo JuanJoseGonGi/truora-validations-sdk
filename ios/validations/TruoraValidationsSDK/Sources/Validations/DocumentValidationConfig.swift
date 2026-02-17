@@ -26,9 +26,10 @@ import Foundation
 public class Document {
     private var _country: String = ""
     private var _documentType: String = ""
-    private var _shouldWaitForResults: Bool = false
+    private var _waitForResults: Bool = false
     private var _useAutocapture: Bool = true
-    private var _timeoutSeconds: Int = 60
+    private var _didExplicitlyEnableAutocapture: Bool = false
+    private var _timeout: Int?
     private var _finishViewConfig: FinishViewConfiguration?
 
     public required init() {}
@@ -41,16 +42,23 @@ public class Document {
         _documentType
     }
 
-    public var shouldWaitForResults: Bool {
-        _shouldWaitForResults
+    public var waitForResults: Bool {
+        _waitForResults
     }
 
     public var useAutocapture: Bool {
         _useAutocapture
     }
 
-    public var timeoutSeconds: Int {
-        _timeoutSeconds
+    /// Whether the developer explicitly called ``useAutocapture(true)``.
+    /// Used by ``ValidationConfig`` defense-in-depth validation to distinguish
+    /// explicit opt-in from the default `true` value.
+    var didExplicitlyEnableAutocapture: Bool {
+        _didExplicitlyEnableAutocapture
+    }
+
+    public var timeout: Int? {
+        _timeout
     }
 
     public var finishViewConfig: FinishViewConfiguration? {
@@ -70,12 +78,20 @@ public class Document {
 
     /// Sets the document type for validation.
     ///
+    /// - Precondition: Cannot be set to `"passport"` when autocapture has been explicitly enabled,
+    ///   because autocapture is not supported for passport documents.
     /// - Note: If not set, a document selection view will be shown to collect this from the user.
     /// - Parameter documentType: The document type identifier (e.g., "national-id", "passport",
     ///   "driver-license").
     /// - Returns: This Document for method chaining
     @discardableResult
     public func setDocumentType(_ documentType: String) -> Document {
+        if documentType == NativeDocumentType.passport.rawValue, _didExplicitlyEnableAutocapture {
+            preconditionFailure(
+                "Autocapture is not supported for passport document type. "
+                    + "Remove useAutocapture(true) or use a different document type."
+            )
+        }
         _documentType = documentType
         return self
     }
@@ -88,25 +104,35 @@ public class Document {
     /// - Parameter enabled: true to show results view, false to skip it (default: false)
     /// - Returns: This Document for method chaining
     @discardableResult
-    public func enableWaitForResults(_ enabled: Bool) -> Document {
+    public func waitForResults(_ enabled: Bool) -> Document {
         if !enabled, _finishViewConfig != nil {
             preconditionFailure(
-                "enableWaitForResults(false) cannot be called when "
+                "waitForResults(false) cannot be called when "
                     + "finishViewConfiguration is set. Remove "
                     + "setFinishViewConfiguration() first."
             )
         }
-        _shouldWaitForResults = enabled
+        _waitForResults = enabled
         return self
     }
 
     /// Sets whether to enable auto-detect and auto-capture of the document.
     ///
+    /// - Precondition: Cannot be set to `true` when the document type is `passport`,
+    ///   because autocapture is not supported for passport documents.
     /// - Parameter enabled: true to enable auto-capture, false for manual capture (default: true)
     /// - Returns: This Document for method chaining
     @discardableResult
-    public func enableAutocapture(_ enabled: Bool) -> Document {
+    public func useAutocapture(_ enabled: Bool) -> Document {
+        if enabled, _documentType == NativeDocumentType.passport.rawValue {
+            preconditionFailure(
+                "useAutocapture(true) is not supported for passport document type. "
+                    + "Autocapture does not work reliably with passports. "
+                    + "Remove useAutocapture(true) or use a different document type."
+            )
+        }
         _useAutocapture = enabled
+        _didExplicitlyEnableAutocapture = enabled
         return self
     }
 
@@ -117,7 +143,7 @@ public class Document {
     /// - Returns: This Document for method chaining
     @discardableResult
     public func setTimeout(_ seconds: Int) -> Document {
-        _timeoutSeconds = max(seconds, 0)
+        _timeout = max(seconds, 0)
         return self
     }
 
@@ -131,7 +157,7 @@ public class Document {
     @discardableResult
     public func setFinishViewConfiguration(_ config: FinishViewConfiguration) -> Document {
         _finishViewConfig = config
-        _shouldWaitForResults = true
+        _waitForResults = true
         return self
     }
 }

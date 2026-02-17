@@ -175,19 +175,19 @@ final class ValidationResultHelperTests: XCTestCase {
         // Given
         let frontUrl = "https://cdn.example.com/front.png"
         let reverseUrl = "https://cdn.example.com/reverse.png"
-        let docDetail = DocumentDetail(
-            country: "CO",
-            documentType: "national-id",
-            name: "John",
-            frontUrl: frontUrl,
-            reverseUrl: reverseUrl
-        )
+        let docDetail: [String: JSONValue] = [
+            "country": .string("CO"),
+            "document_type": .string("national-id"),
+            "name": .string("John"),
+            "front_url": .string(frontUrl),
+            "reverse_url": .string(reverseUrl)
+        ]
 
         // Then
-        XCTAssertEqual(docDetail.frontUrl, frontUrl)
-        XCTAssertEqual(docDetail.reverseUrl, reverseUrl)
-        XCTAssertEqual(docDetail.country, "CO")
-        XCTAssertEqual(docDetail.name, "John")
+        XCTAssertEqual(docDetail["front_url"]?.stringValue, frontUrl)
+        XCTAssertEqual(docDetail["reverse_url"]?.stringValue, reverseUrl)
+        XCTAssertEqual(docDetail["country"]?.stringValue, "CO")
+        XCTAssertEqual(docDetail["name"]?.stringValue, "John")
     }
 
     func testValidationDetail_faceRecognitionPreservesAllFields() {
@@ -248,11 +248,13 @@ final class ValidationResultHelperTests: XCTestCase {
     // MARK: - Helper Methods
 
     private func createResult(frontUrl: String?) -> ValidationResult {
-        let docDetail = DocumentDetail(
-            country: "CO",
-            documentType: "national-id",
-            frontUrl: frontUrl
-        )
+        var docDetail: [String: JSONValue] = [
+            "country": .string("CO"),
+            "document_type": .string("national-id")
+        ]
+        if let frontUrl {
+            docDetail["front_url"] = .string(frontUrl)
+        }
         let detailInfo = ValidationDetailInfo(documentDetails: docDetail)
         let detail = ValidationDetail(
             validationId: "VLD-123",
@@ -273,11 +275,13 @@ final class ValidationResultHelperTests: XCTestCase {
         frontUrl: String?,
         inputFiles: [String]
     ) -> ValidationResult {
-        let docDetail = DocumentDetail(
-            country: "CO",
-            documentType: "national-id",
-            frontUrl: frontUrl
-        )
+        var docDetail: [String: JSONValue] = [
+            "country": .string("CO"),
+            "document_type": .string("national-id")
+        ]
+        if let frontUrl {
+            docDetail["front_url"] = .string(frontUrl)
+        }
         let detailInfo = ValidationDetailInfo(documentDetails: docDetail)
         let userResponse = ValidationDetailUserResponse(inputFiles: inputFiles)
         let detail = ValidationDetail(

@@ -20,7 +20,7 @@ import XCTest
         sut = ResultInteractor(
             validationId: "test-validation-id",
             loadingType: .face,
-            timeProvider: mockTimeProvider
+            timeProvider: mockTimeProvider, logger: <#any TruoraLogger#>
         )
         sut.presenter = mockPresenter
         ValidationConfig.shared.reset()
@@ -223,18 +223,11 @@ import XCTest
         // Then
         XCTAssertNotNil(result.detail)
         XCTAssertEqual(result.detail?.validationId, "id")
-        XCTAssertEqual(
-            result.detail?.details?.documentDetails?.country,
-            "CO"
-        )
-        XCTAssertEqual(
-            result.detail?.details?.documentDetails?.frontUrl,
-            "https://example.com/front.png"
-        )
-        XCTAssertEqual(
-            result.detail?.details?.documentDetails?.reverseUrl,
-            "https://example.com/reverse.png"
-        )
+        let docDetails = result.detail?.details?.documentDetails
+        XCTAssertNotNil(docDetails)
+        XCTAssertEqual(docDetails?["country"]?.stringValue, "CO")
+        XCTAssertEqual(docDetails?["front_url"]?.stringValue, "https://example.com/front.png")
+        XCTAssertEqual(docDetails?["reverse_url"]?.stringValue, "https://example.com/reverse.png")
     }
 
     func testCreateValidationResult_mapsFaceRecognitionDetailCorrectly() {
@@ -435,29 +428,12 @@ extension ResultInteractor {
 
     private func mapDocumentDetails(
         from doc: NativeDocumentDetails?
-    ) -> DocumentDetail? {
+    ) -> [String: JSONValue]? {
         guard let doc else { return nil }
-        return DocumentDetail(
-            docId: doc.docId,
-            country: doc.country,
-            documentType: doc.documentType,
-            documentNumber: doc.documentNumber,
-            name: doc.name,
-            lastName: doc.lastName,
-            dateOfBirth: doc.dateOfBirth,
-            gender: doc.gender,
-            issueDate: doc.issueDate,
-            expirationDate: doc.expirationDate,
-            expeditionPlace: doc.expeditionPlace,
-            birthPlace: doc.birthPlace,
-            height: doc.height,
-            rh: doc.rh,
-            mimeType: doc.mimeType,
-            clientId: doc.clientId,
-            creationDate: doc.creationDate,
-            frontUrl: doc.frontUrl,
-            reverseUrl: doc.reverseUrl
-        )
+        let encoder = JSONEncoder()
+        guard let data = try? encoder.encode(doc) else { return nil }
+        let decoder = JSONDecoder()
+        return try? decoder.decode([String: JSONValue].self, from: data)
     }
 
     private func mapDocumentValidations(

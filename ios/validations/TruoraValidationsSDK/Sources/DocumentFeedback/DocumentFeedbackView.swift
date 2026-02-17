@@ -64,19 +64,20 @@ struct DocumentFeedbackView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .top, spacing: 14) {
                         FeedbackIconView(
-                            feedback: viewModel.feedback, errorColor: theme.colors.error
+                            feedback: viewModel.feedback,
+                            errorColor: theme.colors.error
                         )
                         .frame(width: 60, height: 60)
 
                         Text(feedbackTitle(for: viewModel.feedback))
-                            .font(.system(size: 19, weight: .bold))
+                            .font(theme.typography.titleLarge)
                             .foregroundColor(theme.colors.error)
                             .tracking(0.25)
                             .multilineTextAlignment(.leading)
                     }
 
                     Text(feedbackDescription(for: viewModel.feedback))
-                        .font(.system(size: 16, weight: .regular))
+                        .font(theme.typography.bodyLarge)
                         .foregroundColor(theme.colors.onSurface)
                         .multilineTextAlignment(.leading)
 
@@ -188,7 +189,7 @@ struct DocumentFeedbackView: View {
                     .font(theme.typography.bodySmall)
                     .foregroundColor(theme.colors.onSurface)
                 Text(numberString)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(theme.typography.bodyMedium)
                     .foregroundColor(theme.colors.onSurface)
                 Text(suffix)
                     .font(theme.typography.bodySmall)
@@ -207,6 +208,7 @@ struct DocumentFeedbackView: View {
 private struct FeedbackIconView: View {
     let feedback: FeedbackScenario
     let errorColor: Color
+    @EnvironmentObject var theme: TruoraTheme
 
     var iconName: String {
         switch feedback {
@@ -240,7 +242,7 @@ private struct FeedbackIconView: View {
                     .fill(errorColor)
                     .frame(width: 23, height: 23)
                 SwiftUI.Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(theme.typography.bodySmall)
                     .foregroundColor(.white)
             }
             .offset(x: 8, y: 8)

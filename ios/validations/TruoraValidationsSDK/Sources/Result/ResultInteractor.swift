@@ -18,6 +18,8 @@ final class ResultInteractor {
 
     /// Constants for logging
     private static let viewName = "result"
+    private static let encoder = JSONEncoder()
+    private static let decoder = JSONDecoder()
 
     init(
         validationId: String,
@@ -156,6 +158,7 @@ private extension ResultInteractor {
 
     func pollForResult(apiClient: TruoraAPIClient) async throws -> ValidationResult {
         let backoffIntervals = getBackoffIntervals()
+        var lastValidationDetail: NativeValidationDetailResponse?
 
         if loadingType == .document {
             try await timeProvider.sleep(nanoseconds: 1_000_000_000) // 1s
@@ -170,6 +173,7 @@ private extension ResultInteractor {
 
             do {
                 let validationDetail = try await fetchValidationDetail(apiClient: apiClient)
+                lastValidationDetail = validationDetail
                 if shouldReturnResult(for: validationDetail) {
                     return createValidationResult(from: validationDetail)
                 }
@@ -193,12 +197,43 @@ private extension ResultInteractor {
             }
         }
 
-        print("❌ ResultInteractor: Polling timeout after \(backoffIntervals.count) attempts")
-        throw TruoraException.sdk(
-            SDKError(
-                type: .validationResultsTimedOut,
-                details: "Validation processing timeout. Please check back later."
+        // Timeout: return a failure result instead of throwing an error.
+        // The API will eventually mark the validation as failed after the wait time expires,
+        // so we treat timeout as a completed validation with failure status.
+        print("⚠️ ResultInteractor: Polling timeout after \(backoffIntervals.count) attempts, returning failure result")
+        return createTimeoutResult(from: lastValidationDetail)
+    }
+
+    func createTimeoutResult(from lastDetail: NativeValidationDetailResponse?) -> ValidationResult {
+        guard let lastDetail else {
+            return ValidationResult(
+                validationId: validationId,
+                status: .failure,
+                confidence: nil,
+                metadata: nil
             )
+        }
+
+        let confidence = lastDetail.details?.faceRecognitionValidations?.confidenceScore
+        var detail = mapToValidationDetail(from: lastDetail)
+        detail = ValidationDetail(
+            validationId: detail.validationId,
+            type: detail.type,
+            validationStatus: detail.validationStatus,
+            failureStatus: "expired",
+            creationDate: detail.creationDate,
+            accountId: detail.accountId,
+            details: detail.details,
+            validationInputs: detail.validationInputs,
+            userResponse: detail.userResponse
+        )
+
+        return ValidationResult(
+            validationId: lastDetail.validationId,
+            status: .failure,
+            confidence: confidence,
+            metadata: nil,
+            detail: detail
         )
     }
 
@@ -288,29 +323,10 @@ private extension ResultInteractor {
 
     func mapDocumentDetails(
         from doc: NativeDocumentDetails?
-    ) -> DocumentDetail? {
+    ) -> [String: JSONValue]? {
         guard let doc else { return nil }
-        return DocumentDetail(
-            docId: doc.docId,
-            country: doc.country,
-            documentType: doc.documentType,
-            documentNumber: doc.documentNumber,
-            name: doc.name,
-            lastName: doc.lastName,
-            dateOfBirth: doc.dateOfBirth,
-            gender: doc.gender,
-            issueDate: doc.issueDate,
-            expirationDate: doc.expirationDate,
-            expeditionPlace: doc.expeditionPlace,
-            birthPlace: doc.birthPlace,
-            height: doc.height,
-            rh: doc.rh,
-            mimeType: doc.mimeType,
-            clientId: doc.clientId,
-            creationDate: doc.creationDate,
-            frontUrl: doc.frontUrl,
-            reverseUrl: doc.reverseUrl
-        )
+        guard let data = try? Self.encoder.encode(doc) else { return nil }
+        return try? Self.decoder.decode([String: JSONValue].self, from: data)
     }
 
     func mapDocumentValidations(

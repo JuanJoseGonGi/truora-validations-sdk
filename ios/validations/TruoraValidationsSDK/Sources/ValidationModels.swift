@@ -49,7 +49,7 @@ public extension ValidationResult {
     ///
     /// - Returns: The presigned front image URL, or `nil` if unavailable.
     func getFaceReferenceImage() -> String? {
-        if let frontUrl = detail?.details?.documentDetails?.frontUrl {
+        if let frontUrl = detail?.details?.documentDetails?["front_url"]?.stringValue {
             return frontUrl
         }
         return detail?.userResponse?.inputFiles?.first { $0.contains("_front") }

@@ -127,7 +127,6 @@ struct DocumentSelectionView: View {
                             // Static country display when pre-configured
                             if let country = viewModel.selectedCountry {
                                 CountryStaticView(country: country)
-                                    .environmentObject(theme)
                             }
                         } else {
                             // Country Picker
@@ -146,7 +145,6 @@ struct DocumentSelectionView: View {
                                         }
                                     )
                                 )
-                                .environmentObject(theme)
                                 .anchorPreference(
                                     key: CountryPickerAnchorKey.self,
                                     value: .bounds
@@ -202,7 +200,6 @@ struct DocumentSelectionView: View {
                                     ) { document in
                                         Task { await viewModel.presenter?.documentSelected(document) }
                                     }
-                                    .environmentObject(theme)
                                 }
 
                                 if viewModel.isDocumentError {
@@ -262,7 +259,6 @@ struct DocumentSelectionView: View {
                             },
                             isExpanded: $viewModel.isCountryDropdownExpanded
                         )
-                        .environmentObject(theme)
                         .frame(width: pickerFrame.width)
                         .offset(x: pickerFrame.minX, y: pickerFrame.maxY + 4)
                     }
@@ -311,7 +307,7 @@ private struct CountryStaticView: View {
                 .scaledToFit()
                 .frame(width: 30, height: 22)
             Text(country.displayName)
-                .font(.system(size: 16))
+                .font(theme.typography.bodyLarge)
                 .foregroundColor(theme.colors.onSurface)
         }
         .padding(.vertical, 8)
@@ -342,16 +338,16 @@ private struct CountryPickerView: View {
                             .scaledToFit()
                             .frame(width: 30, height: 22)
                         Text(country.displayName)
-                            .font(.system(size: 16))
+                            .font(theme.typography.bodyLarge)
                             .foregroundColor(theme.colors.onSurface)
                     } else {
                         Text(TruoraLocalization.string(forKey: LocalizationKeys.documentSelectionCountryPlaceholder))
-                            .font(.system(size: 16))
+                            .font(theme.typography.bodyLarge)
                             .foregroundColor(theme.colors.tint00)
                     }
                     Spacer()
                     SwiftUI.Image(systemName: "chevron.down")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(theme.typography.bodySmall)
                         .foregroundColor(theme.colors.onSurface)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                         .animation(.easeInOut(duration: 0.2), value: isExpanded)
@@ -408,7 +404,7 @@ private struct CountryDropdownOverlay: View {
                                     .scaledToFit()
                                     .frame(width: 30, height: rowContentHeight)
                                 Text(country.displayName)
-                                    .font(.system(size: 16))
+                                    .font(theme.typography.bodyLarge)
                                     .foregroundColor(theme.colors.onSurface)
                                 Spacer()
                             }
@@ -439,12 +435,12 @@ private struct DocumentTypeStaticView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(document.label)
-                .font(.system(size: 16, weight: .bold))
+            Text(document.label(for: country))
+                .font(theme.typography.bodyLarge)
                 .foregroundColor(theme.colors.onSurface)
             if let description = document.descriptionText(for: country) {
                 Text(description)
-                    .font(.system(size: 14))
+                    .font(theme.typography.bodyMedium)
                     .foregroundColor(theme.colors.layoutGray500)
             }
         }
@@ -476,15 +472,14 @@ private struct DocumentTypePickerView: View {
                 },
                 label: {
                     HStack {
-                        if let document = selectedDocument {
+                        if let document = selectedDocument, let country = selectedCountry {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(document.label)
-                                    .font(.system(size: 16, weight: .bold))
+                                Text(document.label(for: country))
+                                    .font(theme.typography.bodyLarge)
                                     .foregroundColor(theme.colors.onSurface)
-                                if let country = selectedCountry,
-                                   let description = document.descriptionText(for: country) {
+                                if let description = document.descriptionText(for: country) {
                                     Text(description)
-                                        .font(.system(size: 14))
+                                        .font(theme.typography.bodyMedium)
                                         .foregroundColor(theme.colors.layoutGray500)
                                 }
                             }
@@ -494,12 +489,12 @@ private struct DocumentTypePickerView: View {
                                     forKey: LocalizationKeys.documentSelectionDocumentPlaceholder
                                 )
                             )
-                            .font(.system(size: 16))
+                            .font(theme.typography.bodyLarge)
                             .foregroundColor(theme.colors.tint00)
                         }
                         Spacer()
                         SwiftUI.Image(systemName: "chevron.down")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(theme.typography.bodySmall)
                             .foregroundColor(theme.colors.onSurface)
                             .rotationEffect(.degrees(isExpanded ? 180 : 0))
                             .animation(.easeInOut(duration: 0.2), value: isExpanded)
@@ -530,15 +525,21 @@ private struct DocumentTypePickerView: View {
                                 label: {
                                     HStack {
                                         VStack(alignment: .leading, spacing: 2) {
-                                            Text(document.label)
-                                                .font(.system(size: 16, weight: .bold))
-                                                .foregroundColor(theme.colors.onSurface)
+                                            if let country = selectedCountry {
+                                                Text(document.label(for: country))
+                                                    .font(theme.typography.bodyLarge)
+                                                    .foregroundColor(theme.colors.onSurface)
+                                            } else {
+                                                Text(document.label)
+                                                    .font(theme.typography.bodyLarge)
+                                                    .foregroundColor(theme.colors.onSurface)
+                                            }
                                             let description = selectedCountry.flatMap {
                                                 document.descriptionText(for: $0)
                                             }
                                             if let description {
                                                 Text(description)
-                                                    .font(.system(size: 14))
+                                                    .font(theme.typography.bodyMedium)
                                                     .foregroundColor(theme.colors.layoutGray500)
                                             }
                                         }
@@ -693,6 +694,12 @@ private struct DocumentSelectionLoadingPreview: View {
 #Preview("Document Selection - Country Locked") {
     if #available(iOS 14.0, *) {
         DocumentSelectionLockedPreview()
+    }
+}
+
+#Preview("Document Selection - Country and Type Locked") {
+    if #available(iOS 14.0, *) {
+        DocumentSelectionTypeLockedPreview()
     }
 }
 

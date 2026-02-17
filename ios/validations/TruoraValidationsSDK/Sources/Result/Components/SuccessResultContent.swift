@@ -33,7 +33,7 @@ struct SuccessResultContent: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text(TruoraLocalization.string(forKey: LocalizationKeys.successResultDescription, arguments: date))
-                    .font(theme.typography.bodyLarge)
+                    .font(theme.typography.bodyMedium)
                     .foregroundColor(theme.colors.onSurface)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)

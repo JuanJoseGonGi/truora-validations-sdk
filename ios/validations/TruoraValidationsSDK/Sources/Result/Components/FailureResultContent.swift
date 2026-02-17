@@ -32,7 +32,7 @@ struct FailureResultContent: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text(TruoraLocalization.string(forKey: LocalizationKeys.failureResultDescription))
-                    .font(theme.typography.bodyLarge)
+                    .font(theme.typography.bodyMedium)
                     .foregroundColor(theme.colors.onSurface.opacity(0.8))
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)

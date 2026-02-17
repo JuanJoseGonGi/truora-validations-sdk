@@ -11,7 +11,7 @@ import XCTest
 @MainActor final class TruoraValidationResultTests: XCTestCase {
     // MARK: - Initialization Tests
 
-    func testCompleteCase() {
+    func testCompletedCase() {
         // Given
         let validationResult = ValidationResult(
             validationId: "test-id",
@@ -21,59 +21,32 @@ import XCTest
         )
 
         // When
-        let result: TruoraValidationResult<ValidationResult> = .complete(validationResult)
+        let result: TruoraValidationResult<ValidationResult> = .completed(validationResult)
 
         // Then
-        XCTAssertTrue(result.isComplete, "Should be complete")
-        XCTAssertFalse(result.isFailure, "Should not be failure")
+        XCTAssertTrue(result.isCompleted, "Should be completed")
+        XCTAssertFalse(result.isError, "Should not be error")
         XCTAssertFalse(result.isCanceled, "Should not be canceled")
         XCTAssertEqual(result.completionValue?.validationId, "test-id", "Should have completion value")
     }
 
-    func testFailureCase() {
+    func testErrorCase() {
         // Given
         let error = TruoraException.sdk(SDKError(type: .invalidConfiguration, details: "Test error"))
 
         // When
-        let result: TruoraValidationResult<ValidationResult> = .failure(error, nil)
+        let result: TruoraValidationResult<ValidationResult> = .error(error)
 
         // Then
-        XCTAssertFalse(result.isComplete, "Should not be complete")
-        XCTAssertTrue(result.isFailure, "Should be failure")
+        XCTAssertFalse(result.isCompleted, "Should not be completed")
+        XCTAssertTrue(result.isError, "Should be error")
         XCTAssertFalse(result.isCanceled, "Should not be canceled")
-        XCTAssertNotNil(result.error, "Should have error")
-        XCTAssertNil(result.failureValue, "Should not have failure value")
-    }
-
-    func testFailureCaseWithPartialResult() {
-        // Given
-        let error = TruoraException.sdk(
-            SDKError(type: .validationResultsTimedOut, details: "Timed out")
-        )
-        let partialResult = ValidationResult(
-            validationId: "partial-id",
-            status: .pending,
-            confidence: nil,
-            metadata: nil
-        )
-
-        // When
-        let result: TruoraValidationResult<ValidationResult> = .failure(error, partialResult)
-
-        // Then
-        XCTAssertTrue(result.isFailure, "Should be failure")
-        XCTAssertNotNil(result.error, "Should have error")
-        XCTAssertNotNil(result.failureValue, "Should have failure value")
-        XCTAssertEqual(
-            result.failureValue?.validationId,
-            "partial-id",
-            "Should match partial result"
-        )
+        XCTAssertNotNil(result.exception, "Should have exception")
     }
 
     // MARK: - Convenience Property Tests
 
-    func testCompletionValueForComplete() {
+    func testCompletionValueForCompleted() {
         // Given
         let validationResult = ValidationResult(
             validationId: "test-id",
@@ -81,7 +54,7 @@ import XCTest
             confidence: 0.95,
             metadata: nil
         )
-        let result: TruoraValidationResult<ValidationResult> = .complete(validationResult)
+        let result: TruoraValidationResult<ValidationResult> = .completed(validationResult)
 
         // When
         let value = result.completionValue
@@ -95,10 +68,10 @@ import XCTest
         )
     }
 
-    func testCompletionValueForNonComplete() {
+    func testCompletionValueForNonCompleted() {
         // Given
-        let result: TruoraValidationResult<ValidationResult> = .failure(
-            .sdk(SDKError(type: .validationCanceledByUser)), nil
+        let result: TruoraValidationResult<ValidationResult> = .error(
+            .sdk(SDKError(type: .validationCanceledByUser))
         )
 
         // When
@@ -108,16 +81,16 @@ import XCTest
         XCTAssertNil(value, "Should not have completion value")
     }
 
-    func testErrorForFailure() {
+    func testExceptionForError() {
         // Given
         let error = TruoraException.network(message: "Network failed", underlyingError: nil)
-        let result: TruoraValidationResult<ValidationResult> = .failure(error, nil)
+        let result: TruoraValidationResult<ValidationResult> = .error(error)
 
         // When
-        let extractedError = result.error
+        let extractedError = result.exception
 
         // Then
-        XCTAssertNotNil(extractedError, "Should have error")
+        XCTAssertNotNil(extractedError, "Should have exception")
         if case .network(let message, _) = extractedError {
             XCTAssertEqual(message, "Network failed", "Should match error message")
         } else {
@@ -125,7 +98,7 @@ import XCTest
         }
     }
 
-    func testErrorForNonFailure() {
+    func testExceptionForNonError() {
         // Given
         let validationResult = ValidationResult(
             validationId: "test-id",
@@ -133,83 +106,60 @@ import XCTest
             confidence: 0.95,
             metadata: nil
         )
-        let result: TruoraValidationResult<ValidationResult> = .complete(validationResult)
+        let result: TruoraValidationResult<ValidationResult> = .completed(validationResult)
 
         // When
-        let error = result.error
+        let error = result.exception
 
         // Then
-        XCTAssertNil(error, "Should not have error")
+        XCTAssertNil(error, "Should not have exception")
     }
 
     // MARK: - Equatable Tests
 
-    func testEqualityForComplete() {
+    func testEqualityForCompleted() {
         // Given
         let result1 = ValidationResult(validationId: "id1", status: .success, confidence: 0.9, metadata: nil)
         let result2 = ValidationResult(validationId: "id1", status: .success, confidence: 0.9, metadata: nil)
 
-        let validation1: TruoraValidationResult<ValidationResult> = .complete(result1)
-        let validation2: TruoraValidationResult<ValidationResult> = .complete(result2)
+        let validation1: TruoraValidationResult<ValidationResult> = .completed(result1)
+        let validation2: TruoraValidationResult<ValidationResult> = .completed(result2)
 
         // Then
         XCTAssertEqual(validation1, validation2, "Should be equal for same completion values")
     }
 
-    func testEqualityForFailure() {
+    func testEqualityForError() {
         // Given - Create two separate instances with same error content
-        let validation1: TruoraValidationResult<ValidationResult> = .failure(
-            .sdk(SDKError(type: .validationCanceledByUser)), nil
+        let validation1: TruoraValidationResult<ValidationResult> = .error(
+            .sdk(SDKError(type: .validationCanceledByUser))
         )
-        let validation2: TruoraValidationResult<ValidationResult> = .failure(
-            .sdk(SDKError(type: .validationCanceledByUser)), nil
+        let validation2: TruoraValidationResult<ValidationResult> = .error(
+            .sdk(SDKError(type: .validationCanceledByUser))
         )
 
         // Then - Should be equal based on error content, not reference
         XCTAssertEqual(validation1, validation2, "Should be equal for same error content")
     }
 
-    func testEqualityForFailureWithPartialResult() {
-        // Given
-        let partialResult = ValidationResult(
-            validationId: "id",
-            status: .pending,
-            confidence: nil,
-            metadata: nil
-        )
-        let validation1: TruoraValidationResult<ValidationResult> = .failure(
-            .sdk(SDKError(type: .validationResultsTimedOut)), partialResult
-        )
-        let validation2: TruoraValidationResult<ValidationResult> = .failure(
-            .sdk(SDKError(type: .validationResultsTimedOut)), partialResult
-        )
-
-        // Then
-        XCTAssertEqual(
-            validation1,
-            validation2,
-            "Should be equal for same error and partial result"
-        )
-    }
-
     func testInequalityBetweenDifferentCases() {
         // Given
         let validationResult = ValidationResult(validationId: "id", status: .success, confidence: 0.9, metadata: nil)
-        let complete: TruoraValidationResult<ValidationResult> = .complete(validationResult)
-        let failure: TruoraValidationResult<ValidationResult> = .failure(
-            .sdk(SDKError(type: .validationCanceledByUser)), nil
+        let completed: TruoraValidationResult<ValidationResult> = .completed(validationResult)
+        let error: TruoraValidationResult<ValidationResult> = .error(
+            .sdk(SDKError(type: .validationCanceledByUser))
         )
         let canceled: TruoraValidationResult<ValidationResult> = .canceled(nil)
 
         // Then
-        XCTAssertNotEqual(complete, failure, "Complete should not equal failure")
-        XCTAssertNotEqual(complete, canceled, "Complete should not equal canceled")
-        XCTAssertNotEqual(failure, canceled, "Failure should not equal canceled")
+        XCTAssertNotEqual(completed, error, "Completed should not equal error")
+        XCTAssertNotEqual(completed, canceled, "Completed should not equal canceled")
+        XCTAssertNotEqual(error, canceled, "Error should not equal canceled")
     }
 
     // MARK: - CustomStringConvertible Tests
 
-    func testDescriptionForComplete() {
+    func testDescriptionForCompleted() {
         // Given
         let validationResult = ValidationResult(
             validationId: "test-id",
@@ -217,26 +167,26 @@ import XCTest
             confidence: 0.9,
             metadata: nil
         )
-        let result: TruoraValidationResult<ValidationResult> = .complete(validationResult)
+        let result: TruoraValidationResult<ValidationResult> = .completed(validationResult)
 
         // When
         let description = result.description
 
         // Then
-        XCTAssertTrue(description.contains("complete"), "Description should contain 'complete'")
+        XCTAssertTrue(description.contains("completed"), "Description should contain 'completed'")
     }
 
-    func testDescriptionForFailure() {
+    func testDescriptionForError() {
         // Given
-        let result: TruoraValidationResult<ValidationResult> = .failure(
-            .sdk(SDKError(type: .validationCanceledByUser)), nil
+        let result: TruoraValidationResult<ValidationResult> = .error(
+            .sdk(SDKError(type: .validationCanceledByUser))
         )
 
         // When
         let description = result.description
 
         // Then
-        XCTAssertTrue(description.contains("failure"), "Description should contain 'failure'")
+        XCTAssertTrue(description.contains("error"), "Description should contain 'error'")
     }
 
     // MARK: - Canceled Tests
@@ -247,8 +197,8 @@ import XCTest
 
         // When/Then
         XCTAssertTrue(result.isCanceled, "Should be canceled")
-        XCTAssertFalse(result.isComplete, "Should not be complete")
-        XCTAssertFalse(result.isFailure, "Should not be failure")
+        XCTAssertFalse(result.isCompleted, "Should not be completed")
+        XCTAssertFalse(result.isError, "Should not be error")
     }
 
     func testCanceledValueWithValue() {

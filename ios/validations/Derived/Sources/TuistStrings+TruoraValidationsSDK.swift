@@ -111,6 +111,10 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static let docCoPtp = TruoraValidationsSDKStrings.tr("Localizable", "doc_co_ptp")
   /// Temporary ID
   public static let docCoTempId = TruoraValidationsSDKStrings.tr("Localizable", "doc_co_temp_id")
+  /// Foreign ID
+  public static let docCrForeignId = TruoraValidationsSDKStrings.tr("Localizable", "doc_cr_foreign_id")
+  /// National ID
+  public static let docCrNationalId = TruoraValidationsSDKStrings.tr("Localizable", "doc_cr_national_id")
   /// Permanent/temporary residence
   public static let docMxForeignId = TruoraValidationsSDKStrings.tr("Localizable", "doc_mx_foreign_id")
   /// INE/IFE (CURP)

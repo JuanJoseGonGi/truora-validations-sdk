@@ -82,17 +82,21 @@ public class TruoraValidationsSDK {
         public let apiKeyGenerator: TruoraAPIKeyGetter
         public let userId: String
         public let uiConfig: UIConfig
+        /// Language set by the client, or nil when using device locale.
+        public let lang: TruoraLanguage?
         let type: ValidationType
 
         init(
             apiKeyGenerator: TruoraAPIKeyGetter,
             userId: String,
             uiConfig: UIConfig,
+            lang: TruoraLanguage?,
             type: ValidationType
         ) {
             self.apiKeyGenerator = apiKeyGenerator
             self.userId = userId
             self.uiConfig = uiConfig
+            self.lang = lang
             self.type = type
         }
 
@@ -118,7 +122,8 @@ public class TruoraValidationsSDK {
                     accountId: userId,
                     delegate: completion,
                     baseUrl: nil,
-                    uiConfig: uiConfig
+                    uiConfig: uiConfig,
+                    lang: lang
                 )
 
                 try ValidationConfig.shared.setValidation(self.type)
@@ -129,7 +134,7 @@ public class TruoraValidationsSDK {
                 viewController.present(navController, animated: true)
             } catch {
                 completion?(
-                    .failure(.sdk(SDKError(type: .internalError, details: error.localizedDescription)), nil)
+                    .error(.sdk(SDKError(type: .internalError, details: error.localizedDescription)))
                 )
             }
         }
@@ -177,6 +182,7 @@ public class TruoraValidationsSDK {
         private let apiKeyGenerator: TruoraAPIKeyGetter
         private let userId: String
         private var uiConfig: UIConfig?
+        private var lang: TruoraLanguage?
 
         public init(apiKeyGenerator: TruoraAPIKeyGetter, userId: String) {
             self.apiKeyGenerator = apiKeyGenerator
@@ -193,6 +199,15 @@ public class TruoraValidationsSDK {
             return self
         }
 
+        /// Sets the language for the SDK UI. When not called, the SDK uses the device locale.
+        /// - Parameter lang: The language to use
+        /// - Returns: This Builder for method chaining
+        @discardableResult
+        public func withLanguage(_ lang: TruoraLanguage) -> Builder {
+            self.lang = lang
+            return self
+        }
+
         /// Configures Face validation with the provided configuration options.
         /// - Parameter validationConfigurator: A closure that receives a Face configuration object
         ///   and returns the configured Face
@@ -206,6 +221,7 @@ public class TruoraValidationsSDK {
                 apiKeyGenerator: apiKeyGenerator,
                 userId: userId,
                 uiConfig: uiConfig,
+                lang: lang,
                 validationConfig: validation,
                 validationType: .face(validation)
             )
@@ -224,6 +240,7 @@ public class TruoraValidationsSDK {
                 apiKeyGenerator: apiKeyGenerator,
                 userId: userId,
                 uiConfig: uiConfig,
+                lang: lang,
                 validationConfig: validation,
                 validationType: .document(validation)
             )
@@ -236,6 +253,7 @@ public class TruoraValidationsSDK {
         private let apiKeyGenerator: TruoraAPIKeyGetter
         private let userId: String
         private let uiConfig: UIConfig?
+        private let lang: TruoraLanguage?
         private let validationConfig: T
         private let validationType: ValidationType
 
@@ -243,21 +261,25 @@ public class TruoraValidationsSDK {
             apiKeyGenerator: TruoraAPIKeyGetter,
             userId: String,
             uiConfig: UIConfig?,
+            lang: TruoraLanguage?,
             validationConfig: T,
             validationType: ValidationType
         ) {
             self.apiKeyGenerator = apiKeyGenerator
             self.userId = userId
             self.uiConfig = uiConfig
+            self.lang = lang
             self.validationConfig = validationConfig
             self.validationType = validationType
         }
 
         public func build() -> TruoraValidation<T> {
-            TruoraValidation<T>(
+            let finalUIConfig = uiConfig ?? UIConfig()
+            return TruoraValidation<T>(
                 apiKeyGenerator: apiKeyGenerator,
                 userId: userId,
-                uiConfig: uiConfig ?? UIConfig(),
+                uiConfig: finalUIConfig,
+                lang: lang,
                 type: validationType
             )
         }

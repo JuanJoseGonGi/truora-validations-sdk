@@ -12,20 +12,19 @@ import Foundation
 ///
 /// Error code ranges:
 /// - 20001-20008: Authentication and API key errors
-/// - 20009-20016: Validation errors
+/// - 20009-20014: Validation errors
 /// - 20017-20026: Configuration and state errors
 /// - 20500+: Internal/system errors
 public enum SDKErrorType: Int, CaseIterable {
     /// Authentication and API key errors (20001-20008)
     case apiKeyMissing = 20001
 
-    /// Validation errors (20009-20016)
+    /// Validation errors (20009-20014)
     case validationError = 20009
     case validationCanceledByUser = 20010
     case cameraPermissionError = 20011
     case validationInterrupted = 20013
     case missingModule = 20014
-    case validationResultsTimedOut = 20016
 
     /// Configuration and state errors (20017-20026)
     case invalidApiKey = 20017
@@ -58,8 +57,6 @@ public enum SDKErrorType: Int, CaseIterable {
             "Validation was interrupted. Please try again"
         case .missingModule:
             "Missing module"
-        case .validationResultsTimedOut:
-            "Validation results timed out"
         // Configuration and state errors
         case .invalidApiKey:
             "Invalid API Key sent"

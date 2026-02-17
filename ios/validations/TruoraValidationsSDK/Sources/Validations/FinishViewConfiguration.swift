@@ -22,7 +22,7 @@ public enum FinishViewVisibility: Equatable {
 /// Configuration for controlling the visibility of success and failure screens
 /// shown after validation polling completes.
 ///
-/// Setting this configuration implicitly enables `shouldWaitForResults`.
+/// Setting this configuration implicitly enables `waitForResults`.
 /// The SDK will always poll for results, but you can control whether the
 /// success and/or failure screens are displayed to the user.
 ///

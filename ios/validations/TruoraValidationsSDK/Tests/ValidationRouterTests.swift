@@ -12,7 +12,7 @@ import XCTest
 
 @MainActor class ValidationRouterTests: XCTestCase {
     var router: ValidationRouter!
-    var mockNavigationController: UINavigationController!
+    var mockNavigationController: TruoraNavigationController!
     fileprivate var mockDelegate: MockValidationDelegateForRouter!
 
     /// Minimal valid JPEG data (1x1 pixel red image)
@@ -54,7 +54,7 @@ import XCTest
     override func setUp() {
         super.setUp()
         ValidationConfig.shared.reset()
-        mockNavigationController = UINavigationController()
+        mockNavigationController = TruoraNavigationController()
         mockDelegate = MockValidationDelegateForRouter()
         router = ValidationRouter(navigationController: mockNavigationController)
     }

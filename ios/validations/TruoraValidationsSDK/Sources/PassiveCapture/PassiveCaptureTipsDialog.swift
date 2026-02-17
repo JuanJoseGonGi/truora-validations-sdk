@@ -33,15 +33,15 @@ struct PassiveCaptureTipsDialog: View {
                 // Header with title and close button
                 HStack {
                     Text(TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureTipsTitle))
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(theme.colors.layoutGray900)
+                        .font(theme.typography.titleSmall)
+                        .foregroundColor(theme.colors.onSurface)
 
                     Spacer()
 
                     Button(action: onDismiss) {
                         SwiftUI.Image(systemName: "xmark")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(theme.colors.layoutGray900)
+                            .font(theme.typography.bodyLarge)
+                            .foregroundColor(theme.colors.onSurface)
                     }
                     .frame(width: 24, height: 24)
                 }
@@ -90,16 +90,17 @@ struct PassiveCaptureTipsDialog: View {
 private struct TipBulletRow: View {
     let text: String
     let color: Color
+    @EnvironmentObject var theme: TruoraTheme
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Text("•")
-                .font(.system(size: 16, weight: .regular))
-                .foregroundColor(.black)
+                .font(theme.typography.bodyMedium)
+                .foregroundColor(color)
 
             Text(text)
-                .font(.system(size: 16, weight: .regular))
-                .foregroundColor(.black)
+                .font(theme.typography.bodyMedium)
+                .foregroundColor(color)
                 .lineSpacing(7) // 150% line height = 21px, 14px font = 7px extra
                 .fixedSize(horizontal: false, vertical: true)
         }

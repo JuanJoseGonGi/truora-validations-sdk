@@ -102,15 +102,18 @@ extension DocumentIntroInteractor: DocumentIntroPresenterToInteractor {
 
 private extension DocumentIntroInteractor {
     func buildRequest(accountId: String) -> NativeValidationRequest {
-        NativeValidationRequest(
+        let documentConfig = ValidationConfig.shared.documentConfig
+
+        return NativeValidationRequest(
             type: NativeValidationTypeEnum.documentValidation.rawValue,
             country: country.lowercased(),
             accountId: accountId,
             threshold: nil,
             subvalidations: nil,
             documentType: documentType,
-            timeout: nil,
-            userAuthorized: true
+            timeout: documentConfig.timeout,
+            userAuthorized: true,
+            checkManualReviewAvailability: true
         )
     }
 

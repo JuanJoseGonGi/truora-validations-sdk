@@ -186,8 +186,6 @@
 "doc_co_ptp" = "PPT (VEN)";
 "doc_sv_national_id" = "Unique Identity Document (DUI)";
 "doc_sv_foreign_id" = "Residency card";
-"doc_cr_national_id" = "National ID";
-"doc_cr_foreign_id" = "Foreign ID";
 
 /* Document Descriptions */
 "desc_original_valid" = "Valid and current";

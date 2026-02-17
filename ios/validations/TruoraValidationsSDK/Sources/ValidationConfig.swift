@@ -19,6 +19,8 @@ final class ValidationConfig: ObservableObject {
     private(set) var validationId: String?
     private(set) var enrollmentData: EnrollmentData?
     private(set) var uiConfig: UIConfig
+    /// SDK UI language. Set via Builder.withLanguage(). When nil, SDK uses device locale internally.
+    private(set) var lang: TruoraLanguage?
     private(set) var faceConfig: Face
     private(set) var documentConfig: Document
     private let logoDownloader: LogoDownloading
@@ -51,13 +53,15 @@ final class ValidationConfig: ObservableObject {
     ///   - delegate: Optional delegate for callbacks.
     ///   - baseUrl: Optional base URL.
     ///   - uiConfig: Optional UI configuration.
+    ///   - lang: Optional language; when provided (e.g. from Builder.withLanguage()), forces UI language.
     func configure(
         apiKey: String,
         accountId: String? = nil,
         enrollmentData: EnrollmentData? = nil,
         delegate: ((TruoraValidationResult<ValidationResult>) -> Void)? = nil,
         baseUrl: String? = nil,
-        uiConfig: UIConfig? = nil
+        uiConfig: UIConfig? = nil,
+        lang: TruoraLanguage? = nil
     ) async throws {
         // Input validation
         guard !apiKey.isEmpty else {
@@ -95,6 +99,7 @@ final class ValidationConfig: ObservableObject {
         self.enrollmentData = finalData
         self.delegate = delegate
         self.uiConfig = uiConfig ?? UIConfig()
+        self.lang = lang
         await downloadLogoIfNeeded()
 
         apiClient = TruoraAPIClient(apiKey: apiKey)
@@ -105,26 +110,40 @@ final class ValidationConfig: ObservableObject {
         case .face(let face):
             try validateFinishViewConfig(
                 finishViewConfig: face.finishViewConfig,
-                shouldWaitForResults: face.shouldWaitForResults
+                waitForResults: face.waitForResults
             )
             self.faceConfig = face
         case .document(let document):
             try validateFinishViewConfig(
                 finishViewConfig: document.finishViewConfig,
-                shouldWaitForResults: document.shouldWaitForResults
+                waitForResults: document.waitForResults
             )
+            try validateAutocaptureConfig(document)
             self.documentConfig = document
         }
     }
 
     private func validateFinishViewConfig(
         finishViewConfig: FinishViewConfiguration?,
-        shouldWaitForResults: Bool
+        waitForResults: Bool
     ) throws {
-        if finishViewConfig != nil, !shouldWaitForResults {
+        if finishViewConfig != nil, !waitForResults {
             let details = "finishViewConfiguration requires waitForResults to be enabled. "
                 + "Either remove setFinishViewConfiguration() or call "
-                + "enableWaitForResults(true)."
+                + "waitForResults(true)."
+            print("❌ ValidationConfig: \(details)")
+            throw TruoraException.sdk(SDKError(
+                type: .invalidConfiguration,
+                details: details
+            ))
+        }
+    }
+
+    private func validateAutocaptureConfig(_ document: Document) throws {
+        let isPassport = document.documentType == NativeDocumentType.passport.rawValue
+        if document.didExplicitlyEnableAutocapture, isPassport {
+            let details = "Autocapture is not supported for passport document type. "
+                + "Remove useAutocapture(true) or use a different document type."
             print("❌ ValidationConfig: \(details)")
             throw TruoraException.sdk(SDKError(
                 type: .invalidConfiguration,
@@ -152,6 +171,7 @@ final class ValidationConfig: ObservableObject {
         // Note: Swift ARC automatically handles cleanup of old UIConfig/Face/Document instances
         // and their nested objects (e.g., ReferenceFace's temp file cleanup via deinit)
         uiConfig = UIConfig()
+        lang = nil
         faceConfig = Face()
         documentConfig = Document()
     }

@@ -33,7 +33,6 @@ import XCTest
         XCTAssertNil(sut.secondary, "Secondary color should be nil by default")
         XCTAssertNil(sut.error, "Error color should be nil by default")
         XCTAssertNil(sut.logoUrl, "Logo URL should be nil by default")
-        XCTAssertNil(sut.language, "Language should be nil by default (uses device locale)")
     }
 
     // MARK: - Surface Color Tests
@@ -290,29 +289,6 @@ import XCTest
         XCTAssertTrue(result === sut, "Should still return self for chaining")
     }
 
-    // MARK: - Language Tests
-
-    func testSetLanguage() {
-        // Given
-        let language = TruoraLanguage.spanish
-
-        // When
-        let result = sut.setLanguage(language)
-
-        // Then
-        XCTAssertEqual(sut.language, language, "Should set language")
-        XCTAssertTrue(result === sut, "Should return self for chaining")
-    }
-
-    func testSetLanguagePortuguese() {
-        // When
-        let result = sut.setLanguage(.portuguese)
-
-        // Then
-        XCTAssertEqual(sut.language, .portuguese, "Should set Portuguese language")
-        XCTAssertTrue(result === sut, "Should return self for chaining")
-    }
-
     // MARK: - Method Chaining Tests
 
     func testMethodChainingAllMaterial3Colors() {
@@ -325,7 +301,6 @@ import XCTest
             .setSecondaryColor("#082054")
             .setErrorColor("#FF5454")
             .setLogo("https://example.com/logo.png")
-            .setLanguage(.spanish)
 
         // Then
         XCTAssertTrue(result === sut, "Should support method chaining")
@@ -336,7 +311,6 @@ import XCTest
         XCTAssertNotNil(sut.secondary, "Should have set secondary color")
         XCTAssertNotNil(sut.error, "Should have set error color")
         XCTAssertEqual(sut.logoUrl, "https://example.com/logo.png", "Should have set logo URL")
-        XCTAssertEqual(sut.language, .spanish, "Should have set language")
     }
 
     func testMethodChainingWithUIColors() {

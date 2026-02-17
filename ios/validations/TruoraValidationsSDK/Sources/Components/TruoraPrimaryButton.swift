@@ -52,7 +52,7 @@ struct TruoraPrimaryButton: View {
                     )
                 } else {
                     Text(title)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(theme.typography.titleSmall)
                 }
             }
             .frame(maxWidth: 810)

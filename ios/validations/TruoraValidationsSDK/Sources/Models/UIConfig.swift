@@ -17,13 +17,13 @@ public class UIConfig {
     private var _primary: UIColor?
     private var _onPrimary: UIColor?
     private var _secondary: UIColor?
+    private var _onSecondary: UIColor?
     private var _error: UIColor?
 
     private var _logoUrl: String?
     private var _customLogoData: Data?
     private var _logoWidth: CGFloat?
     private var _logoHeight: CGFloat?
-    private var _language: TruoraLanguage?
 
     public init() {}
 
@@ -47,6 +47,10 @@ public class UIConfig {
         _secondary
     }
 
+    public var onSecondary: UIColor? {
+        _onSecondary
+    }
+
     public var error: UIColor? {
         _error
     }
@@ -65,10 +69,6 @@ public class UIConfig {
 
     public var logoHeight: CGFloat? {
         _logoHeight
-    }
-
-    public var language: TruoraLanguage? {
-        _language
     }
 
     /// Sets the surface color for UI elements.
@@ -171,6 +171,26 @@ public class UIConfig {
         return self
     }
 
+    /// Sets the onSecondary color for UI elements.
+    /// - Parameter color: UIColor for onSecondary elements
+    /// - Returns: This UIConfig for method chaining
+    @discardableResult
+    public func setOnSecondaryColor(_ color: UIColor) -> UIConfig {
+        _onSecondary = color
+        return self
+    }
+
+    /// Sets the onSecondary color for UI elements using a hex string.
+    /// - Parameter colorHex: Hex color string (e.g., "#FFFFFF")
+    /// - Returns: This UIConfig for method chaining
+    @discardableResult
+    public func setOnSecondaryColor(_ colorHex: String) -> UIConfig {
+        if let color = UIColor(hex: colorHex) {
+            _onSecondary = color
+        }
+        return self
+    }
+
     /// Sets the error color for UI elements.
     /// - Parameter color: UIColor for error elements
     /// - Returns: This UIConfig for method chaining
@@ -233,15 +253,6 @@ public class UIConfig {
         _customLogoData = logoData
         _logoWidth = width
         _logoHeight = height
-        return self
-    }
-
-    /// Sets the language for SDK UI.
-    /// - Parameter language: The language to use
-    /// - Returns: This UIConfig for method chaining
-    @discardableResult
-    public func setLanguage(_ language: TruoraLanguage) -> UIConfig {
-        _language = language
         return self
     }
 

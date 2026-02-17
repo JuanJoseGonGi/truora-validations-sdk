@@ -41,7 +41,6 @@ struct PassiveCaptureView: View {
                     showHelpButton: viewModel.uploadState == .none
                 ) { viewModel.handleEvent(.helpRequested) }
             }
-            .environmentObject(theme)
 
             // Manual recording button - positioned below oval center
             // Matches KMP offset: (PASSIVE_CAPTURE_OVAL_HEIGHT / 2) + height offset based on screen size
@@ -61,7 +60,6 @@ struct PassiveCaptureView: View {
                     ManualRecordButton(
                         isEnabled: !viewModel.isRecordingInProgress && viewModel.uploadState == .none
                     ) { viewModel.handleEvent(.recordVideoRequested) }
-                        .environmentObject(theme)
                         .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset)
                 }
             }
@@ -72,7 +70,6 @@ struct PassiveCaptureView: View {
                     onDismiss: { viewModel.handleEvent(.helpDismissed) },
                     onManualRecording: { viewModel.handleEvent(.manualRecordingRequested) }
                 )
-                .environmentObject(theme)
             }
 
             // Settings prompt
@@ -81,7 +78,6 @@ struct PassiveCaptureView: View {
                     onOpenSettings: { viewModel.handleEvent(.openSettingsRequested) },
                     onDismiss: { viewModel.handleEvent(.settingsPromptDismissed) }
                 )
-                .environmentObject(theme)
             }
         }
         .environmentObject(theme)

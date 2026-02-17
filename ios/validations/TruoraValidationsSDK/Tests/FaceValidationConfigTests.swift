@@ -27,9 +27,9 @@ import XCTest
         // Then
         XCTAssertNil(sut.referenceFace, "Reference face should be nil by default")
         XCTAssertEqual(sut.similarityThreshold, 0.8, "Similarity threshold should default to 0.8")
-        XCTAssertFalse(sut.shouldWaitForResults, "Should not wait for results by default")
+        XCTAssertFalse(sut.waitForResults, "Should not wait for results by default")
         XCTAssertTrue(sut.useAutocapture, "Should use autocapture by default")
-        XCTAssertEqual(sut.timeoutSeconds, 60, "Timeout should default to 60 seconds")
+        XCTAssertEqual(sut.timeout, 60, "Timeout should default to 60 seconds")
     }
 
     // MARK: - Reference Face Tests
@@ -110,44 +110,44 @@ import XCTest
 
     // MARK: - Wait For Results Tests
 
-    func testEnableWaitForResults() {
+    func testWaitForResults() {
         // When
-        let result = sut.enableWaitForResults(false)
+        let result = sut.waitForResults(false)
 
         // Then
-        XCTAssertFalse(sut.shouldWaitForResults, "Should disable wait for results")
+        XCTAssertFalse(sut.waitForResults, "Should disable wait for results")
         XCTAssertTrue(result === sut, "Should return self for chaining")
     }
 
-    func testEnableWaitForResultsTrue() {
+    func testWaitForResultsTrue() {
         // Given
-        _ = sut.enableWaitForResults(false)
+        _ = sut.waitForResults(false)
 
         // When
-        let result = sut.enableWaitForResults(true)
+        let result = sut.waitForResults(true)
 
         // Then
-        XCTAssertTrue(sut.shouldWaitForResults, "Should enable wait for results")
+        XCTAssertTrue(sut.waitForResults, "Should enable wait for results")
         XCTAssertTrue(result === sut, "Should return self for chaining")
     }
 
     // MARK: - Autocapture Tests
 
-    func testEnableAutocapture() {
+    func testUseAutocapture() {
         // When
-        let result = sut.enableAutocapture(false)
+        let result = sut.useAutocapture(false)
 
         // Then
         XCTAssertFalse(sut.useAutocapture, "Should disable autocapture")
         XCTAssertTrue(result === sut, "Should return self for chaining")
     }
 
-    func testEnableAutocaptureTrue() {
+    func testUseAutocaptureTrue() {
         // Given
-        _ = sut.enableAutocapture(false)
+        _ = sut.useAutocapture(false)
 
         // When
-        let result = sut.enableAutocapture(true)
+        let result = sut.useAutocapture(true)
 
         // Then
         XCTAssertTrue(sut.useAutocapture, "Should enable autocapture")
@@ -164,7 +164,7 @@ import XCTest
         let result = sut.setTimeout(timeout)
 
         // Then
-        XCTAssertEqual(sut.timeoutSeconds, timeout, "Should set timeout")
+        XCTAssertEqual(sut.timeout, timeout, "Should set timeout")
         XCTAssertTrue(result === sut, "Should return self for chaining")
     }
 
@@ -176,7 +176,7 @@ import XCTest
         let result = sut.setTimeout(timeout)
 
         // Then
-        XCTAssertEqual(sut.timeoutSeconds, timeout, "Should accept 0 as timeout")
+        XCTAssertEqual(sut.timeout, timeout, "Should accept 0 as timeout")
         XCTAssertTrue(result === sut, "Should return self for chaining")
     }
 
@@ -188,7 +188,7 @@ import XCTest
         let result = sut.setTimeout(timeout)
 
         // Then - Should clamp to 0
-        XCTAssertEqual(sut.timeoutSeconds, 0, "Should clamp negative timeout to 0")
+        XCTAssertEqual(sut.timeout, 0, "Should clamp negative timeout to 0")
         XCTAssertTrue(result === sut, "Should return self for chaining")
     }
 
@@ -215,26 +215,26 @@ import XCTest
 
     func testSetFinishViewConfigurationImplicitlyEnablesWaitForResults() {
         // Given
-        _ = sut.enableWaitForResults(false)
-        XCTAssertFalse(sut.shouldWaitForResults, "Precondition: wait for results disabled")
+        _ = sut.waitForResults(false)
+        XCTAssertFalse(sut.waitForResults, "Precondition: wait for results disabled")
 
         // When
         _ = sut.setFinishViewConfiguration(FinishViewConfiguration(success: .hide, failure: .hide))
 
         // Then
-        XCTAssertTrue(sut.shouldWaitForResults, "Should implicitly enable wait for results")
+        XCTAssertTrue(sut.waitForResults, "Should implicitly enable wait for results")
     }
 
-    func testEnableWaitForResultsFalseWithoutFinishViewConfig_succeeds() {
+    func testWaitForResultsFalseWithoutFinishViewConfig_succeeds() {
         // When — disabling waitForResults without finishViewConfig is valid
-        _ = sut.enableWaitForResults(false)
+        _ = sut.waitForResults(false)
 
         // Then
-        XCTAssertFalse(sut.shouldWaitForResults)
+        XCTAssertFalse(sut.waitForResults)
         XCTAssertNil(sut.finishViewConfig)
     }
 
-    // Note: enableWaitForResults(false) after setFinishViewConfiguration
+    // Note: waitForResults(false) after setFinishViewConfiguration
     // triggers a preconditionFailure, which cannot be tested with XCTest
     // since it terminates the process. The precondition protects against
     // developer misconfiguration at the call site.
@@ -242,17 +242,17 @@ import XCTest
     // defense-in-depth check, but that path is unreachable through the
     // public builder API since the precondition fires first.
 
-    func testEnableWaitForResultsTruePreservesFinishViewConfig() {
+    func testWaitForResultsTruePreservesFinishViewConfig() {
         // Given
         let config = FinishViewConfiguration(success: .hide, failure: .show)
         _ = sut.setFinishViewConfiguration(config)
 
         // When
-        _ = sut.enableWaitForResults(true)
+        _ = sut.waitForResults(true)
 
         // Then
         XCTAssertNotNil(sut.finishViewConfig, "Should preserve finish view config")
-        XCTAssertTrue(sut.shouldWaitForResults)
+        XCTAssertTrue(sut.waitForResults)
     }
 
     func testSetFinishViewConfigurationBothShow() {
@@ -284,8 +284,8 @@ import XCTest
             sut
                 .useReferenceFace(referenceFace)
                 .setSimilarityThreshold(0.9)
-                .enableAutocapture(false)
-                .enableWaitForResults(false)
+                .useAutocapture(false)
+                .waitForResults(false)
                 .setTimeout(90)
 
         // Then
@@ -293,8 +293,8 @@ import XCTest
         XCTAssertNotNil(sut.referenceFace, "Should have set reference face")
         XCTAssertEqual(sut.similarityThreshold, 0.9, "Should have set similarity threshold")
         XCTAssertFalse(sut.useAutocapture, "Should have disabled autocapture")
-        XCTAssertFalse(sut.shouldWaitForResults, "Should have disabled wait for results")
-        XCTAssertEqual(sut.timeoutSeconds, 90, "Should have set timeout")
+        XCTAssertFalse(sut.waitForResults, "Should have disabled wait for results")
+        XCTAssertEqual(sut.timeout, 90, "Should have set timeout")
     }
 
     func testMethodChainingWithFinishViewConfig() throws {
@@ -313,7 +313,7 @@ import XCTest
         // Then
         XCTAssertTrue(result === sut, "Should support method chaining")
         XCTAssertNotNil(sut.finishViewConfig, "Should have set finish view config")
-        XCTAssertTrue(sut.shouldWaitForResults, "Should have enabled wait for results")
-        XCTAssertEqual(sut.timeoutSeconds, 90, "Should have set timeout")
+        XCTAssertTrue(sut.waitForResults, "Should have enabled wait for results")
+        XCTAssertEqual(sut.timeout, 90, "Should have set timeout")
     }
 }

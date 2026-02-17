@@ -11,13 +11,11 @@ import UIKit
 
 /// Displays the instruction text at the top of the screen during countdown
 struct PassiveCaptureCountdownHeaderView: View {
-    private var isIPad: Bool {
-        UIDevice.current.userInterfaceIdiom == .pad
-    }
+    @EnvironmentObject var theme: TruoraTheme
 
     var body: some View {
         Text(TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureStartInstruction))
-            .font(.system(size: isIPad ? 36 : 17, weight: .semibold))
+            .font(theme.typography.titleMedium)
             .foregroundColor(.white)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 24)
@@ -27,6 +25,7 @@ struct PassiveCaptureCountdownHeaderView: View {
 /// Displays the countdown number centered in the oval
 struct PassiveCaptureCountdownNumberView: View {
     let countdown: Int
+    @EnvironmentObject var theme: TruoraTheme
 
     @State private var scale: CGFloat = 1.0
     @State private var opacity: Double = 1.0
@@ -34,7 +33,7 @@ struct PassiveCaptureCountdownNumberView: View {
 
     var body: some View {
         Text("\(countdown)")
-            .font(.system(size: 80, weight: .bold))
+            .font(theme.typography.displayLarge)
             .foregroundColor(.white)
             .scaleEffect(scale)
             .opacity(opacity)
@@ -57,6 +56,7 @@ struct PassiveCaptureCountdownNumberView: View {
 /// Legacy view for backward compatibility - combines header and number
 struct PassiveCaptureCountdownView: View {
     let countdown: Int
+    @EnvironmentObject var theme: TruoraTheme
 
     var body: some View {
         VStack(spacing: 16) {
@@ -74,8 +74,10 @@ struct PassiveCaptureCountdownView: View {
         VStack {
             PassiveCaptureCountdownHeaderView()
                 .padding(.top, 16)
+                .environmentObject(TruoraTheme(config: nil))
             Spacer()
             PassiveCaptureCountdownNumberView(countdown: 3)
+                .environmentObject(TruoraTheme(config: nil))
             Spacer()
         }
     }
@@ -85,6 +87,7 @@ struct PassiveCaptureCountdownView: View {
     ZStack {
         Color(red: 0.03, green: 0.13, blue: 0.33)
         PassiveCaptureCountdownHeaderView()
+            .environmentObject(TruoraTheme(config: nil))
     }
     .frame(height: 100)
 }
@@ -93,6 +96,7 @@ struct PassiveCaptureCountdownView: View {
     ZStack {
         Color(red: 0.03, green: 0.13, blue: 0.33)
         PassiveCaptureCountdownNumberView(countdown: 1)
+            .environmentObject(TruoraTheme(config: nil))
     }
     .frame(height: 150)
 }

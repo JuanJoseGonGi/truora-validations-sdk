@@ -19,7 +19,7 @@ import XCTest
         super.setUp()
         mockView = MockDocumentSelectionView()
         mockInteractor = MockDocumentSelectionInteractor()
-        let navController = UINavigationController()
+        let navController = TruoraNavigationController()
         mockRouter = MockDocumentSelectionRouter(navigationController: navController)
     }
 
@@ -122,7 +122,7 @@ import XCTest
 
     // Note: Invalid configuration (finishViewConfig set with waitForResults disabled)
     // is prevented at the builder level via preconditionFailure in
-    // enableWaitForResults(false). The throw in ValidationConfig.setValidation
+    // waitForResults(false). The throw in ValidationConfig.setValidation
     // is a defense-in-depth measure that cannot be triggered through the
     // public builder API, so it is not directly testable here.
 
@@ -152,7 +152,7 @@ import XCTest
         XCTAssertEqual(docConfig.country, "co")
         XCTAssertEqual(docConfig.documentType, "national-id")
         XCTAssertEqual(docConfig.finishViewConfig, finishConfig)
-        XCTAssertTrue(docConfig.shouldWaitForResults)
+        XCTAssertTrue(docConfig.waitForResults)
     }
 
     func testCancelTapped_callsRouterHandleCancellation() async {

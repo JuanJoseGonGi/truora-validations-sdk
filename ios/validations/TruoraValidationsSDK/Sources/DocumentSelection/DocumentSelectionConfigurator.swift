@@ -31,7 +31,7 @@ enum DocumentSelectionConfigurator {
         presenter.interactor = interactor
 
         let swiftUIView = DocumentSelectionView(viewModel: viewModel, config: ValidationConfig.shared.uiConfig)
-            .sdkLocaleEnvironment(locale: ValidationConfig.shared.uiConfig.language?.locale ?? Locale.current)
+            .sdkLocaleEnvironment(locale: TruoraLocalization.currentLocale)
         return UIHostingController(rootView: swiftUIView)
     }
 }

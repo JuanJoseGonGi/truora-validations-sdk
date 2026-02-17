@@ -100,7 +100,8 @@ private final class APIURLProtocolStub: URLProtocol {
             subvalidations: nil,
             documentType: nil,
             timeout: nil,
-            userAuthorized: true
+            userAuthorized: true,
+            checkManualReviewAvailability: true
         )
 
         // When

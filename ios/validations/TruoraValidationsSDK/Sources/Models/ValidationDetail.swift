@@ -63,13 +63,13 @@ public struct ValidationDetail: Codable, Equatable {
 /// Contains the detailed results nested under the `details` key in the API response.
 public struct ValidationDetailInfo: Codable, Equatable {
     public let faceRecognitionValidations: FaceRecognitionDetail?
-    public let documentDetails: DocumentDetail?
+    public let documentDetails: [String: JSONValue]?
     public let documentValidations: DocumentSubValidationResults?
     public let backgroundCheck: BackgroundCheckDetail?
 
     public init(
         faceRecognitionValidations: FaceRecognitionDetail? = nil,
-        documentDetails: DocumentDetail? = nil,
+        documentDetails: [String: JSONValue]? = nil,
         documentValidations: DocumentSubValidationResults? = nil,
         backgroundCheck: BackgroundCheckDetail? = nil
     ) {
@@ -151,101 +151,72 @@ public struct FaceSearchDetail: Codable, Equatable {
     }
 }
 
-// MARK: - Document Detail
+// MARK: - JSON Value
 
-/// Extracted document data and image URLs from a document validation.
-public struct DocumentDetail: Codable, Equatable {
-    public let docId: String?
-    public let country: String?
-    public let documentType: String?
-    public let documentNumber: String?
-    public let name: String?
-    public let lastName: String?
-    public let dateOfBirth: String?
-    public let gender: String?
-    public let issueDate: String?
-    public let expirationDate: String?
-    public let expeditionPlace: String?
-    public let birthPlace: String?
-    public let height: String?
-    public let rh: String?
-    public let mimeType: String?
-    public let clientId: String?
-    public let creationDate: String?
+/// Represents a dynamically-typed value (string, number, bool, null, object, or array).
+/// Used for `document_details` so the API can evolve without SDK changes.
+public enum JSONValue: Codable, Equatable {
+    case string(String)
+    case int(Int)
+    case double(Double)
+    case bool(Bool)
+    case null
+    case object([String: JSONValue])
+    case array([JSONValue])
 
-    /// Presigned CloudFront URL to the document front image.
-    /// This URL expires approximately 15 minutes after the API response.
-    public let frontUrl: String?
-
-    /// Presigned CloudFront URL to the document reverse image.
-    /// This URL expires approximately 15 minutes after the API response.
-    public let reverseUrl: String?
-
-    // swiftlint:disable function_parameter_count
-    public init(
-        docId: String? = nil,
-        country: String? = nil,
-        documentType: String? = nil,
-        documentNumber: String? = nil,
-        name: String? = nil,
-        lastName: String? = nil,
-        dateOfBirth: String? = nil,
-        gender: String? = nil,
-        issueDate: String? = nil,
-        expirationDate: String? = nil,
-        expeditionPlace: String? = nil,
-        birthPlace: String? = nil,
-        height: String? = nil,
-        rh: String? = nil,
-        mimeType: String? = nil,
-        clientId: String? = nil,
-        creationDate: String? = nil,
-        frontUrl: String? = nil,
-        reverseUrl: String? = nil
-    ) {
-        self.docId = docId
-        self.country = country
-        self.documentType = documentType
-        self.documentNumber = documentNumber
-        self.name = name
-        self.lastName = lastName
-        self.dateOfBirth = dateOfBirth
-        self.gender = gender
-        self.issueDate = issueDate
-        self.expirationDate = expirationDate
-        self.expeditionPlace = expeditionPlace
-        self.birthPlace = birthPlace
-        self.height = height
-        self.rh = rh
-        self.mimeType = mimeType
-        self.clientId = clientId
-        self.creationDate = creationDate
-        self.frontUrl = frontUrl
-        self.reverseUrl = reverseUrl
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self = .null
+            return
+        }
+        if let value = try? container.decode(String.self) {
+            self = .string(value)
+            return
+        }
+        if let value = try? container.decode(Int.self) {
+            self = .int(value)
+            return
+        }
+        if let value = try? container.decode(Double.self) {
+            self = .double(value)
+            return
+        }
+        if let value = try? container.decode(Bool.self) {
+            self = .bool(value)
+            return
+        }
+        if let value = try? container.decode([String: JSONValue].self) {
+            self = .object(value)
+            return
+        }
+        if let value = try? container.decode([JSONValue].self) {
+            self = .array(value)
+            return
+        }
+        throw DecodingError.dataCorruptedError(
+            in: container,
+            debugDescription: "Invalid JSON value"
+        )
     }
 
-    // swiftlint:enable function_parameter_count
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .string(let value): try container.encode(value)
+        case .int(let value): try container.encode(value)
+        case .double(let value): try container.encode(value)
+        case .bool(let value): try container.encode(value)
+        case .null: try container.encodeNil()
+        case .object(let value): try container.encode(value)
+        case .array(let value): try container.encode(value)
+        }
+    }
 
-    private enum CodingKeys: String, CodingKey {
-        case docId = "doc_id"
-        case country
-        case documentType = "document_type"
-        case documentNumber = "document_number"
-        case name
-        case lastName = "last_name"
-        case dateOfBirth = "date_of_birth"
-        case gender
-        case issueDate = "issue_date"
-        case expirationDate = "expiration_date"
-        case expeditionPlace = "expedition_place"
-        case birthPlace = "birth_place"
-        case height
-        case rh
-        case mimeType = "mime_type"
-        case clientId = "client_id"
-        case creationDate = "creation_date"
-        case frontUrl = "front_url"
-        case reverseUrl = "reverse_url"
+    /// Returns the string value when this is `.string(s)`, otherwise `nil`.
+    public var stringValue: String? {
+        if case .string(let value) = self { return value }
+        return nil
     }
 }
 

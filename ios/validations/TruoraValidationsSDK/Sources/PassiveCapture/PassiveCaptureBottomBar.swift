@@ -30,7 +30,7 @@ struct PassiveCaptureBottomBar: View {
             if showHelpButton {
                 Button(action: onHelpClick) {
                     Text(TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureHelp))
-                        .font(.system(size: 12, weight: .medium))
+                        .font(theme.typography.bodySmall)
                         .foregroundColor(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
@@ -57,7 +57,7 @@ struct PassiveCaptureBottomBar: View {
         .padding(.horizontal, 24)
         .padding(.vertical, 16)
         .frame(maxWidth: .infinity)
-        .background(theme.colors.primary900.extendingIntoSafeArea())
+        .background(theme.colors.secondary.extendingIntoSafeArea())
     }
 }
 

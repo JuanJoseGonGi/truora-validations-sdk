@@ -88,12 +88,12 @@ extension PassiveIntroInteractor: PassiveIntroPresenterToInteractor {
     }
 
     private func createValidationRequest(accountId: String) -> NativeValidationRequest {
-        // Get similarity threshold from configuration
-        let threshold = Double(ValidationConfig.shared.faceConfig.similarityThreshold)
+        let faceConfig = ValidationConfig.shared.faceConfig
+        var threshold: Double?
 
-        // Get timeout from configuration (in seconds)
-        let timeoutSeconds = ValidationConfig.shared.faceConfig.timeoutSeconds
-        let timeout = timeoutSeconds > 0 ? timeoutSeconds : nil
+        if let configThreshold = faceConfig.similarityThreshold {
+            threshold = Double(configThreshold)
+        }
 
         return NativeValidationRequest(
             type: NativeValidationTypeEnum.faceRecognition.rawValue,
@@ -105,8 +105,9 @@ extension PassiveIntroInteractor: PassiveIntroPresenterToInteractor {
                 NativeSubValidationTypeEnum.similarity.rawValue
             ],
             documentType: nil,
-            timeout: timeout,
-            userAuthorized: true
+            timeout: faceConfig.timeout,
+            userAuthorized: true,
+            checkManualReviewAvailability: true
         )
     }
 

@@ -13,10 +13,10 @@ import Foundation
 /// Use the builder pattern to configure face validation parameters.
 public class Face {
     private var _referenceFace: ReferenceFace?
-    private var _similarityThreshold: Float = 0.8
-    private var _shouldWaitForResults: Bool = false
+    private var _similarityThreshold: Float?
+    private var _waitForResults: Bool = false
     private var _useAutocapture: Bool = true
-    private var _timeoutSeconds: Int = 60
+    private var _timeout: Int?
     private var _finishViewConfig: FinishViewConfiguration?
 
     public required init() {}
@@ -25,20 +25,20 @@ public class Face {
         _referenceFace
     }
 
-    public var similarityThreshold: Float {
+    public var similarityThreshold: Float? {
         _similarityThreshold
     }
 
-    public var shouldWaitForResults: Bool {
-        _shouldWaitForResults
+    public var waitForResults: Bool {
+        _waitForResults
     }
 
     public var useAutocapture: Bool {
         _useAutocapture
     }
 
-    public var timeoutSeconds: Int {
-        _timeoutSeconds
+    public var timeout: Int? {
+        _timeout
     }
 
     public var finishViewConfig: FinishViewConfiguration? {
@@ -74,15 +74,15 @@ public class Face {
     /// - Parameter enabled: true to show results view, false to skip it (default: false)
     /// - Returns: This Face for method chaining
     @discardableResult
-    public func enableWaitForResults(_ enabled: Bool) -> Face {
+    public func waitForResults(_ enabled: Bool) -> Face {
         if !enabled, _finishViewConfig != nil {
             preconditionFailure(
-                "enableWaitForResults(false) cannot be called when "
+                "waitForResults(false) cannot be called when "
                     + "finishViewConfiguration is set. Remove "
                     + "setFinishViewConfiguration() first."
             )
         }
-        _shouldWaitForResults = enabled
+        _waitForResults = enabled
         return self
     }
 
@@ -91,7 +91,7 @@ public class Face {
     /// - Parameter enabled: true to enable auto-capture, false for manual capture (default: true)
     /// - Returns: This Face for method chaining
     @discardableResult
-    public func enableAutocapture(_ enabled: Bool) -> Face {
+    public func useAutocapture(_ enabled: Bool) -> Face {
         _useAutocapture = enabled
         return self
     }
@@ -103,7 +103,7 @@ public class Face {
     /// - Returns: This Face for method chaining
     @discardableResult
     public func setTimeout(_ seconds: Int) -> Face {
-        _timeoutSeconds = max(seconds, 0)
+        _timeout = max(seconds, 0)
         return self
     }
 
@@ -117,7 +117,7 @@ public class Face {
     @discardableResult
     public func setFinishViewConfiguration(_ config: FinishViewConfiguration) -> Face {
         _finishViewConfig = config
-        _shouldWaitForResults = true
+        _waitForResults = true
         return self
     }
 }

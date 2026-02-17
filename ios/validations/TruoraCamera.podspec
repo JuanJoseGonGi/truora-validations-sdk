@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "TruoraCamera"
-  s.version          = "1.0.0-beta.1"
+  s.version          = "1.0.0-beta.4"
   s.summary          = "Truora camera module to capture input for biometric validations"
   s.description      = <<-DESC
 TruoraCamera is a camera module based on AVFoundation, with facial detection (Vision/CoreML)
@@ -14,19 +14,19 @@ DESC
   s.static_framework = true
   s.source           = { :git => "https://bitbucket.org/truora/truora-sdks.git", :tag => s.version.to_s }
 
-  s.source_files       = [ 
+  s.source_files       = [
     "ios/validations/TruoraCamera/Sources/**/*.{swift}",
     "ios/validations/TensorFlowLite/Sources/**/*.{swift}",
     "ios/validations/Derived/Sources/TuistAssets+TruoraCamera.swift",
     "ios/validations/Derived/Sources/TuistBundle+TruoraCamera.swift"
   ]
-  s.resource_bundles = { 
+  s.resource_bundles = {
     "TruoraCameraResources" => [
       "ios/validations/TruoraCamera/Sources/Assets.xcassets",
       "ios/validations/TruoraCamera/Resources/**/*.tflite"
-    ] 
+    ]
   }
-  
+
   # Bundle TensorFlowLiteC XCFramework
   s.vendored_frameworks = ["ios/validations/XCFrameworks/TensorFlowLiteC.xcframework"]
   s.frameworks          = ["AVFoundation", "UIKit", "CoreGraphics", "Vision", "CoreML"]

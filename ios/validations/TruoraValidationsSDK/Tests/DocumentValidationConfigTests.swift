@@ -43,32 +43,81 @@ import XCTest
 
     func testSetFinishViewConfigurationImplicitlyEnablesWaitForResults() {
         // Given
-        _ = sut.enableWaitForResults(false)
-        XCTAssertFalse(sut.shouldWaitForResults, "Precondition: wait for results disabled")
+        _ = sut.waitForResults(false)
+        XCTAssertFalse(sut.waitForResults, "Precondition: wait for results disabled")
 
         // When
         _ = sut.setFinishViewConfiguration(FinishViewConfiguration(success: .hide, failure: .hide))
 
         // Then
-        XCTAssertTrue(sut.shouldWaitForResults, "Should implicitly enable wait for results")
+        XCTAssertTrue(sut.waitForResults, "Should implicitly enable wait for results")
     }
 
-    func testEnableWaitForResultsFalseWithoutFinishViewConfig_succeeds() {
+    func testWaitForResultsFalseWithoutFinishViewConfig_succeeds() {
         // When — disabling waitForResults without finishViewConfig is valid
-        _ = sut.enableWaitForResults(false)
+        _ = sut.waitForResults(false)
 
         // Then
-        XCTAssertFalse(sut.shouldWaitForResults)
+        XCTAssertFalse(sut.waitForResults)
         XCTAssertNil(sut.finishViewConfig)
     }
 
-    // Note: enableWaitForResults(false) after setFinishViewConfiguration
+    // Note: waitForResults(false) after setFinishViewConfiguration
     // triggers a preconditionFailure, which cannot be tested with XCTest
     // since it terminates the process. The precondition protects against
     // developer misconfiguration at the call site.
     // ValidationConfig.setValidation also throws invalidConfiguration as a
     // defense-in-depth check, but that path is unreachable through the
     // public builder API since the precondition fires first.
+
+    // MARK: - Passport Autocapture Validation Tests
+
+    // Note: useAutocapture(true) after setDocumentType("passport") and
+    // setDocumentType("passport") after useAutocapture(true) both trigger
+    // preconditionFailure, which cannot be tested with XCTest since it
+    // terminates the process. The precondition protects against developer
+    // misconfiguration at the call site.
+    // ValidationConfig.setValidation also throws invalidConfiguration as a
+    // defense-in-depth check for passport + autocapture.
+
+    func testPassportWithDefaultAutocapture_succeeds() {
+        // When the developer does NOT explicitly call useAutocapture(true),
+        // configuration should succeed (autocapture will be silently disabled at runtime)
+        _ = sut.setDocumentType("passport")
+
+        XCTAssertEqual(sut.documentType, "passport")
+        XCTAssertTrue(sut.useAutocapture, "Default autocapture should remain true")
+    }
+
+    func testPassportWithAutocaptureDisabled_succeeds() {
+        _ = sut
+            .setDocumentType("passport")
+            .useAutocapture(false)
+
+        XCTAssertEqual(sut.documentType, "passport")
+        XCTAssertFalse(sut.useAutocapture)
+    }
+
+    func testPassportWithAutocaptureEnabledThenDisabled_succeeds() {
+        // Calling useAutocapture(false) after useAutocapture(true) should reset the flag,
+        // so setDocumentType("passport") must not crash.
+        _ = sut
+            .useAutocapture(true)
+            .useAutocapture(false)
+            .setDocumentType("passport")
+
+        XCTAssertEqual(sut.documentType, "passport")
+        XCTAssertFalse(sut.useAutocapture)
+    }
+
+    func testNonPassportWithAutocapture_succeeds() {
+        _ = sut
+            .setDocumentType("national-id")
+            .useAutocapture(true)
+
+        XCTAssertEqual(sut.documentType, "national-id")
+        XCTAssertTrue(sut.useAutocapture)
+    }
 
     func testMethodChainingWithFinishViewConfig() {
         // Given
@@ -87,7 +136,7 @@ import XCTest
         XCTAssertEqual(sut.country, "CO")
         XCTAssertEqual(sut.documentType, "national-id")
         XCTAssertNotNil(sut.finishViewConfig)
-        XCTAssertTrue(sut.shouldWaitForResults)
-        XCTAssertEqual(sut.timeoutSeconds, 90)
+        XCTAssertTrue(sut.waitForResults)
+        XCTAssertEqual(sut.timeout, 90)
     }
 }

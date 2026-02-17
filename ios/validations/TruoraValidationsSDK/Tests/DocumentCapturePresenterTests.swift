@@ -28,7 +28,7 @@ import XCTest
         mockView = MockDocumentCaptureView()
         mockInteractor = MockDocumentCaptureInteractor()
         mockTimeProvider = MockTimeProvider()
-        let navController = UINavigationController()
+        let navController = TruoraNavigationController()
         mockRouter = MockDocumentCaptureRouter(navigationController: navController)
         mockRouter.frontUploadUrl = "https://example.com/front"
         mockRouter.reverseUploadUrl = "https://example.com/reverse"

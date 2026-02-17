@@ -18,7 +18,7 @@ import XCTest
         super.setUp()
         mockView = MockDocumentIntroView()
         mockInteractor = MockDocumentIntroInteractor()
-        let navController = UINavigationController()
+        let navController = TruoraNavigationController()
         mockRouter = MockDocumentIntroRouter(navigationController: navController)
 
         sut = DocumentIntroPresenter(

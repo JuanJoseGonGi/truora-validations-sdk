@@ -510,8 +510,8 @@ private struct DocumentCaptureHeaderView: View {
             if showRotationAnimation {
                 // Flip document instruction - two lines
                 Text(TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureRotateInstruction))
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
+                    .font(theme.typography.titleMedium)
+                    .foregroundColor(theme.colors.onSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             } else {
@@ -529,15 +529,15 @@ private struct DocumentCaptureHeaderView: View {
                         ? TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureFrontInstruction)
                         : TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureBackInstruction)
                 )
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
+                .font(theme.typography.titleMedium)
+                .foregroundColor(theme.colors.onSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
             }
         }
         .frame(maxWidth: .infinity)
         .frame(height: 180)
-        .background(theme.colors.primary900.extendingIntoSafeArea())
+        .background(theme.colors.secondary.extendingIntoSafeArea())
     }
 
     /// Returns the appropriate document icon based on side
@@ -636,14 +636,14 @@ private struct DocumentCaptureFeedbackMessage: View {
     var textColor: Color {
         switch feedbackType {
         case .scanning, .scanningManual, .searching, .multipleDocuments: .white
-        default: .black
+        default: theme.colors.tint
         }
     }
 
     var body: some View {
         if shouldShow {
             Text(feedbackText)
-                .font(.system(size: 14, weight: .bold))
+                .font(theme.typography.bodyMedium)
                 .foregroundColor(textColor)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
@@ -732,7 +732,7 @@ private struct DocumentPhotoThumbnail: View {
                                 .fill(theme.colors.layoutSuccess)
                                 .frame(width: 20, height: 20)
                             SwiftUI.Image(systemName: "checkmark")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(theme.typography.bodySmall)
                                 .foregroundColor(.white)
                         }
                         .offset(x: 6, y: 6)
@@ -784,7 +784,7 @@ private struct DocumentCaptureFooter: View {
                 if showHelpButton {
                     Button(action: onHelpClick) {
                         Text(TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureHelp))
-                            .font(.system(size: 12, weight: .medium))
+                            .font(theme.typography.bodySmall)
                             .foregroundColor(.white)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
@@ -810,7 +810,7 @@ private struct DocumentCaptureFooter: View {
             .padding(.horizontal, 24)
         }
         .frame(height: 150)
-        .background(theme.colors.primary900.extendingIntoSafeArea())
+        .background(theme.colors.secondary.extendingIntoSafeArea())
     }
 }
 
@@ -846,15 +846,15 @@ struct DocumentCaptureTipsDialog: View {
                 // Header with title and close button
                 HStack {
                     Text(TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureHelpTitle))
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(theme.colors.layoutGray900)
+                        .font(theme.typography.titleMedium)
+                        .foregroundColor(theme.colors.onSurface)
 
                     Spacer()
 
                     Button(action: onDismiss) {
                         Text("\u{2715}")
-                            .font(.system(size: 16))
-                            .foregroundColor(theme.colors.layoutGray900)
+                            .font(theme.typography.bodyLarge)
+                            .foregroundColor(theme.colors.onSurface)
                     }
                     .frame(width: 24, height: 24)
                 }
@@ -871,12 +871,12 @@ struct DocumentCaptureTipsDialog: View {
                     ForEach(tips, id: \.self) { tip in
                         HStack(alignment: .top, spacing: 8) {
                             Text("\u{2022}")
-                                .font(.system(size: 16))
-                                .foregroundColor(.black)
+                                .font(theme.typography.bodyLarge)
+                                .foregroundColor(theme.colors.onSurface)
 
                             Text(tip)
-                                .font(.system(size: 14))
-                                .foregroundColor(.black)
+                                .font(theme.typography.bodyMedium)
+                                .foregroundColor(theme.colors.onSurface)
                                 .lineSpacing(7)
                         }
                     }
@@ -894,7 +894,7 @@ struct DocumentCaptureTipsDialog: View {
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
             }
-            .background(Color.white)
+            .background(theme.colors.surface)
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)

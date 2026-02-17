@@ -37,7 +37,7 @@ struct TruoraHeaderView: View {
             if let onCancel {
                 Button(action: onCancel) {
                     SwiftUI.Image(systemName: "xmark")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(theme.typography.bodyLarge)
                         .foregroundColor(theme.colors.layoutGray900)
                 }
                 .frame(width: 48, height: 48)

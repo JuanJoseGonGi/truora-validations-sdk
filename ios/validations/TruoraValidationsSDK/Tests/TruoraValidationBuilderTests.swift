@@ -48,7 +48,6 @@ import XCTest
             config
                 .setSurfaceColor("#FFFFFF")
                 .setPrimaryColor("#435AE0")
-                .setLanguage(.spanish)
         }
 
         // Then
@@ -68,7 +67,7 @@ import XCTest
         let typedBuilder = builder.withValidation { (validation: Face) in
             validation
                 .setSimilarityThreshold(0.85)
-                .enableAutocapture(true)
+                .useAutocapture(true)
         }
 
         // Then
@@ -117,15 +116,15 @@ import XCTest
         // When
         let validation =
             builder
+                .withLanguage(.spanish)
                 .withConfig { config in
                     config
                         .setPrimaryColor("#435AE0")
-                        .setLanguage(.spanish)
                 }
                 .withValidation { (validation: Face) in
                     validation
                         .setSimilarityThreshold(0.85)
-                        .enableAutocapture(false)
+                        .useAutocapture(false)
                         .setTimeout(120)
                 }
                 .build()
@@ -138,7 +137,7 @@ import XCTest
         // Then
         XCTAssertNotNil(validation, "Should build TruoraValidation")
         XCTAssertNotNil(validation.uiConfig.primary, "Should have configured UI")
-        XCTAssertEqual(validation.uiConfig.language, .spanish, "Should have configured language")
+        XCTAssertEqual(validation.lang, .spanish, "Should have configured language")
         XCTAssertEqual(
             faceConfig.similarityThreshold,
             0.85,
@@ -149,7 +148,7 @@ import XCTest
             "Should have configured autocapture"
         )
         XCTAssertEqual(
-            faceConfig.timeoutSeconds,
+            faceConfig.timeout,
             120,
             "Should have configured timeout"
         )
@@ -172,7 +171,7 @@ import XCTest
 
         // Then
         XCTAssertNotNil(validation, "Should build TruoraValidation with default config")
-        XCTAssertEqual(validation.uiConfig.language, .english, "Should use default language")
+        XCTAssertNil(validation.lang, "When withLanguage() not called, lang is nil (device locale)")
         XCTAssertNil(validation.uiConfig.primary, "Should have no primary color")
     }
 
@@ -188,6 +187,7 @@ import XCTest
             apiKeyGenerator: mockAPIKeyGetter,
             userId: "user-456"
         )
+        .withLanguage(.portuguese)
         .withConfig { config in
             config
                 .setSurfaceColor("#FFFFFF")
@@ -197,14 +197,13 @@ import XCTest
                 .setSecondaryColor("#082054")
                 .setErrorColor("#FF5454")
                 .setLogo("https://example.com/logo.png")
-                .setLanguage(.portuguese)
         }
         .withValidation { (validation: Face) in
             validation
                 .useReferenceFace(referenceFace)
                 .setSimilarityThreshold(0.95)
-                .enableAutocapture(true)
-                .enableWaitForResults(false)
+                .useAutocapture(true)
+                .waitForResults(false)
                 .setTimeout(180)
         }
         .build()
@@ -224,7 +223,7 @@ import XCTest
             "https://example.com/logo.png",
             "Should have logo URL"
         )
-        XCTAssertEqual(validation.uiConfig.language, .portuguese, "Should have Portuguese language")
+        XCTAssertEqual(validation.lang, .portuguese, "Should have Portuguese language")
 
         guard case .face(let faceConfig) = validation.type else {
             XCTFail("Expected .face case, but got \(validation.type)")
@@ -240,10 +239,10 @@ import XCTest
         )
         XCTAssertTrue(faceConfig.useAutocapture, "Should have autocapture enabled")
         XCTAssertFalse(
-            faceConfig.shouldWaitForResults,
+            faceConfig.waitForResults,
             "Should not wait for results"
         )
-        XCTAssertEqual(faceConfig.timeoutSeconds, 180, "Should have timeout")
+        XCTAssertEqual(faceConfig.timeout, 180, "Should have timeout")
     }
 
     // MARK: - Type Inference Tests
@@ -321,15 +320,15 @@ extension TruoraValidationBuilderTests {
         )
         XCTAssertTrue(faceConfig.useAutocapture, "Should have default autocapture")
         XCTAssertFalse(
-            faceConfig.shouldWaitForResults,
+            faceConfig.waitForResults,
             "Should have default wait for results (false)"
         )
         XCTAssertEqual(
-            faceConfig.timeoutSeconds,
+            faceConfig.timeout,
             60,
             "Should have default timeout"
         )
-        XCTAssertEqual(validation.uiConfig.language, .english, "Should have default language")
+        XCTAssertNil(validation.lang, "Should have nil lang when withLanguage() not called (device locale)")
     }
 }
 

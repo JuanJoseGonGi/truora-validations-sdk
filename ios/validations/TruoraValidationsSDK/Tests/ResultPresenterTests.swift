@@ -18,7 +18,7 @@ import XCTest
         super.setUp()
         mockView = MockResultView()
         mockInteractor = MockResultInteractor()
-        let navController = UINavigationController()
+        let navController = TruoraNavigationController()
         mockRouter = MockResultRouter(navigationController: navController)
         mockDelegate = MockValidationDelegate()
         ValidationConfig.shared.reset()
@@ -37,7 +37,7 @@ import XCTest
 
     func testViewDidLoad_waitingForResults_startsPollingAndShowsLoading() async {
         // Given
-        ValidationConfig.shared.faceConfig.enableWaitForResults(true)
+        ValidationConfig.shared.faceConfig.waitForResults(true)
         let sut = createPresenter()
 
         // When
@@ -50,7 +50,7 @@ import XCTest
 
     func testViewDidLoad_notWaitingForResults_startsPollingAndShowsCompleted() async {
         // Given
-        let sut = createPresenter(loadingType: .face, shouldWaitForResults: false)
+        let sut = createPresenter(loadingType: .face, waitForResults: false)
 
         // When
         await sut.viewDidLoad()
@@ -64,7 +64,7 @@ import XCTest
 
     func testDoneTapped_withResult_dismissesFlowAndNotifiesDelegate() async {
         // Given
-        ValidationConfig.shared.faceConfig.enableWaitForResults(true)
+        ValidationConfig.shared.faceConfig.waitForResults(true)
         let sut = createPresenter()
         let result = ValidationResult(validationId: "id", status: .success)
         await sut.pollingCompleted(result: result)
@@ -80,7 +80,7 @@ import XCTest
 
     func testPollingCompleted_waitingForResults_showsResult() async {
         // Given
-        ValidationConfig.shared.faceConfig.enableWaitForResults(true)
+        ValidationConfig.shared.faceConfig.waitForResults(true)
         let sut = createPresenter()
         let result = ValidationResult(validationId: "id", status: .success)
 
@@ -94,7 +94,7 @@ import XCTest
 
     func testPollingFailed_waitingForResults_showsFailedResult() async {
         // Given
-        ValidationConfig.shared.faceConfig.enableWaitForResults(true)
+        ValidationConfig.shared.faceConfig.waitForResults(true)
         let sut = createPresenter()
 
         // When
@@ -260,8 +260,8 @@ import XCTest
     }
 
     func testPollingCompleted_noFinishViewConfig_showsResultAsDefault() async {
-        // Given - no finishViewConfig set, shouldWaitForResults = true
-        ValidationConfig.shared.faceConfig.enableWaitForResults(true)
+        // Given - no finishViewConfig set, waitForResults = true
+        ValidationConfig.shared.faceConfig.waitForResults(true)
         let sut = createPresenter()
 
         await sut.viewDidLoad()
@@ -308,15 +308,15 @@ import XCTest
 
     private func createPresenter(
         loadingType: ResultLoadingType = .face,
-        shouldWaitForResults: Bool = true,
+        waitForResults: Bool = true,
         isCanceled: Bool = false
     ) -> ResultPresenter {
         // Configure the validation config to match the test expectation
         switch loadingType {
         case .face:
-            ValidationConfig.shared.faceConfig.enableWaitForResults(shouldWaitForResults)
+            ValidationConfig.shared.faceConfig.waitForResults(waitForResults)
         case .document:
-            ValidationConfig.shared.documentConfig.enableWaitForResults(shouldWaitForResults)
+            ValidationConfig.shared.documentConfig.waitForResults(waitForResults)
         }
 
         return ResultPresenter(
@@ -395,10 +395,10 @@ private class MockResultInteractor: ResultPresenterToInteractor {
     var closure: (TruoraValidationResult<ValidationResult>) -> Void {
         { [weak self] result in
             switch result {
-            case .complete(let validationResult):
+            case .completed(let validationResult):
                 self?.completeCalled = true
                 self?.lastResult = validationResult
-            case .failure(let error, _):
+            case .error(let error):
                 self?.failureCalled = true
                 self?.lastError = error
             case .canceled:

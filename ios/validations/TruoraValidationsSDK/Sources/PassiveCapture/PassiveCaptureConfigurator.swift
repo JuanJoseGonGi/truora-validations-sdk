@@ -37,7 +37,7 @@ enum PassiveCaptureConfigurator {
 
         let uiConfig = ValidationConfig.shared.uiConfig
         let swiftUIView = PassiveCaptureView(viewModel: viewModel, config: uiConfig)
-            .sdkLocaleEnvironment(locale: ValidationConfig.shared.uiConfig.language?.locale ?? Locale.current)
+            .sdkLocaleEnvironment(locale: TruoraLocalization.currentLocale)
         let hostingController = UIHostingController(rootView: swiftUIView)
         hostingController.view.backgroundColor = .clear // Ensure transparent background
         hostingController.modalPresentationStyle = .fullScreen

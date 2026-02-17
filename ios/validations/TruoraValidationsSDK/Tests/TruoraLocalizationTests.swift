@@ -67,14 +67,14 @@ import XCTest
 
     // MARK: - currentLocale Tests
 
-    func testCurrentLocale_noLanguageConfigured_returnsLocaleCurrent() {
-        // Given: ValidationConfig is reset (no language configured)
+    func testCurrentLocale_afterReset_usesDeviceLocale() {
+        // Given: ValidationConfig is reset (lang is nil → use device)
         ValidationConfig.shared.reset()
 
         // When
         let locale = TruoraLocalization.currentLocale
 
-        // Then: Should return Locale.current since no language is configured
+        // Then: Should return device locale when lang was not configured
         XCTAssertEqual(locale, Locale.current)
     }
 

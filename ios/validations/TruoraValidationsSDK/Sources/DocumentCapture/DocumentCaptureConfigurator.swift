@@ -9,6 +9,14 @@ import SwiftUI
 import UIKit
 
 enum DocumentCaptureConfigurator {
+    /// Resolves whether autocapture should be enabled based on the document config.
+    /// Passport documents always disable autocapture because the ML model
+    /// does not work reliably on that document type.
+    static func resolveAutocapture(from documentConfig: Document) -> Bool {
+        let isPassport = documentConfig.documentType == NativeDocumentType.passport.rawValue
+        return documentConfig.useAutocapture && !isPassport
+    }
+
     @MainActor static func buildModule(
         router: ValidationRouter,
         validationId: String,
@@ -16,12 +24,14 @@ enum DocumentCaptureConfigurator {
         reverseUploadUrl: String?
     ) throws -> UIViewController {
         let viewModel = DocumentCaptureViewModel()
+        let useAutocapture = resolveAutocapture(from: ValidationConfig.shared.documentConfig)
 
         let presenter = DocumentCapturePresenter(
             view: viewModel,
             interactor: nil,
             router: router,
-            validationId: validationId
+            validationId: validationId,
+            useAutocapture: useAutocapture
         )
 
         let logger = try TruoraLoggerImplementation.shared
@@ -38,7 +48,7 @@ enum DocumentCaptureConfigurator {
 
         let config = ValidationConfig.shared.uiConfig
         let swiftUIView = DocumentCaptureView(viewModel: viewModel, config: config)
-            .sdkLocaleEnvironment(locale: config.language?.locale ?? Locale.current)
+            .sdkLocaleEnvironment(locale: TruoraLocalization.currentLocale)
         let hostingController = UIHostingController(rootView: swiftUIView)
         hostingController.modalPresentationStyle = .fullScreen
         return hostingController

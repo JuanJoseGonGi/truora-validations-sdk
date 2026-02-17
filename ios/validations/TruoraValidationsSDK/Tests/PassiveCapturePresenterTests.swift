@@ -30,7 +30,7 @@ import XCTest
         mockView = MockPassiveCaptureView()
         mockInteractor = MockPassiveCaptureInteractor()
         mockTimeProvider = MockTimeProvider()
-        let navController = UINavigationController()
+        let navController = TruoraNavigationController()
         mockRouter = MockPassiveCaptureRouter(navigationController: navController)
 
         sut = PassiveCapturePresenter(

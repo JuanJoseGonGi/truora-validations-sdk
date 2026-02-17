@@ -1,12 +1,12 @@
 import Foundation
 
 /// Represents the result of a validation operation
-/// - complete: Validation completed successfully with a result of type T
-/// - failure: Validation failed with a TruoraException, with an optional partial result
+/// - completed: Validation process finished with a result of type T
+/// - error: SDK error occurred with a TruoraException
 /// - canceled: Validation was canceled by the user, with an optional partial result
 public enum TruoraValidationResult<T> {
-    case complete(T)
-    case failure(TruoraException, T?)
+    case completed(T)
+    case error(TruoraException)
     case canceled(T?)
 }
 
@@ -15,10 +15,10 @@ public enum TruoraValidationResult<T> {
 extension TruoraValidationResult: Equatable where T: Equatable {
     public static func == (lhs: TruoraValidationResult<T>, rhs: TruoraValidationResult<T>) -> Bool {
         switch (lhs, rhs) {
-        case (.complete(let lhsValue), .complete(let rhsValue)):
+        case (.completed(let lhsValue), .completed(let rhsValue)):
             lhsValue == rhsValue
-        case (.failure(let lhsError, let lhsValue), .failure(let rhsError, let rhsValue)):
-            lhsError == rhsError && lhsValue == rhsValue
+        case (.error(let lhsError), .error(let rhsError)):
+            lhsError == rhsError
         case (.canceled(let lhsValue), .canceled(let rhsValue)):
             lhsValue == rhsValue
         default:
@@ -32,14 +32,12 @@ extension TruoraValidationResult: Equatable where T: Equatable {
 extension TruoraValidationResult: CustomStringConvertible {
     public var description: String {
         switch self {
-        case .complete(let value):
-            return "TruoraValidationResult.complete(\(value))"
-        case .failure(let error, let value):
-            let errorDesc = error.localizedDescription
-            let valueDesc = String(describing: value)
-            return "TruoraValidationResult.failure(\(errorDesc), \(valueDesc))"
+        case .completed(let value):
+            "TruoraValidationResult.completed(\(value))"
+        case .error(let error):
+            "TruoraValidationResult.error(\(error.localizedDescription))"
         case .canceled(let value):
-            return "TruoraValidationResult.canceled(\(String(describing: value)))"
+            "TruoraValidationResult.canceled(\(String(describing: value)))"
         }
     }
 }
@@ -48,14 +46,14 @@ extension TruoraValidationResult: CustomStringConvertible {
 
 public extension TruoraValidationResult {
     /// Returns true if the result is a completion
-    var isComplete: Bool {
-        if case .complete = self { return true }
+    var isCompleted: Bool {
+        if case .completed = self { return true }
         return false
     }
 
-    /// Returns true if the result is a failure
-    var isFailure: Bool {
-        if case .failure = self { return true }
+    /// Returns true if the result is an error
+    var isError: Bool {
+        if case .error = self { return true }
         return false
     }
 
@@ -67,19 +65,13 @@ public extension TruoraValidationResult {
 
     /// Extracts the completion value if available
     var completionValue: T? {
-        if case .complete(let value) = self { return value }
+        if case .completed(let value) = self { return value }
         return nil
     }
 
-    /// Extracts the error if this is a failure
-    var error: TruoraException? {
-        if case .failure(let error, _) = self { return error }
-        return nil
-    }
-
-    /// Extracts the partial validation result if this is a failure
-    var failureValue: T? {
-        if case .failure(_, let value) = self { return value }
+    /// Extracts the exception if this is an error
+    var exception: TruoraException? {
+        if case .error(let error) = self { return error }
         return nil
     }
 

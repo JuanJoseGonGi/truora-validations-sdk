@@ -21,6 +21,7 @@ struct NativeValidationRequest: Codable {
     let documentType: String?
     let timeout: Int?
     let userAuthorized: Bool
+    let checkManualReviewAvailability: Bool
 
     enum CodingKeys: String, CodingKey {
         case type
@@ -31,6 +32,7 @@ struct NativeValidationRequest: Codable {
         case documentType = "document_type"
         case timeout
         case userAuthorized = "user_authorized"
+        case checkManualReviewAvailability = "check_manual_review_availability"
     }
 }
 

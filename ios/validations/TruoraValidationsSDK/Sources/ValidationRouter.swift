@@ -16,7 +16,7 @@ private var routerAssociatedKey: UInt8 = 0
 // MARK: - Validation Router
 
 @MainActor class ValidationRouter {
-    weak var navigationController: UINavigationController?
+    weak var navigationController: TruoraNavigationController?
 
     private var validationId: String?
     var uploadUrl: String?
@@ -25,7 +25,7 @@ private var routerAssociatedKey: UInt8 = 0
     private var enrollmentTask: Task<Void, Error>?
     private weak var documentFeedbackViewController: UIViewController?
 
-    init(navigationController: UINavigationController) {
+    init(navigationController: TruoraNavigationController) {
         self.navigationController = navigationController
     }
 
@@ -189,7 +189,7 @@ private var routerAssociatedKey: UInt8 = 0
     }
 
     func handleError(_ error: TruoraException) {
-        ValidationConfig.shared.delegate?(.failure(error, nil))
+        ValidationConfig.shared.delegate?(.error(error))
         dismissFlow()
     }
 
@@ -255,8 +255,8 @@ private var routerAssociatedKey: UInt8 = 0
 
 extension ValidationRouter {
     @MainActor
-    static func createRootNavigationController(of type: ValidationType) throws -> UINavigationController {
-        let navController = UINavigationController()
+    static func createRootNavigationController(of type: ValidationType) throws -> TruoraNavigationController {
+        let navController = TruoraNavigationController()
         let router = ValidationRouter(navigationController: navController)
 
         // Store router as associated object to prevent deallocation
@@ -285,8 +285,8 @@ extension ValidationRouter {
     }
 
     @MainActor
-    static func createDocumentSelectionNavigationController() throws -> UINavigationController {
-        let navController = UINavigationController()
+    static func createDocumentSelectionNavigationController() throws -> TruoraNavigationController {
+        let navController = TruoraNavigationController()
         let router = ValidationRouter(navigationController: navController)
 
         // Store router as associated object to prevent deallocation
@@ -308,13 +308,13 @@ extension ValidationRouter {
     }
 
     /// Helper to retrieve router from navigation controller
-    static func getRouter(from navigationController: UINavigationController) -> ValidationRouter? {
+    static func getRouter(from navigationController: TruoraNavigationController) -> ValidationRouter? {
         objc_getAssociatedObject(navigationController, &routerAssociatedKey) as? ValidationRouter
     }
 
     @MainActor
     static func presentFlow(
-        navController: UINavigationController,
+        navController: TruoraNavigationController,
         from presentingViewController: UIViewController
     ) throws {
         guard presentingViewController.viewIfLoaded?.window != nil else {

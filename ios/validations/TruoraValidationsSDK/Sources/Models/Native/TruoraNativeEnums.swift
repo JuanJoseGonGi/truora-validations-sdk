@@ -95,9 +95,109 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
         rawValue
     }
 
-    /// Returns localized display label for the document type
+    /// Returns generic localized display label for the document type
     public var label: String {
-        let key = switch self {
+        TruoraLocalization.string(forKey: genericLabelKey)
+    }
+
+    /// Returns localized display label for the document type based on country context
+    public func label(for country: NativeCountry) -> String {
+        TruoraLocalization.string(forKey: labelKey(for: country))
+    }
+
+    /// Returns the localization key for a specific country, or generic if not available
+    private func labelKey(for country: NativeCountry) -> String {
+        switch country {
+        case .mx: labelKeyForMx
+        case .br: labelKeyForBr
+        case .co: labelKeyForCo
+        case .cl: labelKeyForCl
+        case .pe: labelKeyForPe
+        case .ve: labelKeyForVe
+        case .ar: labelKeyForAr
+        case .sv: labelKeyForSv
+        case .cr: labelKeyForCr
+        case .all: genericLabelKey
+        }
+    }
+
+    private var labelKeyForMx: String {
+        switch self {
+        case .nationalId: LocalizationKeys.docMxNationalId
+        case .foreignId: LocalizationKeys.docMxForeignId
+        default: genericLabelKey
+        }
+    }
+
+    private var labelKeyForBr: String {
+        switch self {
+        case .cnh: LocalizationKeys.docBrCnh
+        case .generalRegistration: LocalizationKeys.docBrGeneralReg
+        case .nationalId: LocalizationKeys.docBrNationalId
+        default: genericLabelKey
+        }
+    }
+
+    private var labelKeyForCo: String {
+        switch self {
+        case .nationalId: LocalizationKeys.docCoNationalId
+        case .foreignId: LocalizationKeys.docCoForeignId
+        case .ppt: LocalizationKeys.docCoPpt
+        case .temporaryNationalId: LocalizationKeys.docCoTempId
+        case .ptp: LocalizationKeys.docCoPtp
+        default: genericLabelKey
+        }
+    }
+
+    private var labelKeyForCl: String {
+        switch self {
+        case .nationalId: LocalizationKeys.docClNationalId
+        default: genericLabelKey
+        }
+    }
+
+    private var labelKeyForPe: String {
+        switch self {
+        case .nationalId: LocalizationKeys.docPeNationalId
+        case .foreignId: LocalizationKeys.docPeForeignId
+        case .ptp: LocalizationKeys.docPePtp
+        default: genericLabelKey
+        }
+    }
+
+    private var labelKeyForVe: String {
+        switch self {
+        case .nationalId: LocalizationKeys.docVeNationalId
+        default: genericLabelKey
+        }
+    }
+
+    private var labelKeyForAr: String {
+        switch self {
+        case .nationalId: LocalizationKeys.docArNationalId
+        default: genericLabelKey
+        }
+    }
+
+    private var labelKeyForSv: String {
+        switch self {
+        case .nationalId: LocalizationKeys.docSvNationalId
+        case .foreignId: LocalizationKeys.docSvForeignId
+        default: genericLabelKey
+        }
+    }
+
+    private var labelKeyForCr: String {
+        switch self {
+        case .nationalId: LocalizationKeys.docCrNationalId
+        case .foreignId: LocalizationKeys.docCrForeignId
+        default: genericLabelKey
+        }
+    }
+
+    /// Returns the generic localization key for this document type
+    private var genericLabelKey: String {
+        switch self {
         case .nationalId: LocalizationKeys.documentTypeNationalId
         case .identityCard: LocalizationKeys.documentTypeIdentityCard
         case .foreignId: LocalizationKeys.documentTypeForeignId
@@ -113,7 +213,6 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
         case .generalRegistration: LocalizationKeys.docBrGeneralReg
         case .temporaryNationalId: LocalizationKeys.docCoTempId
         }
-        return TruoraLocalization.string(forKey: key)
     }
 
     /// Returns localized description for the document type based on country context

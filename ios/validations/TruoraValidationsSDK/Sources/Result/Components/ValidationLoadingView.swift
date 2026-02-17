@@ -76,8 +76,7 @@ struct ValidationLoadingView: View {
             let iconSizeValue = iconSize(for: geometry.size.width)
 
             ZStack {
-                // Full-screen dark blue background
-                theme.colors.primary900
+                theme.colors.secondary
                     .extendingIntoSafeArea()
 
                 VStack(spacing: 0) {
@@ -89,7 +88,7 @@ struct ValidationLoadingView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: iconSizeValue.width, height: iconSizeValue.height)
-                        .foregroundColor(.white)
+                        .foregroundColor(theme.colors.onSecondary)
 
                     Spacer()
 
@@ -104,9 +103,9 @@ struct ValidationLoadingView: View {
                                     forKey: LocalizationKeys.documentAutocaptureLoadingVerifying
                                 )
                         )
-                        .font(theme.typography.titleSmall)
+                        .font(theme.typography.titleLarge)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .foregroundColor(theme.colors.onSecondary)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -116,7 +115,7 @@ struct ValidationLoadingView: View {
                             )
                         )
                         .font(theme.typography.bodyLarge)
-                        .foregroundColor(.white)
+                        .foregroundColor(theme.colors.onSecondary)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -135,7 +134,7 @@ struct ValidationLoadingView: View {
                             .resizable()
                             .scaledToFit()
                             .frame(width: footerLogoSize.width, height: footerLogoSize.height)
-                            .foregroundColor(theme.colors.tint00)
+                            .foregroundColor(theme.colors.onSecondary)
                     }
                     .frame(maxWidth: maxContentWidth)
                     .padding(.horizontal, footerHorizontalPadding)

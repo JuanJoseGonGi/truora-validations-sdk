@@ -14,6 +14,7 @@ struct TruoraColors {
     var primary: Color
     var onPrimary: Color
     var secondary: Color
+    var onSecondary: Color
     var error: Color
 
     // Additional layout colors
@@ -39,6 +40,7 @@ struct TruoraColors {
         let defaultPrimary = Color(red: 0.22, green: 0.0, blue: 0.78) // #3800C7 Truora Purple
         let defaultOnPrimary = Color.white
         let defaultSecondary = Color(red: 0.0, green: 0.8, blue: 0.6) // Truora Green
+        let defaultOnSecondary = Color.white
         let defaultError = Color.red
 
         // Layout grays (hardcoded to match design system)
@@ -64,6 +66,7 @@ struct TruoraColors {
             self.primary = config.primary.map { Color($0) } ?? defaultPrimary
             self.onPrimary = config.onPrimary.map { Color($0) } ?? defaultOnPrimary
             self.secondary = config.secondary.map { Color($0) } ?? defaultSecondary
+            self.onSecondary = config.onSecondary.map { Color($0) } ?? defaultOnSecondary
             self.error = config.error.map { Color($0) } ?? defaultError
         } else {
             self.surface = defaultSurface
@@ -71,6 +74,7 @@ struct TruoraColors {
             self.primary = defaultPrimary
             self.onPrimary = defaultOnPrimary
             self.secondary = defaultSecondary
+            self.onSecondary = defaultOnSecondary
             self.error = defaultError
         }
     }
