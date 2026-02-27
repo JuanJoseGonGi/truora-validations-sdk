@@ -81,6 +81,7 @@ enum LocalizationKeys {
 
     static let documentFeedbackRetry = "document_feedback_retry"
     static let documentFeedbackRetriesLeft = "document_feedback_retries_left"
+    static let documentFeedbackDefaultTitle = "document_feedback_default_title"
     static let documentFeedbackBlurryTitle = "document_feedback_blurry_title"
     static let documentFeedbackBlurryDescription = "document_feedback_blurry_description"
     static let documentFeedbackGlareTitle = "document_feedback_glare_title"

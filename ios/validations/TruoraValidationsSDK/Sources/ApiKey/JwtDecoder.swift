@@ -1,5 +1,12 @@
 import Foundation
 
+/// Data extracted from a decoded JWT (expiration, key type, application ID).
+public struct JwtData {
+    public let expiration: TimeInterval
+    public let keyType: String
+    public let applicationId: String?
+}
+
 /// Decodes JWT tokens to extract API key metadata.
 ///
 /// This decoder extracts the `exp` (expiration) and `key_type` claims from JWT tokens
@@ -7,12 +14,12 @@ import Foundation
 public struct JwtDecoder {
     public init() {}
 
-    /// Extracts the expiration timestamp and key type from a JWT.
+    /// Extracts the expiration timestamp, key type, and application_id from a JWT.
     ///
     /// - Parameter jwt: The JWT string (format: header.payload.signature)
-    /// - Returns: A tuple containing the expiration timestamp and key type
+    /// - Returns: `JwtData` with expiration timestamp, key type, and optional application_id
     /// - Throws: `ApiKeyError` if the JWT is malformed or missing required claims
-    public func extractJwtData(_ jwt: String) throws -> (expiration: TimeInterval, keyType: String) {
+    public func extractJwtData(_ jwt: String) throws -> JwtData {
         let payload = try decodePayload(jwt)
         let expiration = try extractExpiration(from: payload)
 
@@ -20,7 +27,8 @@ public struct JwtDecoder {
             throw ApiKeyError.missingKeyType
         }
 
-        return (expiration, keyType)
+        let applicationId = payload["application_id"] as? String
+        return JwtData(expiration: expiration, keyType: keyType, applicationId: applicationId)
     }
 
     /// Checks if a JWT is expired.

@@ -62,7 +62,7 @@ struct DocumentFeedbackView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
-                    HStack(alignment: .top, spacing: 14) {
+                    HStack(alignment: .center, spacing: 14) {
                         FeedbackIconView(
                             feedback: viewModel.feedback,
                             errorColor: theme.colors.error
@@ -120,15 +120,6 @@ struct DocumentFeedbackView: View {
                     ) {
                         viewModel.retryTapped()
                     }
-
-                    HStack {
-                        Spacer()
-                        TruoraValidationsSDKAsset.byTruoraDark.swiftUIImage
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 24)
-                    }
-                    .padding(.horizontal, 16)
                 }
             }
         }
@@ -140,7 +131,9 @@ struct DocumentFeedbackView: View {
 
     private func feedbackTitle(for feedback: FeedbackScenario) -> String {
         switch feedback {
-        case .blurryImage, .lowLight:
+        case .lowLight:
+            TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackDefaultTitle)
+        case .blurryImage:
             TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackBlurryTitle)
         case .imageWithReflection:
             TruoraLocalization.string(forKey: LocalizationKeys.documentFeedbackGlareTitle)
@@ -324,6 +317,17 @@ private func createPlaceholderImageData() -> Data? {
     DocumentFeedbackView(
         viewModel: DocumentFeedbackViewModel(
             feedback: .backOfDocumentNotFound,
+            capturedImageData: createPlaceholderImageData(),
+            retriesLeft: 1
+        ),
+        config: nil
+    )
+}
+
+#Preview("Low Light Feedback") {
+    DocumentFeedbackView(
+        viewModel: DocumentFeedbackViewModel(
+            feedback: .lowLight,
             capturedImageData: createPlaceholderImageData(),
             retriesLeft: 1
         ),

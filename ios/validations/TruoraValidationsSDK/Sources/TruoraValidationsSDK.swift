@@ -63,8 +63,7 @@ public class TruoraValidationsSDK {
             return // Already initialized
         }
 
-        let sdkVersion = Bundle(for: TruoraValidationsSDK.self)
-            .object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
+        let sdkVersion = TruoraSDKVersion.current
 
         let config = LoggerConfiguration.production(apiKey: apiKey, sdkVersion: sdkVersion)
         try await TruoraLoggerImplementation.initialize(with: config)
@@ -112,7 +111,7 @@ public class TruoraValidationsSDK {
             completion: ((TruoraValidationResult<ValidationResult>) -> Void)? = nil
         ) async {
             do {
-                let apiKey = try await resolveApiKey()
+                let apiKey = try await validateApiKey()
 
                 // Initialize logger before starting validation
                 try await TruoraValidationsSDK.shared.initializeLogger(apiKey: apiKey)
@@ -139,18 +138,16 @@ public class TruoraValidationsSDK {
             }
         }
 
-        /// Resolves the API key from the provider.
+        /// Validates the API key from the provider.
         ///
         /// This method:
         /// 1. Gets the API key from the secure location provider
         /// 2. Validates it's not empty
-        /// 3. Decodes the JWT and checks expiration
-        /// 4. Returns SDK keys directly
-        /// 5. Exchanges generator keys for SDK keys via the Account API
+        /// 3. Validates the JWT: key_type must be "sdk", expiration, and application_id must match bundle ID
         ///
-        /// - Returns: The resolved SDK API key ready to use
-        /// - Throws: ValidationError if the API key is invalid or resolution fails
-        private func resolveApiKey() async throws -> String {
+        /// - Returns: The validated SDK API key ready to use
+        /// - Throws: ValidationError if the API key is invalid or validation fails
+        private func validateApiKey() async throws -> String {
             let clientApiKey = try await apiKeyGenerator.getApiKeyFromSecureLocation()
 
             guard !clientApiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -166,10 +163,10 @@ public class TruoraValidationsSDK {
             }
             #endif
 
-            // Use ApiKeyManager to resolve the key (handles sdk vs generator types)
+            // Use ApiKeyManager to validate the key (SDK type only, application_id must match bundle ID)
             do {
                 let apiKeyManager = ApiKeyManager()
-                return try await apiKeyManager.resolveApiKey(clientApiKey)
+                return try await apiKeyManager.validateApiKey(clientApiKey)
             } catch let error as ApiKeyError {
                 throw error.toTruoraException()
             }

@@ -36,9 +36,10 @@ struct PassiveCaptureView: View {
                 ) { viewModel.handleEvent(.recordingCompleted) }
                     .modifier(AccessibilityIdentifierModifier(identifier: accessibilityIdentifierForState))
 
-                // Bottom bar - always present, help button hidden only during upload
+                // Help button is hidden while the camera is actively recording video (feedback == .recording)
+                // and during upload, to prevent stopping the recording and sending incomplete video to the backend.
                 PassiveCaptureBottomBar(
-                    showHelpButton: viewModel.uploadState == .none
+                    showHelpButton: viewModel.feedback != .recording && viewModel.uploadState == .none
                 ) { viewModel.handleEvent(.helpRequested) }
             }
 

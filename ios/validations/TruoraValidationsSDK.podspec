@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "TruoraValidationsSDK"
-  s.version          = "1.0.0-beta.4"
+  s.version          = "1.0.0-rc.1"
   s.summary          = "SDK of biometric validations"
   s.description      = <<-DESC
 TruoraValidationsSDK provides a complete biometric validation flow -> enrollment,
@@ -13,6 +13,9 @@ DESC
   s.swift_version    = "5.9"
   s.static_framework = true
   s.source           = { :git => "https://bitbucket.org/truora/truora-sdks.git", :tag => s.version.to_s }
+  s.prepare_command  = <<-CMD
+    bash scripts/generate_ios_sdk_version.sh --version #{s.version}
+  CMD
   s.source_files       = [
     "ios/validations/TruoraValidationsSDK/Sources/**/*.{swift}",
     "ios/validations/Derived/Sources/TuistAssets+TruoraValidationsSDK.swift",
@@ -26,11 +29,10 @@ DESC
     ]
   }
   s.frameworks         = ["UIKit", "Foundation", "SwiftUI"]
-  s.dependency         "TruoraCamera", "1.0.0-beta.4"
+  s.dependency         "TruoraCamera", "1.0.0-rc.1"
   s.pod_target_xcconfig = {
     "DEFINES_MODULE" => "YES",
     "SWIFT_VERSION"  => "5.9",
     "SWIFT_ACTIVE_COMPILATION_CONDITIONS" => "COCOAPODS"
   }
 end
-

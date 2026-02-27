@@ -72,6 +72,18 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
 
     // MARK: - Test Support
 
+    /// Returns the current count of events in the regular event buffer.
+    /// Internal visibility for testing only.
+    var eventBufferCount: Int {
+        eventBuffer.count
+    }
+
+    /// Returns the current count of events in the session buffer.
+    /// Internal visibility for testing only.
+    var sessionBufferCount: Int {
+        sessionBuffer.count
+    }
+
     /// Initialize for testing with minimal configuration.
     /// Safe to call multiple times - only initializes once.
     public static func initializeForTesting() async throws {
@@ -108,6 +120,18 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
 
     private var eventBuffer: [SDKEvent] = []
     private var flushTask: Task<Void, Never>?
+
+    // MARK: - Sampling
+
+    /// Whether this session was selected for full logging at initialization time.
+    /// Set once at init; may be promoted to true on error escalation.
+    private var isSampledIn: Bool = true
+
+    /// Holds all events for the current session in sampled-out sessions.
+    /// Drained to eventBuffer on escalation (first ERROR/FATAL event).
+    /// Capped at maxSessionBufferSize to bound memory usage.
+    private var sessionBuffer: [SDKEvent] = []
+    private let maxSessionBufferSize = 500
     private var notificationObservers: [NSObjectProtocol] = []
     private let consoleOutput: ConsoleLogOutput
     private let apiOutput: APILogOutput?
@@ -137,6 +161,8 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
         } else {
             self.apiOutput = nil
         }
+
+        self.isSampledIn = config.sampleRate >= 1.0 || Double.random(in: 0 ..< 1) < config.sampleRate
     }
 
     /// Initialize lifecycle observers after actor is fully initialized
@@ -243,18 +269,39 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
             retention: retention
         )
 
-        // Buffer the event
-        eventBuffer.append(event)
+        // Always maintain session buffer (ring buffer, bounded at maxSessionBufferSize)
+        if sessionBuffer.count >= maxSessionBufferSize {
+            sessionBuffer.removeFirst()
+        }
+        sessionBuffer.append(event)
 
-        // Console output if enabled
+        if isSampledIn {
+            // Sampled-in: normal path — add to event buffer
+            eventBuffer.append(event)
+
+            if config.enableConsoleOutput {
+                await consoleOutput.output(event: event)
+            }
+
+            if eventBuffer.count >= config.maxBufferSize {
+                await flush()
+            }
+            return
+        }
+
+        let isEscalationEvent = event.level == .error || event.level == .fatal
+        guard isEscalationEvent else { return }
+
+        // Escalation: first error/fatal in a sampled-out session
+        isSampledIn = true
+        eventBuffer.append(contentsOf: sessionBuffer)
+        sessionBuffer.removeAll()
+
         if config.enableConsoleOutput {
             await consoleOutput.output(event: event)
         }
 
-        // Auto-flush if buffer is full
-        if eventBuffer.count >= config.maxBufferSize {
-            await flush()
-        }
+        await flush()
     }
 
     public func logCamera(
@@ -450,6 +497,8 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
         // Remove notification observers
         notificationObservers.forEach { NotificationCenter.default.removeObserver($0) }
         notificationObservers.removeAll()
+
+        sessionBuffer.removeAll()
 
         // Final flush attempt
         await flush(timeoutMs: 5000)

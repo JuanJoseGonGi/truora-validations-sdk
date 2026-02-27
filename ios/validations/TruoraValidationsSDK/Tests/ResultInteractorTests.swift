@@ -20,7 +20,8 @@ import XCTest
         sut = ResultInteractor(
             validationId: "test-validation-id",
             loadingType: .face,
-            timeProvider: mockTimeProvider, logger: <#any TruoraLogger#>
+            timeProvider: mockTimeProvider,
+            logger: MockTruoraLogger()
         )
         sut.presenter = mockPresenter
         ValidationConfig.shared.reset()

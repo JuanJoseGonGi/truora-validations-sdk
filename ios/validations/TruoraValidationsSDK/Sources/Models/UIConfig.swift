@@ -18,6 +18,8 @@ public class UIConfig {
     private var _onPrimary: UIColor?
     private var _secondary: UIColor?
     private var _onSecondary: UIColor?
+    private var _surfaceVariant: UIColor?
+    private var _onSurfaceVariant: UIColor?
     private var _error: UIColor?
 
     private var _logoUrl: String?
@@ -49,6 +51,14 @@ public class UIConfig {
 
     public var onSecondary: UIColor? {
         _onSecondary
+    }
+
+    public var surfaceVariant: UIColor? {
+        _surfaceVariant
+    }
+
+    public var onSurfaceVariant: UIColor? {
+        _onSurfaceVariant
     }
 
     public var error: UIColor? {
@@ -187,6 +197,46 @@ public class UIConfig {
     public func setOnSecondaryColor(_ colorHex: String) -> UIConfig {
         if let color = UIColor(hex: colorHex) {
             _onSecondary = color
+        }
+        return self
+    }
+
+    /// Sets the surface variant color (e.g. capture screen background).
+    /// - Parameter color: UIColor for surface variant elements
+    /// - Returns: This UIConfig for method chaining
+    @discardableResult
+    public func setSurfaceVariantColor(_ color: UIColor) -> UIConfig {
+        _surfaceVariant = color
+        return self
+    }
+
+    /// Sets the surface variant color using a hex string.
+    /// - Parameter colorHex: Hex color string (e.g., "#082054")
+    /// - Returns: This UIConfig for method chaining
+    @discardableResult
+    public func setSurfaceVariantColor(_ colorHex: String) -> UIConfig {
+        if let color = UIColor(hex: colorHex) {
+            _surfaceVariant = color
+        }
+        return self
+    }
+
+    /// Sets the onSurfaceVariant color (e.g. text on capture screen background).
+    /// - Parameter color: UIColor for content on surface variant
+    /// - Returns: This UIConfig for method chaining
+    @discardableResult
+    public func setOnSurfaceVariantColor(_ color: UIColor) -> UIConfig {
+        _onSurfaceVariant = color
+        return self
+    }
+
+    /// Sets the onSurfaceVariant color using a hex string.
+    /// - Parameter colorHex: Hex color string (e.g., "#FFFFFF")
+    /// - Returns: This UIConfig for method chaining
+    @discardableResult
+    public func setOnSurfaceVariantColor(_ colorHex: String) -> UIConfig {
+        if let color = UIColor(hex: colorHex) {
+            _onSurfaceVariant = color
         }
         return self
     }

@@ -70,23 +70,22 @@ import XCTest
     // defense-in-depth check, but that path is unreachable through the
     // public builder API since the precondition fires first.
 
-    // MARK: - Passport Autocapture Validation Tests
+    // MARK: - Passport Autocapture (Public API)
 
-    // Note: useAutocapture(true) after setDocumentType("passport") and
-    // setDocumentType("passport") after useAutocapture(true) both trigger
-    // preconditionFailure, which cannot be tested with XCTest since it
-    // terminates the process. The precondition protects against developer
-    // misconfiguration at the call site.
-    // ValidationConfig.setValidation also throws invalidConfiguration as a
-    // defense-in-depth check for passport + autocapture.
+    // setDocumentType("passport") silently disables _useAutocapture but keeps
+    // _didExplicitlyEnableAutocapture so validateAutocaptureConfig can throw
+    // a catchable TruoraException at start time.
+    //
+    // useAutocapture(true) on a passport document keeps autocapture disabled
+    // (enabled && !isPassport) but records the explicit intent.
 
-    func testPassportWithDefaultAutocapture_succeeds() {
-        // When the developer does NOT explicitly call useAutocapture(true),
-        // configuration should succeed (autocapture will be silently disabled at runtime)
+    func testPassportWithDefaultAutocapture_disablesAutocapture() {
+        // No explicit useAutocapture call — setDocumentType silently disables it.
         _ = sut.setDocumentType("passport")
 
         XCTAssertEqual(sut.documentType, "passport")
-        XCTAssertTrue(sut.useAutocapture, "Default autocapture should remain true")
+        XCTAssertFalse(sut.useAutocapture, "Autocapture should be disabled for passport")
+        XCTAssertFalse(sut.didExplicitlyEnableAutocapture)
     }
 
     func testPassportWithAutocaptureDisabled_succeeds() {
@@ -96,11 +95,35 @@ import XCTest
 
         XCTAssertEqual(sut.documentType, "passport")
         XCTAssertFalse(sut.useAutocapture)
+        XCTAssertFalse(sut.didExplicitlyEnableAutocapture)
+    }
+
+    func testUseAutocaptureTrueThenPassport_disablesButKeepsExplicitFlag() {
+        // Developer misconfiguration: useAutocapture(true) then passport.
+        // No crash — validateAutocaptureConfig will throw at start time instead.
+        _ = sut
+            .useAutocapture(true)
+            .setDocumentType("passport")
+
+        XCTAssertEqual(sut.documentType, "passport")
+        XCTAssertFalse(sut.useAutocapture, "Autocapture should be disabled for passport")
+        XCTAssertTrue(sut.didExplicitlyEnableAutocapture, "Explicit flag preserved for validation")
+    }
+
+    func testPassportThenUseAutocaptureTrue_disablesButKeepsExplicitFlag() {
+        // Developer misconfiguration: passport then useAutocapture(true).
+        // No crash — validateAutocaptureConfig will throw at start time instead.
+        _ = sut
+            .setDocumentType("passport")
+            .useAutocapture(true)
+
+        XCTAssertEqual(sut.documentType, "passport")
+        XCTAssertFalse(sut.useAutocapture, "Autocapture should remain disabled for passport")
+        XCTAssertTrue(sut.didExplicitlyEnableAutocapture, "Explicit flag preserved for validation")
     }
 
     func testPassportWithAutocaptureEnabledThenDisabled_succeeds() {
-        // Calling useAutocapture(false) after useAutocapture(true) should reset the flag,
-        // so setDocumentType("passport") must not crash.
+        // useAutocapture(false) resets the explicit flag, so passport is fine.
         _ = sut
             .useAutocapture(true)
             .useAutocapture(false)
@@ -108,6 +131,7 @@ import XCTest
 
         XCTAssertEqual(sut.documentType, "passport")
         XCTAssertFalse(sut.useAutocapture)
+        XCTAssertFalse(sut.didExplicitlyEnableAutocapture)
     }
 
     func testNonPassportWithAutocapture_succeeds() {
@@ -117,6 +141,41 @@ import XCTest
 
         XCTAssertEqual(sut.documentType, "national-id")
         XCTAssertTrue(sut.useAutocapture)
+    }
+
+    // MARK: - applyRuntimeDocumentType (Internal / Presenter API)
+
+    func testApplyRuntimeDocumentType_passport_disablesAutocaptureAndResetsFlag() {
+        // Simulates the document selection presenter flow: the developer
+        // enabled autocapture via the Builder, and the user picks passport.
+        _ = sut.useAutocapture(true)
+        XCTAssertTrue(sut.didExplicitlyEnableAutocapture, "Precondition")
+
+        _ = sut.applyRuntimeDocumentType("passport")
+
+        XCTAssertEqual(sut.documentType, "passport")
+        XCTAssertFalse(sut.useAutocapture, "Autocapture should be disabled for passport")
+        XCTAssertFalse(sut.didExplicitlyEnableAutocapture, "Flag should be reset for runtime selection")
+    }
+
+    func testApplyRuntimeDocumentType_nonPassport_keepsAutocapture() {
+        // Non-passport runtime selection should not change autocapture settings.
+        _ = sut.useAutocapture(true)
+
+        _ = sut.applyRuntimeDocumentType("national-id")
+
+        XCTAssertEqual(sut.documentType, "national-id")
+        XCTAssertTrue(sut.useAutocapture)
+        XCTAssertTrue(sut.didExplicitlyEnableAutocapture)
+    }
+
+    func testApplyRuntimeDocumentType_passportWithoutExplicitAutocapture_succeeds() {
+        // No prior useAutocapture call — the default flow.
+        _ = sut.applyRuntimeDocumentType("passport")
+
+        XCTAssertEqual(sut.documentType, "passport")
+        XCTAssertFalse(sut.useAutocapture)
+        XCTAssertFalse(sut.didExplicitlyEnableAutocapture)
     }
 
     func testMethodChainingWithFinishViewConfig() {

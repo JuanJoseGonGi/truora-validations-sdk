@@ -160,7 +160,7 @@ extension DocumentSelectionPresenter: DocumentSelectionViewToPresenter {
 
         let documentConfig = ValidationConfig.shared.documentConfig
             .setCountry(selectedCountry.rawValue)
-            .setDocumentType(selectedDocument.rawValue)
+            .applyRuntimeDocumentType(selectedDocument.rawValue)
 
         do {
             try ValidationConfig.shared.setValidation(.document(documentConfig))

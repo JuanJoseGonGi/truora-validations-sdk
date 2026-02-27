@@ -46,10 +46,15 @@ ios/validations/
 │       └── Result/               # Step 6: Show result
 │
 └── SampleApp/                 # Demo application
-    └── Sources/
-        ├── AppDelegate.swift
-        ├── SceneDelegate.swift
-        └── MainViewController.swift
+    ├── Sources/
+    │   ├── AppDelegate.swift
+    │   ├── SceneDelegate.swift
+    │   ├── Config.swift
+    │   └── WebViewHostViewController.swift
+    ├── Resources/
+    │   └── webview/           # Built from sample-apps/validations-sdk-sample-app (see Scripts/copy-webview.sh)
+    └── Scripts/
+        └── copy-webview.sh    # Builds Vue app and copies dist to Resources/webview
 ```
 
 ### Dependencies
@@ -132,13 +137,27 @@ extension YourViewController: ValidationDelegate {
 
 ### Running the Sample App
 
+The Sample App hosts the shared Vue sample app (`sample-apps/validations-sdk-sample-app`) inside a `WKWebView` and bridges to native TruoraValidationsSDK flows (face, document, document+face).
+
+#### Prerequisites
+
+1. Configure your credentials in **SampleApp/Sources/Config.swift** (API key and account ID).
+2. Ensure **Node.js** and **npm** are installed — the build script needs them to compile the Vue app.
+
+#### Steps
+
 1. Generate the project: `tuist generate`
 2. Open `validations.xcworkspace`
-3. Select the `SampleApp` scheme
+3. Select the **SampleApp** scheme
 4. Choose a simulator or physical device (iOS 13.0+)
 5. Build and run (⌘R)
 
-**Note:** The app uses iOS 12 compatibility mode (AppDelegate-managed window) instead of SceneDelegate. This works perfectly on iOS 13+ and avoids Tuist-related scene configuration issues.
+The post-build script `Scripts/copy-webview.sh` automatically builds the Vue app and copies its output into the app bundle. If you prefer to build manually, run from the repo root:
+
+```bash
+cd sample-apps/validations-sdk-sample-app && npm install && npm run build
+ios/validations/Scripts/copy-webview.sh
+```
 
 ## Key Features
 
@@ -281,7 +300,7 @@ tuist test
 tuist test TruoraValidationsSDKTests
 ```
 
-# CocoaPods Release
+# Release
 
 1. Define the semantic_version for the release following iOS standard in [SemVer 2.0](https://semver.org/)
 2. Build the assets for sharing with CocoaPods
@@ -304,7 +323,16 @@ In the case of [Truora Validations podspec](TruoraValidationsSDK.podspec) rememb
 ```ruby
   s.dependency         "TruoraCamera", "SEMANTIC_VERSION" # Set the desired TruoraCamera version here
 ```
-4. Set a repository tag for CocoaPods to track your repository
+
+4. Generate the iOS SDK log version source file:
+
+```bash
+bash ../../scripts/generate_ios_sdk_version.sh --version SEMANTIC_VERSION
+```
+
+This ensures `sdk_version` in create-log requests matches the release version.
+
+5. Set a repository tag for release in CocoaPods and SPM to track your repository
 
 ```bash
 git tag SEMANTIC_VERSION
@@ -317,9 +345,11 @@ git tag -d SEMANTIC_VERSION
 git push origin :SEMANTIC_VERSION
 ```
 
-``Code changes need to be uploaded to the tag with the "push origin" command since CocoaPods retrieves the code from the generated tag``
+``Code changes need to be uploaded to the tag with the "push origin" command since CocoaPods retrieves the code from the generated tag and our pipeline automatically releases SPM with that tag``
 
-5. Verify you have a pod session running
+## CocoaPods release
+
+1. Verify you have a pod session running
 ```bash
 pod trunk me
 ```
@@ -331,7 +361,7 @@ pod trunk register truora-apps@truora.com 'TruoraSDK' --description='Release for
 
 This will send an OTP to the registered email which will allow you to publish the pod version
 
-6. Publish the SDKs with the commands:
+2. Publish the SDKs with the commands:
 ```bash
 # Push the camera dependency first if changed
 pod trunk push TruoraCamera.podspec --allow-warnings
@@ -342,7 +372,12 @@ pod trunk push TruoraCamera.podspec --allow-warnings
 pod trunk push TruoraValidationsSDK.podspec --allow-warnings
 ```
 
-7. Wait for 10/15 minutes for publish to be successful and all references updated in CocoaPods. Then test the release in [Pods sample app](../cocoa-pods-sample-apps)
+3. Wait for 10/15 minutes for publish to be successful and all references updated in CocoaPods. Then test the release in [Pods sample app](../cocoa-pods-sample-apps)
+
+## SPM release
+Our pipeline automatically syncs the bitbucket repo with github in ``https://github.com/truora/truora-validations-sdk``
+
+Test with a sample app by adding the repository URL in Xcode under ``File > Add Packages``
 
 ## Troubleshooting
 
@@ -365,4 +400,3 @@ Copyright © 2026 Truora. All rights reserved.
 ## Support
 
 For issues or questions, contact: truora-apps@truora.com
-

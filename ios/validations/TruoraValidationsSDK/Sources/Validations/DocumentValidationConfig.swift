@@ -78,21 +78,21 @@ public class Document {
 
     /// Sets the document type for validation.
     ///
-    /// - Precondition: Cannot be set to `"passport"` when autocapture has been explicitly enabled,
-    ///   because autocapture is not supported for passport documents.
+    /// When `"passport"` is set, autocapture is silently disabled because the ML model
+    /// does not work reliably on passports. If the developer also called
+    /// ``useAutocapture(true)``, ``ValidationConfig/setValidation(_:)`` will throw
+    /// a catchable ``TruoraException`` at start time.
+    ///
     /// - Note: If not set, a document selection view will be shown to collect this from the user.
     /// - Parameter documentType: The document type identifier (e.g., "national-id", "passport",
     ///   "driver-license").
     /// - Returns: This Document for method chaining
     @discardableResult
     public func setDocumentType(_ documentType: String) -> Document {
-        if documentType == NativeDocumentType.passport.rawValue, _didExplicitlyEnableAutocapture {
-            preconditionFailure(
-                "Autocapture is not supported for passport document type. "
-                    + "Remove useAutocapture(true) or use a different document type."
-            )
-        }
         _documentType = documentType
+        if documentType == NativeDocumentType.passport.rawValue {
+            _useAutocapture = false
+        }
         return self
     }
 
@@ -118,21 +118,35 @@ public class Document {
 
     /// Sets whether to enable auto-detect and auto-capture of the document.
     ///
-    /// - Precondition: Cannot be set to `true` when the document type is `passport`,
-    ///   because autocapture is not supported for passport documents.
+    /// When `true` is passed but the document type is already `"passport"`, autocapture
+    /// stays disabled (passports are not supported). The explicit intent is still recorded
+    /// so that ``ValidationConfig/setValidation(_:)`` can throw a catchable
+    /// ``TruoraException`` at start time, letting the developer fix their configuration.
+    ///
     /// - Parameter enabled: true to enable auto-capture, false for manual capture (default: true)
     /// - Returns: This Document for method chaining
     @discardableResult
     public func useAutocapture(_ enabled: Bool) -> Document {
-        if enabled, _documentType == NativeDocumentType.passport.rawValue {
-            preconditionFailure(
-                "useAutocapture(true) is not supported for passport document type. "
-                    + "Autocapture does not work reliably with passports. "
-                    + "Remove useAutocapture(true) or use a different document type."
-            )
-        }
-        _useAutocapture = enabled
+        let isPassport = _documentType == NativeDocumentType.passport.rawValue
+        _useAutocapture = enabled && !isPassport
         _didExplicitlyEnableAutocapture = enabled
+        return self
+    }
+
+    /// Internal: sets the document type from a runtime user selection
+    /// (e.g. the document selection screen).
+    ///
+    /// Unlike ``setDocumentType(_:)``, this method also resets
+    /// ``didExplicitlyEnableAutocapture`` so that a prior ``useAutocapture(true)``
+    /// call from the Builder does not cause ``ValidationConfig/setValidation(_:)``
+    /// to throw when the user picks passport at runtime.
+    @discardableResult
+    func applyRuntimeDocumentType(_ documentType: String) -> Document {
+        _documentType = documentType
+        if documentType == NativeDocumentType.passport.rawValue {
+            _useAutocapture = false
+            _didExplicitlyEnableAutocapture = false
+        }
         return self
     }
 

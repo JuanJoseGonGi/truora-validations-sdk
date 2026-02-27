@@ -659,8 +659,31 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
             return
         }
 
+        // If we were in countdown when user left, the timer was invalidated so countdown is stuck.
+        // Restart countdown from 3 so it runs again.
+        if stateAtSuspend == .countdown {
+            stateAtSuspend = nil
+            await startCountdown()
+            await view?.resumeCamera()
+            if wasHelpOpenAtSuspend {
+                showHelpDialog = true
+                await updateUI()
+            }
+            wasHelpOpenAtSuspend = false
+            uploadStateAtSuspend = .none
+            return
+        }
+
         // Otherwise, just resume the paused session and keep UI/state as-is.
         await view?.resumeCamera()
+
+        // If we were in recording (showFace phase) waiting for face or manual timeout, we reset the
+        // processing timer on suspend so the 4s manual timeout never fired. Restart it so the
+        // fallback to manual "start recording" can trigger after 4s.
+        if stateAtSuspend == .recording, lifecycleState != .recording {
+            startProcessingTimer()
+            stateAtSuspend = nil
+        }
 
         // If help was open during suspend, keep it open (no auto-restart).
         if wasHelpOpenAtSuspend {

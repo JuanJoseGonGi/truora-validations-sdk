@@ -16,6 +16,7 @@ struct TruoraTypography {
     let bodyLarge: Font
     let bodyMedium: Font
     let bodySmall: Font
+    let labelLarge: Font
 
     init() {
         let isIPad = UIDevice.current.userInterfaceIdiom == .pad
@@ -29,6 +30,7 @@ struct TruoraTypography {
             self.bodyLarge = .system(size: 30, weight: .regular)
             self.bodyMedium = .system(size: 24, weight: .regular)
             self.bodySmall = .system(size: 18, weight: .regular)
+            self.labelLarge = .system(size: 24, weight: .medium)
         } else {
             self.displayLarge = .system(size: 96, weight: .semibold)
             self.titleLarge = .system(size: 20, weight: .semibold)
@@ -37,6 +39,7 @@ struct TruoraTypography {
             self.bodyLarge = .system(size: 16, weight: .regular)
             self.bodyMedium = .system(size: 14, weight: .regular)
             self.bodySmall = .system(size: 12, weight: .regular)
+            self.labelLarge = .system(size: 16, weight: .medium)
         }
     }
 }

@@ -11,7 +11,7 @@ public enum ApiKeyError: Error, Equatable, LocalizedError {
     /// - Parameter expiration: Unix timestamp when the key expired
     case expiredKey(expiration: TimeInterval)
 
-    /// The key_type claim is not "sdk" or "generator"
+    /// The key_type claim is not "sdk"
     /// - Parameter keyType: The invalid key type found in the JWT
     case invalidKeyType(String)
 
@@ -33,7 +33,7 @@ public enum ApiKeyError: Error, Equatable, LocalizedError {
             let date = Date(timeIntervalSince1970: expiration)
             return "API Key expired at: \(date). Must be a valid key"
         case .invalidKeyType(let keyType):
-            return "Invalid key_type: \(keyType). Must be 'sdk' or 'generator'"
+            return "Invalid key_type: \(keyType). Must be 'sdk'"
         case .generationFailed(let reason):
             return "Failed to generate SDK key: \(reason)"
         case .missingKeyType:

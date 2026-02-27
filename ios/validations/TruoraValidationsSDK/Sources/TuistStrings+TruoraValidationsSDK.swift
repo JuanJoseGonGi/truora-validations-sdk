@@ -195,68 +195,38 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static let documentCaptureSuccess = TruoraValidationsSDKStrings.tr("Localizable", "document_capture_success")
   /// Take photo
   public static let documentCaptureTakePhoto = TruoraValidationsSDKStrings.tr("Localizable", "document_capture_take_photo")
-  /// We couldn't detect the back of the document
+  /// Flip your document and take a picture of the back.
   public static let documentFeedbackBackNotFoundDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_back_not_found_description")
-  /// Back of document not detected
+  /// The back of your ID is missing
   public static let documentFeedbackBackNotFoundTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_back_not_found_title")
-  /// Hold your phone parallel to the document
-  public static let documentFeedbackBadAngleDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_bad_angle_description")
-  /// Bad angle
-  public static let documentFeedbackBadAngleTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_bad_angle_title")
-  /// Hold your phone steady and ensure good lighting
+  /// Make sure the text and numbers are easy to read.
   public static let documentFeedbackBlurryDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_blurry_description")
-  /// Image is blurry
+  /// Blurry image, we can't read the details
   public static let documentFeedbackBlurryTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_blurry_title")
-  /// Your document appears to be damaged
-  public static let documentFeedbackDamagedDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_damaged_description")
-  /// Document damaged
-  public static let documentFeedbackDamagedTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_damaged_title")
-  /// This document is no longer valid
-  public static let documentFeedbackExpiredDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_expired_description")
-  /// Document expired
-  public static let documentFeedbackExpiredTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_expired_title")
-  /// There may be reflections covering your face or your ID is too far from the camera.
+  /// There was a problem with the photo, try again
+  public static let documentFeedbackDefaultTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_default_title")
+  /// There may be glare covering your face or your document is too far from the camera.
   public static let documentFeedbackFaceNotFoundDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_face_not_found_description")
-  /// Face not clearly visible
+  /// Your face is not clearly seen
   public static let documentFeedbackFaceNotFoundTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_face_not_found_title")
-  /// We couldn't detect the front of the document
+  /// Flip your document and take a picture of the front.
   public static let documentFeedbackFrontNotFoundDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_front_not_found_description")
-  /// Front of document not detected
+  /// The front of your ID is missing
   public static let documentFeedbackFrontNotFoundTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_front_not_found_title")
-  /// Please try again
-  public static let documentFeedbackGenericDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_generic_description")
-  /// Capture failed
-  public static let documentFeedbackGenericTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_generic_title")
-  /// Avoid direct light on your document
+  /// Ensure that the light does not illuminate your document directly.
   public static let documentFeedbackGlareDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_glare_description")
-  /// Glare detected
+  /// There are sparkles and holograms that don't let us see the details
   public static let documentFeedbackGlareTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_glare_title")
-  /// Place a document in the frame
+  /// Try again, take a picture of your document.
   public static let documentFeedbackNoDocumentDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_no_document_description")
-  /// No document detected
+  /// We did not detect your document
   public static let documentFeedbackNoDocumentTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_no_document_title")
   /// Retries available %@
   public static func documentFeedbackRetriesLeft(_ p1: Any) -> String {
     return TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_retries_left",String(describing: p1))
   }
-  /// Retries available
-  public static let documentFeedbackRetriesLeftPrefix = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_retries_left_prefix")
   /// Take another photo
   public static let documentFeedbackRetry = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_retry")
-  /// Tips for taking a better photo
-  public static let documentFeedbackTips = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_tips")
-  /// Move further from the document
-  public static let documentFeedbackTooCloseDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_too_close_description")
-  /// Document too close
-  public static let documentFeedbackTooCloseTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_too_close_title")
-  /// Move closer to the document
-  public static let documentFeedbackTooFarDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_too_far_description")
-  /// Document too far
-  public static let documentFeedbackTooFarTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_too_far_title")
-  /// Please use the selected document type
-  public static let documentFeedbackWrongDocumentDescription = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_wrong_document_description")
-  /// Wrong document
-  public static let documentFeedbackWrongDocumentTitle = TruoraValidationsSDKStrings.tr("Localizable", "document_feedback_wrong_document_title")
   /// Creating validation...
   public static let documentIntroCreatingValidation = TruoraValidationsSDKStrings.tr("Localizable", "document_intro_creating_validation")
   /// Your information is protected.

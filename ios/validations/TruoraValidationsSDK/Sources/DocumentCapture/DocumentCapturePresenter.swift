@@ -232,7 +232,7 @@ final class DocumentCapturePresenter {
     private var frontPhotoStatus: CaptureStatus?
     private var backPhotoStatus: CaptureStatus?
 
-    private var isUploading: Bool = false
+    private var uploadState: UploadState = .none
 
     private static let maxAttempts = 3
     private static let maxEvaluationErrorRetries = 2
@@ -306,6 +306,8 @@ final class DocumentCapturePresenter {
     }
 
     private func transitionToBackSideWithRotation() async {
+        uploadState = .none
+
         showRotationAnimation = true
         await updateUI()
 
@@ -441,6 +443,10 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
         await updateUI()
     }
 
+    func viewDidBecomeVisible() async {
+        uploadState = .none
+    }
+
     func viewWillAppear() async {
         // On initial load, skip restart logic as it's handled by viewDidLoad
         guard lifecycleState != .uninitialized else {
@@ -448,9 +454,8 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
             return
         }
 
-        // If upload in progress, don't restart camera
-        guard !isUploading else {
-            print("🟢 DocumentCapturePresenter: viewWillAppear - skipping restart (upload in progress)")
+        guard uploadState != .uploading, uploadState != .success, uploadState != .navigatedToResult else {
+            print("🟢 DocumentCapturePresenter: viewWillAppear - skipping (uploadState: \(uploadState))")
             return
         }
 
@@ -595,8 +600,40 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
         detectionState.resetFeedbackDebounce()
     }
 
+    func appWillResignActive() async {
+        if uploadState == .uploading || uploadState == .success || uploadState == .navigatedToResult {
+            await view?.pauseCamera()
+            return
+        }
+
+        // On capture screen: stop camera so we can restart cleanly on resume.
+        if lifecycleState == .capturing {
+            await view?.pauseVideo()
+        }
+        await view?.stopCamera()
+        lifecycleState = .stopped
+        detectionState.resetDocumentDetectionTimer()
+        detectionState.resetDetectionProcessingTimer()
+        detectionState.resetFeedbackDebounce()
+    }
+
+    func appDidBecomeActive() async {
+        if uploadState == .uploading || uploadState == .success || uploadState == .navigatedToResult {
+            return
+        }
+
+        guard lifecycleState != .uninitialized else { return }
+
+        if lifecycleState == .stopped {
+            await view?.setupCamera()
+            return
+        }
+
+        await view?.resumeCamera()
+    }
+
     func photoCaptured(photoData: Data) async {
-        guard !isUploading else {
+        guard uploadState != .uploading else {
             return
         }
 
@@ -606,7 +643,7 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
             return
         }
 
-        isUploading = true
+        uploadState = .uploading
         lifecycleState = .capturing
         feedbackType = .scanning
         showLoadingScreen = true
@@ -689,7 +726,7 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
         guard useAutocapture,
               lifecycleState == .ready,
               feedbackType != .scanningManual,
-              !isUploading,
+              uploadState != .uploading,
               !showHelpDialog,
               !showLoadingScreen else {
             return false
@@ -786,7 +823,6 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
 
 extension DocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
     func photoUploadCompleted(side: DocumentCaptureSide) async {
-        isUploading = false
         showLoadingScreen = false
         await view?.resetCaptureInProgress()
 
@@ -816,19 +852,20 @@ extension DocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
     }
 
     func photoUploadFailed(side: DocumentCaptureSide, error: TruoraException) async {
-        isUploading = false
         showLoadingScreen = false
         await view?.resetCaptureInProgress()
 
         // Validation timeout - navigate to result screen to show failure
         if isValidationError(error) {
             await view?.stopCamera()
+            uploadState = .navigatedToResult
             do {
                 try await router?.navigateToResult(
                     validationId: validationId,
                     loadingType: .document
                 )
             } catch {
+                uploadState = .none
                 // Reset state before showing error to allow user retry
                 feedbackType = useAutocapture ? .searching : .scanningManual
                 lifecycleState = .ready
@@ -843,6 +880,7 @@ extension DocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
         }
 
         // Other errors - show error and allow retry
+        uploadState = .none
         feedbackType = useAutocapture ? .searching : .scanningManual
         lifecycleState = .ready
 
@@ -875,7 +913,7 @@ extension DocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
     }
 
     func imageEvaluationStarted(side: DocumentCaptureSide, previewData: Data) async {
-        isUploading = true
+        uploadState = .uploading
         showLoadingScreen = true
         feedbackType = .scanning
         evaluationErrorRetryCount = 0
@@ -895,7 +933,7 @@ extension DocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
         evaluationErrorRetryCount = 0
         sideNeedingPreviewClear = nil
 
-        isUploading = true
+        uploadState = .uploading
         showLoadingScreen = true
         feedbackType = .scanning
 
@@ -916,7 +954,7 @@ extension DocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
     }
 
     func imageEvaluationFailed(side: DocumentCaptureSide, previewData: Data, reason: String?) async {
-        isUploading = false
+        uploadState = .none
         showLoadingScreen = false
         await view?.resetCaptureInProgress()
         lifecycleState = .stopped
@@ -977,7 +1015,7 @@ extension DocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
         sideNeedingPreviewClear = nil
 
         guard let context = currentEvaluationContext, context.side == side else {
-            isUploading = false
+            uploadState = .none
             showLoadingScreen = false
             await view?.resetCaptureInProgress()
 
@@ -991,7 +1029,7 @@ extension DocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
             return
         }
 
-        isUploading = true
+        uploadState = .uploading
         showLoadingScreen = true
         feedbackType = .scanning
 
@@ -1011,19 +1049,21 @@ extension DocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
 private extension DocumentCapturePresenter {
     func navigateToResultAfterDelay() async {
         await view?.stopCamera()
+        uploadState = .success
 
         try? await timeProvider.sleep(nanoseconds: 500_000_000)
 
         do {
             try await router?.navigateToResult(validationId: validationId, loadingType: .document)
         } catch {
+            uploadState = .none
             await view?.showError(error.localizedDescription)
         }
     }
 
     func handleCaptureFlow(side: DocumentCaptureSide, photoData: Data) {
         guard router != nil else {
-            isUploading = false
+            uploadState = .none
             showLoadingScreen = false
             Task { await view?.showError("Router not configured") }
             return

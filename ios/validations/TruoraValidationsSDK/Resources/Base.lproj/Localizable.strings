@@ -103,35 +103,20 @@
 
 /* Document Feedback */
 "document_feedback_retry" = "Take another photo";
-"document_feedback_tips" = "Tips for taking a better photo";
 "document_feedback_retries_left" = "Retries available %@";
-"document_feedback_retries_left_prefix" = "Retries available";
-"document_feedback_blurry_title" = "Image is blurry";
-"document_feedback_blurry_description" = "Hold your phone steady and ensure good lighting";
-"document_feedback_glare_title" = "Glare detected";
-"document_feedback_glare_description" = "Avoid direct light on your document";
-"document_feedback_too_far_title" = "Document too far";
-"document_feedback_too_far_description" = "Move closer to the document";
-"document_feedback_too_close_title" = "Document too close";
-"document_feedback_too_close_description" = "Move further from the document";
-"document_feedback_bad_angle_title" = "Bad angle";
-"document_feedback_bad_angle_description" = "Hold your phone parallel to the document";
-"document_feedback_no_document_title" = "No document detected";
-"document_feedback_no_document_description" = "Place a document in the frame";
-"document_feedback_front_not_found_title" = "Front of document not detected";
-"document_feedback_front_not_found_description" = "We couldn't detect the front of the document";
-"document_feedback_back_not_found_title" = "Back of document not detected";
-"document_feedback_back_not_found_description" = "We couldn't detect the back of the document";
-"document_feedback_face_not_found_title" = "Face not clearly visible";
-"document_feedback_face_not_found_description" = "There may be reflections covering your face or your ID is too far from the camera.";
-"document_feedback_wrong_document_title" = "Wrong document";
-"document_feedback_wrong_document_description" = "Please use the selected document type";
-"document_feedback_expired_title" = "Document expired";
-"document_feedback_expired_description" = "This document is no longer valid";
-"document_feedback_damaged_title" = "Document damaged";
-"document_feedback_damaged_description" = "Your document appears to be damaged";
-"document_feedback_generic_title" = "Capture failed";
-"document_feedback_generic_description" = "Please try again";
+"document_feedback_default_title" = "There was a problem with the photo, try again";
+"document_feedback_blurry_title" = "Blurry image, we can't read the details";
+"document_feedback_blurry_description" = "Make sure the text and numbers are easy to read.";
+"document_feedback_glare_title" = "There are sparkles and holograms that don't let us see the details";
+"document_feedback_glare_description" = "Ensure that the light does not illuminate your document directly.";
+"document_feedback_no_document_title" = "We did not detect your document";
+"document_feedback_no_document_description" = "Try again, take a picture of your document.";
+"document_feedback_front_not_found_title" = "The front of your ID is missing";
+"document_feedback_front_not_found_description" = "Flip your document and take a picture of the front.";
+"document_feedback_back_not_found_title" = "The back of your ID is missing";
+"document_feedback_back_not_found_description" = "Flip your document and take a picture of the back.";
+"document_feedback_face_not_found_title" = "Your face is not clearly seen";
+"document_feedback_face_not_found_description" = "There may be glare covering your face or your document is too far from the camera.";
 
 /* Camera Errors */
 "camera_error_initialization_failed" = "Camera initialization failed";

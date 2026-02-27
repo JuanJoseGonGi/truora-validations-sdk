@@ -15,6 +15,8 @@ struct TruoraColors {
     var onPrimary: Color
     var secondary: Color
     var onSecondary: Color
+    var surfaceVariant: Color
+    var onSurfaceVariant: Color
     var error: Color
 
     // Additional layout colors
@@ -34,14 +36,16 @@ struct TruoraColors {
     var tint00: Color
 
     init(config: UIConfig? = nil) {
-        // Defaults matching KMP theme
+        // Defaults matching KMP Theme.kt (TruoraExtendedColors)
         let defaultSurface = Color.white
-        let defaultOnSurface = Color.black
+        let defaultOnSurface = Color(red: 0.16, green: 0.16, blue: 0.16) // #282828
         let defaultPrimary = Color(red: 0.22, green: 0.0, blue: 0.78) // #3800C7 Truora Purple
         let defaultOnPrimary = Color.white
-        let defaultSecondary = Color(red: 0.0, green: 0.8, blue: 0.6) // Truora Green
+        let defaultSecondary = Color(red: 0.12, green: 0.16, blue: 0.22) // #1F2A37 - help text on capture screens
         let defaultOnSecondary = Color.white
-        let defaultError = Color.red
+        let defaultSurfaceVariant = Color(red: 0.03, green: 0.13, blue: 0.33) // #082054 - capture/loading background
+        let defaultOnSurfaceVariant = Color.white
+        let defaultError = Color(red: 1.0, green: 0.33, blue: 0.33) // #FF5454
 
         // Layout grays (hardcoded to match design system)
         self.layoutGray200 = Color(red: 0.88, green: 0.88, blue: 0.88)
@@ -67,6 +71,8 @@ struct TruoraColors {
             self.onPrimary = config.onPrimary.map { Color($0) } ?? defaultOnPrimary
             self.secondary = config.secondary.map { Color($0) } ?? defaultSecondary
             self.onSecondary = config.onSecondary.map { Color($0) } ?? defaultOnSecondary
+            self.surfaceVariant = config.surfaceVariant.map { Color($0) } ?? defaultSurfaceVariant
+            self.onSurfaceVariant = config.onSurfaceVariant.map { Color($0) } ?? defaultOnSurfaceVariant
             self.error = config.error.map { Color($0) } ?? defaultError
         } else {
             self.surface = defaultSurface
@@ -75,6 +81,8 @@ struct TruoraColors {
             self.onPrimary = defaultOnPrimary
             self.secondary = defaultSecondary
             self.onSecondary = defaultOnSecondary
+            self.surfaceVariant = defaultSurfaceVariant
+            self.onSurfaceVariant = defaultOnSurfaceVariant
             self.error = defaultError
         }
     }

@@ -22,11 +22,11 @@ import XCTest
         let jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4OTM0NTYwMDAsImtleV90eXBlIjoic2RrIn0.signature"
 
         // When
-        let (expiration, keyType) = try sut.extractJwtData(jwt)
+        let jwtData = try sut.extractJwtData(jwt)
 
         // Then
-        XCTAssertEqual(expiration, 1_893_456_000)
-        XCTAssertEqual(keyType, "sdk")
+        XCTAssertEqual(jwtData.expiration, 1_893_456_000)
+        XCTAssertEqual(jwtData.keyType, "sdk")
     }
 
     func testExtractJwtData_withValidGeneratorKey_returnsExpirationAndKeyType() throws {
@@ -35,11 +35,11 @@ import XCTest
         let jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4OTM0NTYwMDAsImtleV90eXBlIjoiZ2VuZXJhdG9yIn0.signature"
 
         // When
-        let (expiration, keyType) = try sut.extractJwtData(jwt)
+        let jwtData = try sut.extractJwtData(jwt)
 
         // Then
-        XCTAssertEqual(expiration, 1_893_456_000)
-        XCTAssertEqual(keyType, "generator")
+        XCTAssertEqual(jwtData.expiration, 1_893_456_000)
+        XCTAssertEqual(jwtData.keyType, "generator")
     }
 
     func testExtractJwtData_withAdditionalClaims_extractsCorrectly() throws {
@@ -48,11 +48,26 @@ import XCTest
         let jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4OTM0NTYwMDAsImtleV90eXBlIjoic2RrIiwic3ViIjoidXNlcjEyMyIsImlhdCI6MTY0MDAwMDAwMH0.signature"
 
         // When
-        let (expiration, keyType) = try sut.extractJwtData(jwt)
+        let jwtData = try sut.extractJwtData(jwt)
 
         // Then
-        XCTAssertEqual(expiration, 1_893_456_000)
-        XCTAssertEqual(keyType, "sdk")
+        XCTAssertEqual(jwtData.expiration, 1_893_456_000)
+        XCTAssertEqual(jwtData.keyType, "sdk")
+        XCTAssertNil(jwtData.applicationId)
+    }
+
+    func testExtractJwtData_withApplicationId_extractsApplicationId() throws {
+        // Given: A JWT with application_id claim
+        // Payload: {"exp": 1893456000, "key_type": "sdk", "application_id": "com.example.app"}
+        let jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4OTM0NTYwMDAsImtleV90eXBlIjoic2RrIiwiYXBwbGljYXRpb25faWQiOiJjb20uZXhhbXBsZS5hcHAifQ.signature"
+
+        // When
+        let jwtData = try sut.extractJwtData(jwt)
+
+        // Then
+        XCTAssertEqual(jwtData.expiration, 1_893_456_000)
+        XCTAssertEqual(jwtData.keyType, "sdk")
+        XCTAssertEqual(jwtData.applicationId, "com.example.app")
     }
 
     // MARK: - Invalid JWT Format Tests
@@ -200,11 +215,11 @@ import XCTest
         let jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4OTM0NTYwMDAsImtleV90eXBlIjoic2RrIn0.signature"
 
         // When
-        let (expiration, keyType) = try sut.extractJwtData(jwt)
+        let jwtData = try sut.extractJwtData(jwt)
 
         // Then
-        XCTAssertEqual(expiration, 1_893_456_000)
-        XCTAssertEqual(keyType, "sdk")
+        XCTAssertEqual(jwtData.expiration, 1_893_456_000)
+        XCTAssertEqual(jwtData.keyType, "sdk")
     }
 
     func testExtractJwtData_withPaddingRequired_decodesCorrectly() throws {
@@ -213,9 +228,9 @@ import XCTest
         let jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4OTM0NTYwMDAsImtleV90eXBlIjoic2RrIn0.signature"
 
         // When
-        let result = try sut.extractJwtData(jwt)
+        let jwtData = try sut.extractJwtData(jwt)
 
         // Then
-        XCTAssertEqual(result.keyType, "sdk")
+        XCTAssertEqual(jwtData.keyType, "sdk")
     }
 }

@@ -1,62 +1,55 @@
 import Foundation
 
-/// Manages API key resolution, handling both SDK and generator key types.
+/// Manages API key validation for SDK-type keys only.
 ///
 /// The manager:
-/// 1. Decodes the JWT to extract expiration and key type
-/// 2. Validates the key hasn't expired
-/// 3. Returns SDK keys directly
-/// 4. Exchanges generator keys for SDK keys via the Account API
+/// 1. Decodes the JWT to extract expiration, key type, and application_id
+/// 2. Validates key_type is "sdk"
+/// 3. Validates the key hasn't expired
+/// 4. Validates application_id matches the app's bundle ID
 public class ApiKeyManager {
     private let jwtDecoder: JwtDecoder
-    private let generatorClient: ApiKeyGeneratorClient
     private let currentTimeProvider: () -> TimeInterval
+    private let bundleIdentifierProvider: () -> String?
 
     /// Creates a new API key manager.
     ///
     /// - Parameters:
     ///   - jwtDecoder: Decoder for JWT tokens (defaults to new instance)
-    ///   - generatorClient: Client for exchanging generator keys (defaults to new instance)
     ///   - currentTimeProvider: Provider for current time (defaults to Date())
+    ///   - bundleIdentifierProvider: Provider for app bundle ID (defaults to Bundle.main.bundleIdentifier)
     public init(
         jwtDecoder: JwtDecoder = JwtDecoder(),
-        generatorClient: ApiKeyGeneratorClient = ApiKeyGeneratorClient(),
-        currentTimeProvider: @escaping () -> TimeInterval = { Date().timeIntervalSince1970 }
+        currentTimeProvider: @escaping () -> TimeInterval = { Date().timeIntervalSince1970 },
+        bundleIdentifierProvider: @escaping () -> String? = { Bundle.main.bundleIdentifier }
     ) {
         self.jwtDecoder = jwtDecoder
-        self.generatorClient = generatorClient
         self.currentTimeProvider = currentTimeProvider
+        self.bundleIdentifierProvider = bundleIdentifierProvider
     }
 
-    /// Resolves an API key for use with the Validations API.
+    /// Validates an SDK API key for use with the Validations API.
     ///
-    /// - SDK keys are returned directly after validation
-    /// - Generator keys are exchanged for SDK keys via the Account API
-    ///
-    /// - Parameter apiKey: The API key to resolve (can be SDK or generator type)
-    /// - Returns: A valid SDK API key
-    /// - Throws: `ApiKeyError` if resolution fails
-    public func resolveApiKey(_ apiKey: String) async throws -> String {
-        // Extract JWT data
-        let (expiration, keyType) = try jwtDecoder.extractJwtData(apiKey)
+    /// - Parameter apiKey: The SDK API key to validate
+    /// - Returns: The validated API key
+    /// - Throws: `ApiKeyError` if validation fails
+    public func validateApiKey(_ apiKey: String) async throws -> String {
+        let jwtData = try jwtDecoder.extractJwtData(apiKey)
 
-        // Check expiration
-        if jwtDecoder.isExpired(expiration, currentTime: currentTimeProvider()) {
-            throw ApiKeyError.expiredKey(expiration: expiration)
+        guard jwtData.keyType == ApiKeyTypes.sdk else {
+            throw ApiKeyError.invalidKeyType(jwtData.keyType)
         }
 
-        // Handle key type
-        switch keyType {
-        case ApiKeyTypes.sdk:
-            // SDK keys can be used directly
-            return apiKey
-
-        case ApiKeyTypes.generator:
-            // Generator keys need to be exchanged for SDK keys
-            return try await generatorClient.generateSdkKey(from: apiKey)
-
-        default:
-            throw ApiKeyError.invalidKeyType(keyType)
+        if jwtDecoder.isExpired(jwtData.expiration, currentTime: currentTimeProvider()) {
+            throw ApiKeyError.expiredKey(expiration: jwtData.expiration)
         }
+
+        guard let expectedBundleId = bundleIdentifierProvider(),
+              let actualApplicationId = jwtData.applicationId,
+              expectedBundleId == actualApplicationId else {
+            throw ApiKeyError.invalidJwtFormat
+        }
+
+        return apiKey
     }
 }

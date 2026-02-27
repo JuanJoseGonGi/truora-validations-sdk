@@ -52,14 +52,14 @@ struct TruoraPrimaryButton: View {
                     )
                 } else {
                     Text(title)
-                        .font(theme.typography.titleSmall)
+                        .font(theme.typography.labelLarge)
                 }
             }
-            .frame(maxWidth: 810)
-            .frame(height: 41)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
             .background(theme.colors.primary)
             .foregroundColor(theme.colors.onPrimary)
-            .cornerRadius(20)
+            .cornerRadius(28)
         }
         .disabled(isLoading)
         .opacity(isLoading ? 0.6 : 1.0)

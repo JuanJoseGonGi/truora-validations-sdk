@@ -31,10 +31,10 @@ struct PassiveCaptureBottomBar: View {
                 Button(action: onHelpClick) {
                     Text(TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureHelp))
                         .font(theme.typography.bodySmall)
-                        .foregroundColor(.white)
+                        .foregroundColor(theme.colors.onSecondary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
-                        .background(theme.colors.gray800)
+                        .background(theme.colors.secondary)
                         .clipShape(Capsule())
                         .overlay(
                             Capsule()
@@ -57,7 +57,7 @@ struct PassiveCaptureBottomBar: View {
         .padding(.horizontal, 24)
         .padding(.vertical, 16)
         .frame(maxWidth: .infinity)
-        .background(theme.colors.secondary.extendingIntoSafeArea())
+        .background(theme.colors.surfaceVariant.extendingIntoSafeArea())
     }
 }
 

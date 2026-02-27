@@ -137,23 +137,63 @@ import XCTest
     // MARK: - Passport Autocapture Validation Tests
 
     func testSetValidation_passportWithDefaultAutocapture_shouldSucceed() {
-        // Given — Document with passport type, default autocapture (true).
-        // The developer did NOT explicitly call useAutocapture(true), so
-        // defense-in-depth should allow this (autocapture disabled at runtime).
+        // Given — No explicit useAutocapture call.
+        // setDocumentType("passport") silently disables autocapture and
+        // didExplicitlyEnableAutocapture is false, so validation passes.
         let document = Document()
             .setDocumentType("passport")
 
-        // When/Then — should not throw (matches Android behavior)
+        // When/Then — should not throw
         XCTAssertNoThrow(
             try ValidationConfig.shared.setValidation(.document(document))
         )
         XCTAssertEqual(ValidationConfig.shared.documentConfig.documentType, "passport")
+        XCTAssertFalse(ValidationConfig.shared.documentConfig.useAutocapture)
     }
 
-    // Note: The case where passport + explicit useAutocapture(true) reaches
-    // validateAutocaptureConfig is unreachable through the public API because
-    // preconditionFailure fires first in setDocumentType() or useAutocapture().
-    // The defense-in-depth validation exists as a safety net for internal changes.
+    func testSetValidation_useAutocaptureThenPassport_shouldThrow() {
+        // Given — Developer misconfiguration: useAutocapture(true) then passport.
+        // setDocumentType silently disables autocapture but keeps the explicit
+        // flag, so validateAutocaptureConfig throws a catchable TruoraException.
+        let document = Document()
+            .useAutocapture(true)
+            .setDocumentType("passport")
+
+        // When/Then — should throw invalidConfiguration
+        XCTAssertThrowsError(
+            try ValidationConfig.shared.setValidation(.document(document))
+        )
+    }
+
+    func testSetValidation_passportThenExplicitAutocapture_shouldThrow() {
+        // Given — Developer misconfiguration: passport then useAutocapture(true).
+        // useAutocapture keeps autocapture disabled (enabled && !isPassport) but
+        // sets didExplicitlyEnableAutocapture, so validateAutocaptureConfig throws.
+        let document = Document()
+            .setDocumentType("passport")
+            .useAutocapture(true)
+
+        // When/Then — should throw invalidConfiguration
+        XCTAssertThrowsError(
+            try ValidationConfig.shared.setValidation(.document(document))
+        )
+    }
+
+    func testSetValidation_runtimePassportAfterExplicitAutocapture_shouldSucceed() {
+        // Given — Simulates the document selection presenter flow:
+        // developer enabled autocapture via Builder (no document type),
+        // then the user picks passport at runtime via applyRuntimeDocumentType.
+        let document = Document()
+            .useAutocapture(true)
+            .applyRuntimeDocumentType("passport")
+
+        // When/Then — should not throw (runtime selection resets the flag)
+        XCTAssertNoThrow(
+            try ValidationConfig.shared.setValidation(.document(document))
+        )
+        XCTAssertEqual(ValidationConfig.shared.documentConfig.documentType, "passport")
+        XCTAssertFalse(ValidationConfig.shared.documentConfig.useAutocapture)
+    }
 
     func testSetValidation_passportWithAutocaptureDisabled_shouldSucceed() {
         // Given

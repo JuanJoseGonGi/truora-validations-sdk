@@ -43,7 +43,10 @@ import UIKit
 protocol DocumentCaptureViewToPresenter: AnyObject {
     func viewDidLoad() async
     func viewWillAppear() async
+    func viewDidBecomeVisible() async
     func viewWillDisappear() async
+    func appWillResignActive() async
+    func appDidBecomeActive() async
     func cameraReady() async
 
     func photoCaptured(photoData: Data) async

@@ -31,6 +31,9 @@ import XCTest
         XCTAssertNil(sut.primary, "Primary color should be nil by default")
         XCTAssertNil(sut.onPrimary, "OnPrimary color should be nil by default")
         XCTAssertNil(sut.secondary, "Secondary color should be nil by default")
+        XCTAssertNil(sut.onSecondary, "OnSecondary color should be nil by default")
+        XCTAssertNil(sut.surfaceVariant, "SurfaceVariant color should be nil by default")
+        XCTAssertNil(sut.onSurfaceVariant, "OnSurfaceVariant color should be nil by default")
         XCTAssertNil(sut.error, "Error color should be nil by default")
         XCTAssertNil(sut.logoUrl, "Logo URL should be nil by default")
     }
@@ -225,6 +228,48 @@ import XCTest
         XCTAssertTrue(result === sut, "Should still return self for chaining")
     }
 
+    // MARK: - SurfaceVariant Color Tests
+
+    func testSetSurfaceVariantColorWithUIColor() {
+        let testColor = UIColor.darkGray
+        let result = sut.setSurfaceVariantColor(testColor)
+        XCTAssertEqual(sut.surfaceVariant, testColor, "Should set surfaceVariant color")
+        XCTAssertTrue(result === sut, "Should return self for chaining")
+    }
+
+    func testSetSurfaceVariantColorWithHexString() {
+        let result = sut.setSurfaceVariantColor("#082054")
+        XCTAssertNotNil(sut.surfaceVariant, "Should set surfaceVariant color from hex")
+        XCTAssertTrue(result === sut, "Should return self for chaining")
+    }
+
+    func testSetSurfaceVariantColorWithInvalidHex() {
+        let result = sut.setSurfaceVariantColor("invalid")
+        XCTAssertNil(sut.surfaceVariant, "Should not set color with invalid hex")
+        XCTAssertTrue(result === sut, "Should still return self for chaining")
+    }
+
+    // MARK: - OnSurfaceVariant Color Tests
+
+    func testSetOnSurfaceVariantColorWithUIColor() {
+        let testColor = UIColor.white
+        let result = sut.setOnSurfaceVariantColor(testColor)
+        XCTAssertEqual(sut.onSurfaceVariant, testColor, "Should set onSurfaceVariant color")
+        XCTAssertTrue(result === sut, "Should return self for chaining")
+    }
+
+    func testSetOnSurfaceVariantColorWithHexString() {
+        let result = sut.setOnSurfaceVariantColor("#FFFFFF")
+        XCTAssertNotNil(sut.onSurfaceVariant, "Should set onSurfaceVariant color from hex")
+        XCTAssertTrue(result === sut, "Should return self for chaining")
+    }
+
+    func testSetOnSurfaceVariantColorWithInvalidHex() {
+        let result = sut.setOnSurfaceVariantColor("xyz")
+        XCTAssertNil(sut.onSurfaceVariant, "Should not set color with invalid hex")
+        XCTAssertTrue(result === sut, "Should still return self for chaining")
+    }
+
     // MARK: - Error Color Tests
 
     func testSetErrorColorWithUIColor() {
@@ -299,6 +344,8 @@ import XCTest
             .setPrimaryColor("#435AE0")
             .setOnPrimaryColor("#FFFFFF")
             .setSecondaryColor("#082054")
+            .setSurfaceVariantColor("#082054")
+            .setOnSurfaceVariantColor("#FFFFFF")
             .setErrorColor("#FF5454")
             .setLogo("https://example.com/logo.png")
 
@@ -309,6 +356,8 @@ import XCTest
         XCTAssertNotNil(sut.primary, "Should have set primary color")
         XCTAssertNotNil(sut.onPrimary, "Should have set onPrimary color")
         XCTAssertNotNil(sut.secondary, "Should have set secondary color")
+        XCTAssertNotNil(sut.surfaceVariant, "Should have set surfaceVariant color")
+        XCTAssertNotNil(sut.onSurfaceVariant, "Should have set onSurfaceVariant color")
         XCTAssertNotNil(sut.error, "Should have set error color")
         XCTAssertEqual(sut.logoUrl, "https://example.com/logo.png", "Should have set logo URL")
     }
@@ -321,6 +370,8 @@ import XCTest
             .setPrimaryColor(UIColor.blue)
             .setOnPrimaryColor(UIColor.white)
             .setSecondaryColor(UIColor.darkGray)
+            .setSurfaceVariantColor(UIColor.darkGray)
+            .setOnSurfaceVariantColor(UIColor.white)
             .setErrorColor(UIColor.red)
 
         // Then
@@ -330,6 +381,8 @@ import XCTest
         XCTAssertEqual(sut.primary, UIColor.blue)
         XCTAssertEqual(sut.onPrimary, UIColor.white)
         XCTAssertEqual(sut.secondary, UIColor.darkGray)
+        XCTAssertEqual(sut.surfaceVariant, UIColor.darkGray)
+        XCTAssertEqual(sut.onSurfaceVariant, UIColor.white)
         XCTAssertEqual(sut.error, UIColor.red)
     }
 

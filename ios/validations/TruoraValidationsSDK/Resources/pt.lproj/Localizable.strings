@@ -103,35 +103,20 @@
 
 /* Document Feedback */
 "document_feedback_retry" = "Tirar outra foto";
-"document_feedback_tips" = "Dicas para tirar uma foto melhor";
 "document_feedback_retries_left" = "Tentativas restantes %@";
-"document_feedback_retries_left_prefix" = "Tentativas restantes";
-"document_feedback_blurry_title" = "Imagem borrosa";
-"document_feedback_blurry_description" = "Mantenha seu telefone firme e garanta boa iluminação";
-"document_feedback_glare_title" = "Reflexo detectado";
-"document_feedback_glare_description" = "Evite luz direta sobre seu documento";
-"document_feedback_too_far_title" = "Documento muito longe";
-"document_feedback_too_far_description" = "Aproxime-se mais do documento";
-"document_feedback_too_close_title" = "Documento muito perto";
-"document_feedback_too_close_description" = "Afaste-se um pouco do documento";
-"document_feedback_bad_angle_title" = "Ângulo incorreto";
-"document_feedback_bad_angle_description" = "Segure seu telefone paralelo ao documento";
-"document_feedback_no_document_title" = "Nenhum documento detectado";
-"document_feedback_no_document_description" = "Coloque um documento no quadro";
-"document_feedback_front_not_found_title" = "Frente do documento não detectada";
-"document_feedback_front_not_found_description" = "Não encontramos a frente do documento";
-"document_feedback_back_not_found_title" = "Verso do documento não detectado";
-"document_feedback_back_not_found_description" = "Não encontramos o verso do documento";
-"document_feedback_face_not_found_title" = "Seu rosto não está claramente visível";
-"document_feedback_face_not_found_description" = "Pode haver reflexos cobrindo seu rosto ou sua identificação está muito longe da câmera.";
-"document_feedback_wrong_document_title" = "Documento incorreto";
-"document_feedback_wrong_document_description" = "Por favor use o tipo de documento selecionado";
-"document_feedback_expired_title" = "Documento vencido";
-"document_feedback_expired_description" = "Este documento não é mais válido";
-"document_feedback_damaged_title" = "Documento danificado";
-"document_feedback_damaged_description" = "Seu documento parece estar danificado";
-"document_feedback_generic_title" = "Erro na captura";
-"document_feedback_generic_description" = "Por favor tente novamente";
+"document_feedback_default_title" = "Houve um problema com a foto, tente novamente";
+"document_feedback_blurry_title" = "Imagem borrada, não podemos ler os detalhes";
+"document_feedback_blurry_description" = "Certifique-se de que o texto e os números sejam fáceis de ler.";
+"document_feedback_glare_title" = "Há brilhos e hologramas que não nos deixam ver os detalhes";
+"document_feedback_glare_description" = "Certifique-se de que a luz não incida diretamente sobre seu documento.";
+"document_feedback_no_document_title" = "Não detectamos o seu documento";
+"document_feedback_no_document_description" = "Tente novamente, tire uma foto de seu documento.";
+"document_feedback_front_not_found_title" = "Falta a frente da sua identificação";
+"document_feedback_front_not_found_description" = "Vire sua identificação e tire uma foto da parte da frente.";
+"document_feedback_back_not_found_title" = "Falta o verso da sua identificação";
+"document_feedback_back_not_found_description" = "Vire o seu documento e tire uma foto da parte de trás.";
+"document_feedback_face_not_found_title" = "Seu rosto não é visto claramente";
+"document_feedback_face_not_found_description" = "Pode haver brilho cobrindo seu rosto ou seu documento está muito longe da câmera.";
 
 /* Camera Errors */
 "camera_error_initialization_failed" = "Erro ao iniciar a câmera";

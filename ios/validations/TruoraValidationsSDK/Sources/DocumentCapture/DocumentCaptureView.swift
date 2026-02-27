@@ -36,7 +36,11 @@ import UIKit
     weak var cameraViewDelegate: DocumentCaptureCameraDelegate?
 
     func onAppear() {
-        Task { await presenter?.viewDidLoad() }
+        Task {
+            await presenter?.viewDidBecomeVisible()
+            await presenter?.viewDidLoad()
+            await presenter?.viewWillAppear()
+        }
     }
 
     func onWillAppear() {
@@ -45,6 +49,14 @@ import UIKit
 
     func onWillDisappear() {
         Task { await presenter?.viewWillDisappear() }
+    }
+
+    func onAppWillResignActive() {
+        Task { await presenter?.appWillResignActive() }
+    }
+
+    func onAppDidBecomeActive() {
+        Task { await presenter?.appDidBecomeActive() }
     }
 
     func cameraReady() {
@@ -366,12 +378,12 @@ struct DocumentCaptureView: View {
         .onReceive(
             NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)
         ) { _ in
-            viewModel.onWillDisappear()
+            viewModel.onAppWillResignActive()
         }
         .onReceive(
             NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
         ) { _ in
-            viewModel.onWillAppear()
+            viewModel.onAppDidBecomeActive()
         }
     }
 }
@@ -511,7 +523,7 @@ private struct DocumentCaptureHeaderView: View {
                 // Flip document instruction - two lines
                 Text(TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureRotateInstruction))
                     .font(theme.typography.titleMedium)
-                    .foregroundColor(theme.colors.onSecondary)
+                    .foregroundColor(theme.colors.onSurfaceVariant)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             } else {
@@ -530,14 +542,14 @@ private struct DocumentCaptureHeaderView: View {
                         : TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureBackInstruction)
                 )
                 .font(theme.typography.titleMedium)
-                .foregroundColor(theme.colors.onSecondary)
+                .foregroundColor(theme.colors.onSurfaceVariant)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
             }
         }
         .frame(maxWidth: .infinity)
         .frame(height: 180)
-        .background(theme.colors.secondary.extendingIntoSafeArea())
+        .background(theme.colors.surfaceVariant.extendingIntoSafeArea())
     }
 
     /// Returns the appropriate document icon based on side
@@ -785,10 +797,10 @@ private struct DocumentCaptureFooter: View {
                     Button(action: onHelpClick) {
                         Text(TruoraLocalization.string(forKey: LocalizationKeys.passiveCaptureHelp))
                             .font(theme.typography.bodySmall)
-                            .foregroundColor(.white)
+                            .foregroundColor(theme.colors.onSecondary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(theme.colors.gray800)
+                            .background(theme.colors.secondary)
                             .clipShape(Capsule())
                             .overlay(
                                 Capsule()
@@ -810,7 +822,7 @@ private struct DocumentCaptureFooter: View {
             .padding(.horizontal, 24)
         }
         .frame(height: 150)
-        .background(theme.colors.secondary.extendingIntoSafeArea())
+        .background(theme.colors.surfaceVariant.extendingIntoSafeArea())
     }
 }
 
