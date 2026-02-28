@@ -13,9 +13,6 @@ DESC
   s.swift_version    = "5.9"
   s.static_framework = true
   s.source           = { :git => "https://bitbucket.org/truora/truora-sdks.git", :tag => s.version.to_s }
-  s.prepare_command  = <<-CMD
-    bash scripts/generate_ios_sdk_version.sh --version #{s.version}
-  CMD
   s.source_files       = [
     "ios/validations/TruoraValidationsSDK/Sources/**/*.{swift}",
     "ios/validations/Derived/Sources/TuistAssets+TruoraValidationsSDK.swift",

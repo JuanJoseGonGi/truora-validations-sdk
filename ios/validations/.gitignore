@@ -74,6 +74,7 @@ Derived/Sources/*
 
 ### Tuist managed dependencies ###
 Tuist/.build
+Tuist/Package.resolved
 
 ### Frameworks ###
 Frameworks/

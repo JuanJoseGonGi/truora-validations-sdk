@@ -377,7 +377,17 @@ pod trunk push TruoraValidationsSDK.podspec --allow-warnings
 ## SPM release
 Our pipeline automatically syncs the bitbucket repo with github in ``https://github.com/truora/truora-validations-sdk``
 
-Test with a sample app by adding the repository URL in Xcode under ``File > Add Packages``
+Test with the official sample app by:
+
+1. Uncomment the sdk dependency in [Package](Tuist/Package.swift)
+2. Set `useExternalSDK` to `true`in the [tuist project](Project.swift)
+3. Run tuist commands to install and generate project:
+```bash
+tuist install
+
+tuist clean
+tuist generate
+```
 
 ## Troubleshooting
 
