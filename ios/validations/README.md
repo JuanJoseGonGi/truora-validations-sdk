@@ -141,7 +141,7 @@ The Sample App hosts the shared Vue sample app (`sample-apps/validations-sdk-sam
 
 #### Prerequisites
 
-1. Configure your credentials in **SampleApp/Sources/Config.swift** (API key and account ID).
+1. Configure `VITE_TRUORA_API_KEY` in `sample-apps/validations-sdk-sample-app/.env.local` (copy from `.env.example` if needed).
 2. Ensure **Node.js** and **npm** are installed — the build script needs them to compile the Vue app.
 
 #### Steps
@@ -152,12 +152,7 @@ The Sample App hosts the shared Vue sample app (`sample-apps/validations-sdk-sam
 4. Choose a simulator or physical device (iOS 13.0+)
 5. Build and run (⌘R)
 
-The post-build script `Scripts/copy-webview.sh` automatically builds the Vue app and copies its output into the app bundle. If you prefer to build manually, run from the repo root:
-
-```bash
-cd sample-apps/validations-sdk-sample-app && npm install && npm run build
-ios/validations/Scripts/copy-webview.sh
-```
+Xcode builds the Vue app automatically via the post-build script `Scripts/copy-webview.sh`. Configure `VITE_TRUORA_API_KEY` in `sample-apps/validations-sdk-sample-app/.env.local` before building; the script rebuilds when `.env.local` changes.
 
 ## Key Features
 
@@ -324,7 +319,7 @@ In the case of [Truora Validations podspec](TruoraValidationsSDK.podspec) rememb
   s.dependency         "TruoraCamera", "SEMANTIC_VERSION" # Set the desired TruoraCamera version here
 ```
 
-4. Generate the iOS SDK log version source file:
+4. Generate the iOS SDK log version source file (This is not automated in the PodSpec):
 
 ```bash
 bash ../../scripts/generate_ios_sdk_version.sh --version SEMANTIC_VERSION
@@ -373,6 +368,23 @@ pod trunk push TruoraValidationsSDK.podspec --allow-warnings
 ```
 
 3. Wait for 10/15 minutes for publish to be successful and all references updated in CocoaPods. Then test the release in [Pods sample app](../cocoa-pods-sample-apps)
+
+### Troubleshooting publish
+1. Q/ When doing a push with pods I get the error 
+```
+[!] An internal server error occurred. Please check for any known status issues at https://twitter.com/CocoaPods and try again later.
+```
+A/ Either CocoaPods is temporarily down (check twitter as suggested) or the podspec content is crashing the trunk server. A known culprit is the `prepare_command` field — the CocoaPods trunk server can fail to process it, returning a 500 even though `pod spec lint` passes locally. If you encounter this, remove `prepare_command` from the podspec and run the script manually before pushing (see step 4 above). Compare to previously published versions of the same podspec via `pod trunk info <PodName>` to narrow down which field is causing the issue.
+
+2. Q/ The publish was incomplete, I need to replace the version
+
+A/ Luckily in CocoaPods contrary to Android Maven releases you can delete a release with the `delete` command. For example if you wanted to delete a specific version of the TruoraValidationsSDK do: 
+
+```
+pod trunk delete TruoraValidationsSDK SEMANTIC_VERSION
+```
+
+However it's worth noting that after removing this version you can **NEVER AGAIN** push a spec with the same version number.
 
 ## SPM release
 Our pipeline automatically syncs the bitbucket repo with github in ``https://github.com/truora/truora-validations-sdk``
