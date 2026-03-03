@@ -277,7 +277,7 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         let uploadUrl = await router?.uploadUrl
         interactor?.setUploadUrl(uploadUrl)
         if !isSettingUpCamera {
-            print("🟢 PassiveCapturePresenter: viewDidLoad - triggering initial setup")
+            debugLog("🟢 PassiveCapturePresenter: viewDidLoad - triggering initial setup")
             isSettingUpCamera = true
             await view?.setupCamera()
         }
@@ -376,38 +376,40 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
     func viewWillAppear() async {
         // On initial load, skip restart logic as it's handled by viewDidLoad
         guard lifecycleState != .uninitialized else {
-            print("🟢 PassiveCapturePresenter: viewWillAppear - initial load, skipping")
             return
         }
 
         // If upload in progress, don't try to re-setup; upload flow controls the camera.
         // Background/foreground behavior is handled via appWillResignActive/appDidBecomeActive.
         guard uploadState != .uploading, uploadState != .success else {
-            print("🟢 PassiveCapturePresenter: viewWillAppear - skipping upload restart")
+            debugLog(
+                "🟢 PassiveCapturePresenter: viewWillAppear - skipping upload restart "
+                    + "(uploadState: \(uploadState))"
+            )
             return
         }
 
         // Re-try setup when returning to view (e.g. from Settings or background)
-        print("🟢 viewWillAppear, checking camera permissions...")
+        debugLog("🟢 viewWillAppear, checking camera permissions...")
         let status = AVCaptureDevice.authorizationStatus(for: .video)
 
         switch status {
         case .authorized:
             await logCameraPermissionGranted()
             if lifecycleState == .stopped, !isSettingUpCamera {
-                print("✅ Permission granted, restarting camera...")
+                debugLog("✅ Permission granted, restarting camera...")
                 isSettingUpCamera = true
                 await resetToInitialState()
                 await view?.setupCamera()
             }
         case .notDetermined:
             if !isSettingUpCamera {
-                print("🟠 Permission not determined, triggering setup...")
+                debugLog("🟠 Permission not determined, triggering setup...")
                 isSettingUpCamera = true
                 await view?.setupCamera()
             }
         case .denied, .restricted:
-            print("❌ Permission still denied")
+            debugLog("❌ Permission still denied")
             await cameraPermissionDenied()
         @unknown default:
             break
@@ -460,17 +462,17 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
             await startRecording()
         case .none:
             if useAutocapture {
-                print("🟢 PassiveCapturePresenter: Camera ready, starting countdown")
+                debugLog("🟢 PassiveCapturePresenter: Camera ready, starting countdown")
                 await startCountdown()
             } else {
-                print("🟢 PassiveCapturePresenter: Camera ready, autocapture disabled")
+                debugLog("🟢 PassiveCapturePresenter: Camera ready, autocapture disabled")
                 await transitionToManualWithoutError()
             }
         }
     }
 
     func videoRecordingCompleted(videoData: Data) async {
-        print("🟢 PassiveCapturePresenter: Received video data (\(videoData.count) bytes)")
+        debugLog("🟢 PassiveCapturePresenter: Received video data (\(videoData.count) bytes)")
         lifecycleState = .ready
         capturedVideoData = videoData
         uploadState = .uploading
@@ -487,7 +489,7 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
     }
 
     func lastFrameCaptured(frameData: Data) async {
-        print("🟢 Last frame (\(frameData.count) bytes)")
+        debugLog("🟢 Last frame (\(frameData.count) bytes)")
         lastFrameData = frameData
 
         // Don't update state/feedback if already uploading
@@ -552,7 +554,7 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
 
         // Single face detected - check if centered on the oval
         guard isFaceCenteredOnOval(faces[0]) else {
-            print("🟠 Face not centered on oval, showing CENTER_FACE feedback")
+            debugLog("🟠 Face not centered on oval, showing CENTER_FACE feedback")
             await resetTimerAndUpdateFeedback(.centerFace)
             return
         }
@@ -699,8 +701,8 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
 
     func cameraPermissionDenied() async {
         isSettingUpCamera = false
-        print("❌ PassiveCapturePresenter: Camera permission denied")
-        print("🔔 Showing settings prompt to user")
+        debugLog("❌ PassiveCapturePresenter: Camera permission denied")
+        debugLog("🔔 Showing settings prompt to user")
         showSettingsPrompt = true
         await logCameraOpenFailed(errorMessage: "Camera permission denied")
         await updateUI()
@@ -802,7 +804,7 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         if lifecycleState == .recording {
             await view?.stopRecording()
         } else {
-            print("⚠️ PassiveCapturePresenter: Recording already stopped, skipping stop call")
+            debugLog("⚠️ PassiveCapturePresenter: Recording already stopped, skipping stop call")
         }
     }
 }
@@ -851,7 +853,7 @@ extension PassiveCapturePresenter: PassiveCaptureInteractorToPresenter {
         // Validation timeout - navigate to result screen to show failure
         if isValidationError(error) {
             guard let router else {
-                print("Router is nil, cannot navigate to result after validation timeout")
+                debugLog("Router is nil, cannot navigate to result after validation timeout")
                 return
             }
             do {
@@ -860,7 +862,7 @@ extension PassiveCapturePresenter: PassiveCaptureInteractorToPresenter {
                     loadingType: .face
                 )
             } catch let navError {
-                print("Navigation to result failed during validation timeout: \(navError)")
+                debugLog("Navigation to result failed during validation timeout: \(navError)")
                 await router.handleError(
                     TruoraException.sdk(
                         SDKError(

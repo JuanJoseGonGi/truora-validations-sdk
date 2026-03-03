@@ -48,9 +48,7 @@ extension CameraManager: UIGestureRecognizerDelegate {
 
             camera.unlockForConfiguration()
         } catch {
-            #if DEBUG
-            print(error)
-            #endif
+            debugLog("Error starting focus: \(error.localizedDescription)")
         }
     }
 

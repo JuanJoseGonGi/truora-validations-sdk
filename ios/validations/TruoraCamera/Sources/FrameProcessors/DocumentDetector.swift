@@ -143,7 +143,7 @@ class DocumentDetector {
                 }
             } catch {
                 // Model loading failed - notify for fallback to manual capture
-                print("❌ DocumentDetector: Model loading failed - \(error.localizedDescription)")
+                debugLog("❌ DocumentDetector: Model loading failed - \(error.localizedDescription)")
                 self.logger?.logModelInitFailed(
                     modelName: "document_detector",
                     errorMessage: error.localizedDescription

@@ -48,7 +48,7 @@ struct CameraViewWrapper: UIViewRepresentable {
 
         func setupCamera() {
             guard let cameraView else {
-                print("⚠️ setupCamera() failed - cameraView is nil")
+                debugLog("⚠️ setupCamera() failed - cameraView is nil")
                 DispatchQueue.main.async {
                     let message = "Camera view not available. Please restart the validation."
                     self.viewModel.errorMessage = message
@@ -62,7 +62,7 @@ struct CameraViewWrapper: UIViewRepresentable {
 
         func startRecording() {
             guard let cameraView else {
-                print("⚠️ CameraViewDelegate: startRecording() called but cameraView is nil")
+                debugLog("⚠️ CameraViewDelegate: startRecording() called but cameraView is nil")
                 DispatchQueue.main.async {
                     self.viewModel.errorMessage = "Camera not ready to record. Please try again."
                     self.viewModel.showError = true
@@ -74,7 +74,7 @@ struct CameraViewWrapper: UIViewRepresentable {
 
         func stopRecording(skipMediaNotification: Bool) {
             guard let cameraView else {
-                print("⚠️ CameraViewDelegate: stopRecording() called but cameraView is nil")
+                debugLog("⚠️ CameraViewDelegate: stopRecording() called but cameraView is nil")
                 DispatchQueue.main.async {
                     self.viewModel.errorMessage = "Unable to stop recording. " +
                         "Camera resources may not be released properly."
@@ -87,7 +87,7 @@ struct CameraViewWrapper: UIViewRepresentable {
 
         func stopCamera() {
             guard let cameraView else {
-                print("⚠️ CameraViewDelegate: stopCamera() called but cameraView is nil")
+                debugLog("⚠️ CameraViewDelegate: stopCamera() called but cameraView is nil")
                 return
             }
             cameraView.stopCamera()
@@ -95,7 +95,7 @@ struct CameraViewWrapper: UIViewRepresentable {
 
         func pauseCamera() {
             guard let cameraView else {
-                print("⚠️ CameraViewDelegate: pauseCamera() called but cameraView is nil")
+                debugLog("⚠️ CameraViewDelegate: pauseCamera() called but cameraView is nil")
                 return
             }
             cameraView.pauseCamera()
@@ -103,19 +103,18 @@ struct CameraViewWrapper: UIViewRepresentable {
 
         func resumeCamera() {
             guard let cameraView else {
-                print("⚠️ CameraViewDelegate: resumeCamera() called but cameraView is nil")
+                debugLog("⚠️ CameraViewDelegate: resumeCamera() called but cameraView is nil")
                 return
             }
             cameraView.resumeCamera()
         }
 
         func cameraReady() {
-            print("🟢 CameraViewWrapper: Camera ready callback")
             viewModel.cameraReady()
         }
 
         func mediaReady(media: Data) {
-            print("🟢 CameraViewWrapper: Video recording completed, \(media.count) bytes")
+            debugLog("🟢 CameraViewWrapper: Video recording completed, \(media.count) bytes")
             viewModel.videoRecordingCompleted(videoData: media)
         }
 
@@ -124,9 +123,7 @@ struct CameraViewWrapper: UIViewRepresentable {
         }
 
         func reportError(error: CameraError) {
-            #if DEBUG
-            print("❌ CameraViewWrapper: Camera error: \(error)")
-            #endif
+            debugLog("❌ CameraViewWrapper: Camera error: \(error)")
 
             if case .permissionDenied = error {
                 viewModel.cameraPermissionDenied()

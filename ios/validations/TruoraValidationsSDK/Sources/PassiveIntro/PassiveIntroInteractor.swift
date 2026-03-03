@@ -48,7 +48,7 @@ extension PassiveIntroInteractor: PassiveIntroPresenterToInteractor {
         #if DEBUG
         // Offline Mode Mock (DEBUG only)
         if TruoraValidationsSDK.isOfflineMode {
-            print("🟢 PassiveIntro: Offline mode, mocking validation creation")
+            debugLog("🟢 PassiveIntro: Offline mode, mocking validation creation")
             let instructions = NativeValidationInstructions(
                 fileUploadLink: "https://mock.url/upload",
                 frontUrl: nil,
@@ -68,19 +68,19 @@ extension PassiveIntroInteractor: PassiveIntroPresenterToInteractor {
         validationTask = Task {
             do {
                 let request = createValidationRequest(accountId: accountId)
-                print("🟢 PassiveIntro: Creating validation for account: \(accountId)")
+                debugLog("🟢 PassiveIntro: Creating validation for account: \(accountId)")
 
                 // Call native API
                 let response = try await apiClient.createValidation(request: request)
 
                 guard !Task.isCancelled else {
-                    print("⚠️ PassiveIntroInteractor: Task was cancelled")
+                    debugLog("⚠️ PassiveIntroInteractor: Task was cancelled")
                     return
                 }
 
                 await presenter?.validationCreated(response: response)
             } catch is CancellationError {
-                print("⚠️ PassiveIntroInteractor: Task was cancelled")
+                debugLog("⚠️ PassiveIntroInteractor: Task was cancelled")
             } catch {
                 await handleValidationError(error)
             }
@@ -112,7 +112,7 @@ extension PassiveIntroInteractor: PassiveIntroPresenterToInteractor {
     }
 
     private func handleValidationError(_ error: Error) async {
-        print("❌ PassiveIntro: Validation creation failed: \(error)")
+        debugLog("❌ PassiveIntro: Validation creation failed: \(error)")
         if let truoraError = error as? TruoraException {
             await presenter?.validationFailed(truoraError)
         } else {
@@ -124,12 +124,12 @@ extension PassiveIntroInteractor: PassiveIntroPresenterToInteractor {
 
     func enrollmentCompleted() async throws {
         guard let task = enrollmentTask else {
-            print("⚠️ PassiveIntro: No enrollment task to wait for")
+            debugLog("⚠️ PassiveIntro: No enrollment task to wait for")
             return
         }
 
         guard !task.isCancelled else {
-            print("⚠️ PassiveIntro: Enrollment task is already cancelled")
+            debugLog("⚠️ PassiveIntro: Enrollment task is already cancelled")
             throw CancellationError()
         }
 

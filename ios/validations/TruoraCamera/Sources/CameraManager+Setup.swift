@@ -12,7 +12,7 @@ extension CameraManager {
     func setupCamera(view: UIView, cameraOutputMode: CameraOutputMode) {
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--uitesting") {
-            print("🧪 CameraManager: UI Testing mode detected. Skipping real camera setup.")
+            debugLog("🧪 CameraManager: UI Testing mode detected. Skipping real camera setup.")
             cameraIsSetup = true
             // Simulate camera ready delay
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -23,7 +23,7 @@ extension CameraManager {
         #endif
 
         guard !cameraIsSetup else {
-            print("⚠️ CameraManager: setupCamera called when camera is already setup")
+            debugLog("⚠️ CameraManager: setupCamera called when camera is already setup")
             return
         }
 
@@ -35,10 +35,10 @@ extension CameraManager {
 
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
-            print("✅ CameraManager: Camera permission granted")
+            debugLog("✅ CameraManager: Camera permission granted")
             configureSession(view: view, cameraOutputMode: cameraOutputMode)
         case .notDetermined:
-            print("⚠️ CameraManager: Camera permission not determined")
+            debugLog("⚠️ CameraManager: Camera permission not determined")
             AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
                 DispatchQueue.main.async {
                     if granted {
@@ -52,12 +52,12 @@ extension CameraManager {
                 }
             }
         case .denied, .restricted:
-            print("❌ CameraManager: Camera permission denied or restricted")
+            debugLog("❌ CameraManager: Camera permission denied or restricted")
             let status = AVCaptureDevice.authorizationStatus(for: .video)
             delegate?.reportError(error: .permissionDenied(status: status))
             return
         @unknown default:
-            print("❌ CameraManager: Unknown camera permission status")
+            debugLog("❌ CameraManager: Unknown camera permission status")
             let cameraError = CameraError.internalError("Unknown camera permission status")
             delegate?.reportError(error: cameraError)
             return
@@ -75,7 +75,7 @@ extension CameraManager {
         captureSession?.commitConfiguration()
 
         guard inputAdded, outputAdded else {
-            print(
+            debugLog(
                 "❌ CameraManager: Failed to setup camera - input: \(inputAdded), output: \(outputAdded)"
             )
             cameraIsSetup = false // Reset since setup failed
@@ -90,7 +90,7 @@ extension CameraManager {
     @discardableResult
     func setupInput() -> Bool {
         guard let camera = getCamera() else {
-            print("❌ CameraManager: Failed to get camera device")
+            debugLog("❌ CameraManager: Failed to get camera device")
             let cameraError = CameraError.internalError("Error getting camera")
             delegate?.reportError(error: cameraError)
             return false
@@ -100,21 +100,20 @@ extension CameraManager {
         do {
             input = try AVCaptureDeviceInput(device: camera)
         } catch {
-            print("❌ CameraManager: Failed to create camera input: \(error.localizedDescription)")
+            debugLog("❌ CameraManager: Failed to create camera input: \(error.localizedDescription)")
             let message = "Error creating capture device input: \(error.localizedDescription)"
             delegate?.reportError(error: .internalError(message))
             return false
         }
 
         guard let captureSession, let input, captureSession.canAddInput(input) else {
-            print("❌ CameraManager: Cannot add camera input to session")
+            debugLog("❌ CameraManager: Cannot add camera input to session")
             let cameraError = CameraError.internalError("Error creating capture device input")
             delegate?.reportError(error: cameraError)
             return false
         }
 
         captureSession.addInput(input)
-        print("✅ CameraManager: Camera input added successfully")
         return true
     }
 
@@ -132,7 +131,6 @@ extension CameraManager {
 
     func setImageOutput() -> Bool {
         if imageOutput != nil {
-            print("✅ CameraManager: Image output already configured")
             return true
         }
 
@@ -140,14 +138,13 @@ extension CameraManager {
         imageOutput = newImageOutput
 
         guard let captureSession, captureSession.canAddOutput(newImageOutput) else {
-            print("❌ CameraManager: Cannot add image output to session")
+            debugLog("❌ CameraManager: Cannot add image output to session")
             let cameraError = CameraError.internalError("Unable to initialize camera")
             delegate?.reportError(error: cameraError)
             return false
         }
 
         captureSession.addOutput(newImageOutput)
-        print("✅ CameraManager: Image output added successfully")
 
         // Also add video data output for frame processing (detection)
         // This enables document/face detection while in still image capture mode
@@ -161,7 +158,7 @@ extension CameraManager {
         videoDataOutput = newVideoDataOutput
 
         guard captureSession.canAddOutput(newVideoDataOutput) else {
-            print(
+            debugLog(
                 "⚠️ CameraManager: Cannot add video data output for frame processing in image mode"
             )
             // Not a critical error - image capture will still work, just without frame processing
@@ -175,7 +172,6 @@ extension CameraManager {
 
     func setVideoOutput() -> Bool {
         if videoOutput != nil {
-            print("✅ CameraManager: Video output already configured")
             return true
         }
 
@@ -185,14 +181,13 @@ extension CameraManager {
         videoOutput = newVideoOutput
 
         guard let captureSession, captureSession.canAddOutput(newVideoOutput) else {
-            print("❌ CameraManager: Cannot add video output to session")
+            debugLog("❌ CameraManager: Cannot add video output to session")
             let cameraError = CameraError.internalError("Unable to initialize camera")
             delegate?.reportError(error: cameraError)
             return false
         }
 
         captureSession.addOutput(newVideoOutput)
-        print("✅ CameraManager: Video output added successfully")
 
         // Configure HEVC if available (iOS 13+ support)
         if let connection = newVideoOutput.connection(with: .video),
@@ -200,7 +195,7 @@ extension CameraManager {
             newVideoOutput.setOutputSettings(
                 [AVVideoCodecKey: AVVideoCodecType.hevc], for: connection
             )
-            print("✅ CameraManager: HEVC codec configured for video recording")
+            debugLog("✅ CameraManager: HEVC codec configured for video recording")
         }
 
         let newVideoDataOutput = AVCaptureVideoDataOutput()
@@ -213,14 +208,13 @@ extension CameraManager {
         videoDataOutput = newVideoDataOutput
 
         guard captureSession.canAddOutput(newVideoDataOutput) else {
-            print("❌ CameraManager: Cannot add video data output to session")
+            debugLog("❌ CameraManager: Cannot add video data output to session")
             let cameraError = CameraError.internalError("Unable to add video data output")
             delegate?.reportError(error: cameraError)
             return false
         }
 
         captureSession.addOutput(newVideoDataOutput)
-        print("✅ CameraManager: Video data output added successfully")
         return true
     }
 

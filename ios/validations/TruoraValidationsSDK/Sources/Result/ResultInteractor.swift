@@ -126,13 +126,13 @@ private extension ResultInteractor {
 
             // Check cancellation before notifying presenter to avoid UI updates after navigation
             guard !Task.isCancelled else {
-                print("⚠️ ResultInteractor: Polling task was cancelled after completion")
+                debugLog("⚠️ ResultInteractor: Polling task was cancelled after completion")
                 return
             }
 
             await presenter?.pollingCompleted(result: result)
         } catch is CancellationError {
-            print("⚠️ ResultInteractor: Polling task was cancelled")
+            debugLog("⚠️ ResultInteractor: Polling task was cancelled")
         } catch let error as TruoraException {
             guard !Task.isCancelled else { return }
             await presenter?.pollingFailed(error: error)
@@ -169,7 +169,7 @@ private extension ResultInteractor {
                 throw CancellationError()
             }
 
-            print("🟢 ResultInteractor: Polling attempt \(attempt + 1)/\(backoffIntervals.count)...")
+            debugLog("🟢 ResultInteractor: Polling attempt \(attempt + 1)/\(backoffIntervals.count)...")
 
             do {
                 let validationDetail = try await fetchValidationDetail(apiClient: apiClient)
@@ -188,7 +188,7 @@ private extension ResultInteractor {
                 let retryNum = attempt + 1
                 let log = "⚠️ ResultInteractor: Transient error on attempt "
                     + "\(retryNum), retrying: \(errorMsg)"
-                print(log)
+                debugLog(log)
             }
 
             // Sleep throws CancellationError if task is cancelled, which is expected behavior
@@ -200,7 +200,10 @@ private extension ResultInteractor {
         // Timeout: return a failure result instead of throwing an error.
         // The API will eventually mark the validation as failed after the wait time expires,
         // so we treat timeout as a completed validation with failure status.
-        print("⚠️ ResultInteractor: Polling timeout after \(backoffIntervals.count) attempts, returning failure result")
+        debugLog(
+            "⚠️ ResultInteractor: Polling timeout after \(backoffIntervals.count) attempts, "
+                + "returning failure result"
+        )
         return createTimeoutResult(from: lastValidationDetail)
     }
 

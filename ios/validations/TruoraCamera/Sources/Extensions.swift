@@ -61,9 +61,7 @@ extension URL {
         do {
             try FileManager.default.removeItem(at: self)
         } catch {
-            #if DEBUG
-            print("Error deleting file: \(error)")
-            #endif
+            debugLog("Error deleting file: \(error)")
         }
     }
 }

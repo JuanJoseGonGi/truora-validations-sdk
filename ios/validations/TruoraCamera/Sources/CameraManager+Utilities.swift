@@ -20,7 +20,7 @@ extension CameraManager {
               let connection = videoOutput.connection(with: .video) else {
             if attempt < 30 {
                 if attempt == 0 || attempt % 5 == 0 {
-                    print(
+                    debugLog(
                         "⏳ CameraManager: Waiting for video connection (attempt \(attempt + 1)/30)"
                     )
                 }
@@ -28,12 +28,12 @@ extension CameraManager {
                     self?.waitForVideoConnectionReady(attempt: attempt + 1)
                 }
             } else {
-                print(
+                debugLog(
                     "❌ CameraManager: Video connection not available after \(Double(attempt) * 0.2)s"
                 )
-                print("❌ CameraManager: Session running: \(captureSession?.isRunning ?? false)")
-                print("❌ CameraManager: Session inputs: \(captureSession?.inputs.count ?? 0)")
-                print("❌ CameraManager: Session outputs: \(captureSession?.outputs.count ?? 0)")
+                debugLog("❌ CameraManager: Session running: \(captureSession?.isRunning ?? false)")
+                debugLog("❌ CameraManager: Session inputs: \(captureSession?.inputs.count ?? 0)")
+                debugLog("❌ CameraManager: Session outputs: \(captureSession?.outputs.count ?? 0)")
                 let cameraError = CameraError.internalError(
                     "Video connection not available. Camera may be in use or restricted."
                 )
@@ -43,15 +43,10 @@ extension CameraManager {
         }
 
         if connection.isActive, connection.isEnabled {
-            print(
-                "✅ CameraManager: Video connection ready "
-                    + "(attempt: \(attempt + 1), active: \(connection.isActive), "
-                    + "enabled: \(connection.isEnabled))"
-            )
             delegate?.cameraReady()
         } else if attempt < 30 {
             if attempt == 0 || attempt % 5 == 0 {
-                print(
+                debugLog(
                     "⏳ CameraManager: Connection exists but not active yet "
                         + "(attempt \(attempt + 1)/30, active: \(connection.isActive), "
                         + "enabled: \(connection.isEnabled))"
@@ -61,7 +56,7 @@ extension CameraManager {
                 self?.waitForVideoConnectionReady(attempt: attempt + 1)
             }
         } else {
-            print(
+            debugLog(
                 "❌ CameraManager: Video connection failed to become active after \(Double(attempt) * 0.2)s"
             )
             let cameraError = CameraError.internalError(
@@ -104,7 +99,7 @@ extension CameraManager {
 
         let success = setupInput()
         if !success {
-            print("❌ CameraManager: Failed to switch camera side")
+            debugLog("❌ CameraManager: Failed to switch camera side")
         }
     }
 }

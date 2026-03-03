@@ -131,7 +131,7 @@ final class ValidationConfig: ObservableObject {
             let details = "finishViewConfiguration requires waitForResults to be enabled. "
                 + "Either remove setFinishViewConfiguration() or call "
                 + "waitForResults(true)."
-            print("❌ ValidationConfig: \(details)")
+            debugLog("❌ ValidationConfig: \(details)")
             throw TruoraException.sdk(SDKError(
                 type: .invalidConfiguration,
                 details: details
@@ -144,7 +144,7 @@ final class ValidationConfig: ObservableObject {
         if document.didExplicitlyEnableAutocapture, isPassport {
             let details = "Autocapture is not supported for passport document type. "
                 + "Remove useAutocapture(true) or use a different document type."
-            print("❌ ValidationConfig: \(details)")
+            debugLog("❌ ValidationConfig: \(details)")
             throw TruoraException.sdk(SDKError(
                 type: .invalidConfiguration,
                 details: details
@@ -179,7 +179,7 @@ final class ValidationConfig: ObservableObject {
     private func downloadLogoIfNeeded() async {
         #if DEBUG
         if TruoraValidationsSDK.isOfflineMode {
-            print("⚠️ ValidationConfig: Skipping logo download in offline mode")
+            debugLog("⚠️ ValidationConfig: Skipping logo download in offline mode")
             return
         }
         #endif
@@ -196,7 +196,7 @@ final class ValidationConfig: ObservableObject {
                 _ = uiConfig.setCustomLogo(data, width: width, height: height)
             } catch {
                 // Silent fallback to default logo
-                print("⚠️ ValidationConfig: Logo download failed: \(error.localizedDescription)")
+                debugLog("⚠️ ValidationConfig: Logo download failed: \(error.localizedDescription)")
             }
         }
 

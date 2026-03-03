@@ -33,9 +33,7 @@ class DocumentFrameProcessor: FrameProcessor {
             // Frame detection errors are transient and should not interrupt user experience.
             // Individual frame failures are normal (e.g., motion blur, bad lighting) and
             // the camera will continue processing subsequent frames.
-            #if DEBUG
-            print("⚠️ DocumentFrameProcessor: Frame detection error (non-fatal): \(error.localizedDescription)")
-            #endif
+            debugLog("⚠️ DocumentFrameProcessor: Frame detection error (non-fatal): \(error.localizedDescription)")
         }
 
         detector.onModelLoadFailed = { [weak self] error in

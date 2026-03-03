@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "TruoraCamera"
-  s.version          = "1.0.0"
+  s.version          = "1.0.0-rc.2"
   s.summary          = "Truora camera module to capture input for biometric validations"
   s.description      = <<-DESC
 TruoraCamera is a camera module based on AVFoundation, with facial detection (Vision/CoreML)
@@ -34,7 +34,8 @@ DESC
     "PRODUCT_MODULE_NAME" => "TruoraCamera",
     "DEFINES_MODULE"      => "YES",
     "SWIFT_VERSION"       => "5.9",
-    "SWIFT_ACTIVE_COMPILATION_CONDITIONS" => "COCOAPODS"
-  }
+    "SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Debug]"   => "COCOAPODS DEBUG",
+    "SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Release]" => "COCOAPODS"
+    }
 end
 

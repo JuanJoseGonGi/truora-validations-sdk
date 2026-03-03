@@ -277,6 +277,7 @@ class MockPresenterToView: PassiveCapturePresenterToView {
 ✅ Use Configurators for dependency injection
 ✅ Handle errors via Router
 ✅ Use async/await for all network operations
+✅ Add debug logs for code behavior through shared function `debugLog`since it avoids adding too many logs to production builds
 
 ### Don't
 
@@ -285,6 +286,7 @@ class MockPresenterToView: PassiveCapturePresenterToView {
 ❌ Use singletons except ValidationConfig
 ❌ Create retain cycles (use `weak` for delegates)
 ❌ Skip error handling in async operations
+❌ Use `print` functions to debug code behavior
 
 ## Adding a New Module
 

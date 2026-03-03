@@ -38,13 +38,13 @@ extension PassiveCaptureInteractor: PassiveCapturePresenterToInteractor {
     }
 
     func uploadVideo(_ videoData: Data) {
-        print(
+        debugLog(
             "🟢 PassiveCaptureInteractor: Uploading video (\(videoData.count) bytes) "
                 + "for validation \(validationId)..."
         )
 
         guard let presenter else {
-            print("❌ PassiveCaptureInteractor: Presenter is nil")
+            debugLog("❌ PassiveCaptureInteractor: Presenter is nil")
             return
         }
 
@@ -72,7 +72,7 @@ extension PassiveCaptureInteractor: PassiveCapturePresenterToInteractor {
     #if DEBUG
     private func handleOfflineMode() -> Bool {
         guard TruoraValidationsSDK.isOfflineMode else { return false }
-        print("🟢 PassiveCaptureInteractor: Offline mode, mocking successful upload")
+        debugLog("🟢 PassiveCaptureInteractor: Offline mode, mocking successful upload")
         Task { await self.presenter?.videoUploadCompleted(validationId: self.validationId) }
         return true
     }
@@ -83,14 +83,14 @@ extension PassiveCaptureInteractor: PassiveCapturePresenterToInteractor {
         presenter: PassiveCaptureInteractorToPresenter
     ) -> (apiClient: TruoraAPIClient, uploadUrl: String)? {
         guard !videoData.isEmpty else {
-            print("❌ PassiveCaptureInteractor: Video data is empty")
+            debugLog("❌ PassiveCaptureInteractor: Video data is empty")
             let details = "Video data is empty"
             reportUploadError(presenter: presenter, type: .uploadFailed, details: details)
             return nil
         }
 
         guard let apiClient = ValidationConfig.shared.apiClient else {
-            print("❌ PassiveCaptureInteractor: API client not configured")
+            debugLog("❌ PassiveCaptureInteractor: API client not configured")
             let details = "API client not configured"
             reportUploadError(presenter: presenter, type: .invalidConfiguration, details: details)
             return nil
@@ -103,7 +103,7 @@ extension PassiveCaptureInteractor: PassiveCapturePresenterToInteractor {
         }
 
         if UploadUrlValidator.isExpired(uploadUrl) {
-            print("❌ PassiveCaptureInteractor: Upload URL has expired (validation timeout)")
+            debugLog("❌ PassiveCaptureInteractor: Upload URL has expired (validation timeout)")
             let details = "Validation expired. The time limit was exceeded."
             reportUploadError(presenter: presenter, type: .validationError, details: details)
             return nil
@@ -126,7 +126,7 @@ extension PassiveCaptureInteractor: PassiveCapturePresenterToInteractor {
         uploadUrl: String
     ) async {
         do {
-            print("🟢 PassiveCaptureInteractor: Upload URL obtained, uploading video...")
+            debugLog("🟢 PassiveCaptureInteractor: Upload URL obtained, uploading video...")
 
             // Upload video to presigned URL
             try await apiClient.uploadFile(
@@ -136,18 +136,18 @@ extension PassiveCaptureInteractor: PassiveCapturePresenterToInteractor {
             )
 
             guard !Task.isCancelled else {
-                print("⚠️ PassiveCaptureInteractor: Upload task was cancelled")
+                debugLog("⚠️ PassiveCaptureInteractor: Upload task was cancelled")
                 return
             }
 
-            print("🟢 PassiveCaptureInteractor: Video uploaded successfully")
+            debugLog("🟢 PassiveCaptureInteractor: Video uploaded successfully")
 
             // Navigate to result view immediately - polling will happen there
             await presenter?.videoUploadCompleted(validationId: validationId)
         } catch is CancellationError {
-            print("⚠️ PassiveCaptureInteractor: Task was cancelled")
+            debugLog("⚠️ PassiveCaptureInteractor: Task was cancelled")
         } catch {
-            print("❌ PassiveCaptureInteractor: Upload failed: \(error)")
+            debugLog("❌ PassiveCaptureInteractor: Upload failed: \(error)")
             await presenter?.videoUploadFailed(
                 .sdk(SDKError(type: .uploadFailed, details: error.localizedDescription))
             )

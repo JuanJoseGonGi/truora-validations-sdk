@@ -103,9 +103,7 @@ public actor SdkLogClient {
         do {
             try sdkLog.validate()
         } catch let error as SdkLogValidationError {
-            #if DEBUG
-            print("🔴 [SdkLogClient] Validation failed: \(error)")
-            #endif
+            debugLog("🔴 [SdkLogClient] Validation failed: \(error)")
             throw SdkLogClientError.validationFailed(error)
         }
 
@@ -165,20 +163,16 @@ public actor SdkLogClient {
             } catch let error as URLError {
                 lastError = error
                 if attempt < SdkLogClient.maxRetries - 1 {
-                    #if DEBUG
-                    print("⚠️ [SdkLogClient] Network error, retrying...")
-                    print("Attempt \(attempt + 1)/\(SdkLogClient.maxRetries): \(error)")
-                    #endif
+                    debugLog("⚠️ [SdkLogClient] Network error, retrying...")
+                    debugLog("Attempt \(attempt + 1)/\(SdkLogClient.maxRetries): \(error)")
                     await delay(attempt: attempt)
                     continue
                 }
             } catch {
                 lastError = error
                 if attempt < SdkLogClient.maxRetries - 1 {
-                    #if DEBUG
-                    print("⚠️ [SdkLogClient] Error, retrying...")
-                    print("Attempt \(attempt + 1)/\(SdkLogClient.maxRetries): \(error)")
-                    #endif
+                    debugLog("⚠️ [SdkLogClient] Error, retrying...")
+                    debugLog("Attempt \(attempt + 1)/\(SdkLogClient.maxRetries): \(error)")
                     await delay(attempt: attempt)
                     continue
                 }

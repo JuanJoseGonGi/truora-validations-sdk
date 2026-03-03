@@ -93,7 +93,7 @@ extension ResultPresenter: ResultViewToPresenter {
 
     func doneTapped() async {
         guard let router else {
-            print("⚠️ ResultPresenter: Router is nil, cannot dismiss flow")
+            debugLog("⚠️ ResultPresenter: Router is nil, cannot dismiss flow")
             return
         }
 
@@ -106,7 +106,7 @@ extension ResultPresenter: ResultViewToPresenter {
 
         if waitForResults {
             guard let result = finalResult else {
-                print("⚠️ ResultPresenter: Done tapped but no result yet")
+                debugLog("⚠️ ResultPresenter: Done tapped but no result yet")
                 return
             }
 
@@ -132,7 +132,7 @@ extension ResultPresenter: ResultViewToPresenter {
 extension ResultPresenter: ResultInteractorToPresenter {
     func pollingCompleted(result: ValidationResult) async {
         finalResult = result
-        print("🟢 ResultPresenter: Polling completed with status: \(result.status)")
+        debugLog("🟢 ResultPresenter: Polling completed with status: \(result.status)")
 
         // Log SDK execution finished
         await interactor?.logSdkExecutionFinished()
@@ -153,7 +153,7 @@ extension ResultPresenter: ResultInteractorToPresenter {
     }
 
     func pollingFailed(error: TruoraException) async {
-        print("❌ ResultPresenter: Polling failed: \(error)")
+        debugLog("❌ ResultPresenter: Polling failed: \(error)")
 
         // Create a failed result for display purposes
         let failedResult = ValidationResult(
@@ -193,7 +193,7 @@ private extension ResultPresenter {
 
     func notifyDelegate(with result: ValidationResult) async {
         guard !delegateCalled else {
-            print("⚠️ ResultPresenter: Delegate already called, skipping")
+            debugLog("⚠️ ResultPresenter: Delegate already called, skipping")
             return
         }
         delegateCalled = true
@@ -210,7 +210,7 @@ private extension ResultPresenter {
 
     func notifyDelegateError(_ error: TruoraException) async {
         guard !delegateCalled else {
-            print("⚠️ ResultPresenter: Delegate already called, skipping")
+            debugLog("⚠️ ResultPresenter: Delegate already called, skipping")
             return
         }
         delegateCalled = true
@@ -224,7 +224,7 @@ private extension ResultPresenter {
 
     func notifyDelegateCancellation() async {
         guard !delegateCalled else {
-            print("⚠️ ResultPresenter: Delegate already called, skipping")
+            debugLog("⚠️ ResultPresenter: Delegate already called, skipping")
             return
         }
         delegateCalled = true

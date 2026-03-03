@@ -27,9 +27,7 @@ class CoreMLFaceDetector {
         // Vision framework is bundled with iOS — no model file to load.
         // Log init succeeded since the detector is ready immediately.
         logger?.logModelInitSucceeded(modelName: "face_detector")
-        #if DEBUG
-        print("CoreML Face Detector initialized")
-        #endif
+        debugLog("CoreML Face Detector initialized")
     }
 
     /// Detect faces in a video buffer
@@ -109,18 +107,12 @@ class CoreMLFaceDetector {
     /// Detect faces in a image
     func detectFaces(in image: UIImage) {
         guard let cgImage = image.cgImage else {
-            #if DEBUG
-            print("❌ CoreMLFaceDetector: Failed to get cgImage from UIImage")
-            #endif
+            debugLog("❌ CoreMLFaceDetector: Failed to get cgImage from UIImage")
             DispatchQueue.main.async { [weak self] in
                 self?.onError?(CoreMLFaceDetectionError.invalidInput)
             }
             return
         }
-
-        #if DEBUG
-        print("🔬 CoreMLFaceDetector: Processing image \(cgImage.width)x\(cgImage.height)")
-        #endif
 
         let request = createFaceDetectionRequest()
         let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
@@ -128,9 +120,7 @@ class CoreMLFaceDetector {
         do {
             try handler.perform([request])
         } catch {
-            #if DEBUG
-            print("❌ CoreMLFaceDetector: Error performing face detection: \(error)")
-            #endif
+            debugLog("❌ CoreMLFaceDetector: Error performing face detection: \(error)")
             DispatchQueue.main.async { [weak self] in
                 self?.onError?(error)
             }
@@ -153,9 +143,7 @@ class CoreMLFaceDetector {
 
     private func handleFaceDetectionResult(request: VNRequest, error: Error?) {
         if let error {
-            #if DEBUG
-            print("❌ CoreMLFaceDetector: Detection error: \(error)")
-            #endif
+            debugLog("❌ CoreMLFaceDetector: Detection error: \(error)")
             DispatchQueue.main.async { [weak self] in
                 self?.onError?(error)
             }
@@ -163,18 +151,11 @@ class CoreMLFaceDetector {
         }
 
         guard let observations = request.results as? [VNFaceObservation] else {
-            #if DEBUG
-            print("⚠️ CoreMLFaceDetector: No observations returned")
-            #endif
             DispatchQueue.main.async { [weak self] in
                 self?.onFacesDetected?([])
             }
             return
         }
-
-        #if DEBUG
-        print("🔬 CoreMLFaceDetector: Found \(observations.count) face observations")
-        #endif
 
         let faces = observations.compactMap { observation -> DetectionResult? in
             guard observation.confidence >= confidenceThreshold else {
@@ -187,10 +168,6 @@ class CoreMLFaceDetector {
                 confidence: observation.confidence
             )
         }
-
-        #if DEBUG
-        print("🔬 CoreMLFaceDetector: Returning \(faces.count) faces above threshold")
-        #endif
 
         DispatchQueue.main.async { [weak self] in
             self?.onFacesDetected?(faces)

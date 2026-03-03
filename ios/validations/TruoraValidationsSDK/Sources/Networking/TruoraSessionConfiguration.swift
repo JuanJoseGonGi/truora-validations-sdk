@@ -192,7 +192,7 @@ public struct TruoraSessionConfiguration {
 
     private func logRetry(attempt: Int, reason: String, delay: TimeInterval) {
         let delayStr = String(format: "%.1f", delay)
-        print("⚠️ TruoraSession: Retry \(attempt + 1)/\(maxRetries) after \(delayStr)s - \(reason)")
+        debugLog("⚠️ TruoraSession: Retry \(attempt + 1)/\(maxRetries) after \(delayStr)s - \(reason)")
     }
 
     private func logRetryableResponse(attempt: Int, statusCode: Int, body: Data, delay: TimeInterval) {
@@ -204,7 +204,7 @@ public struct TruoraSessionConfiguration {
             message += " | Body: \(bodyString)"
         }
 
-        print(message)
+        debugLog(message)
     }
 }
 

@@ -468,9 +468,7 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
             } else {
                 flushFailureCount += 1
                 lastFlushAttemptTime = Date()
-                #if DEBUG
-                print("⚠️ [TruoraLogger] Flush failed (consecutive: \(flushFailureCount)). Retaining events.")
-                #endif
+                debugLog("⚠️ [TruoraLogger] Flush failed (consecutive: \(flushFailureCount)). Retaining events.")
             }
         } else {
             // If no API output (e.g. testing/dev), just clear

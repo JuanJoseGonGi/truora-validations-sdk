@@ -55,10 +55,10 @@ extension PassiveIntroPresenter: PassiveIntroViewToPresenter {
             interactor.createValidation(accountId: accountId)
         } catch is CancellationError {
             // Task was cancelled - hide loading and exit gracefully
-            print("⚠️ PassiveIntroPresenter: Enrollment was cancelled")
+            debugLog("⚠️ PassiveIntroPresenter: Enrollment was cancelled")
             await view?.hideLoading()
         } catch {
-            print("❌ PassiveIntroPresenter: Enrollment failed: \(error)")
+            debugLog("❌ PassiveIntroPresenter: Enrollment failed: \(error)")
             await view?.hideLoading()
             if let truoraError = error as? TruoraException {
                 await router?.handleError(truoraError)

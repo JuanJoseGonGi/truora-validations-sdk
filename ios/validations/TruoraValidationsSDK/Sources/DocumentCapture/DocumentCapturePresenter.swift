@@ -450,12 +450,11 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
     func viewWillAppear() async {
         // On initial load, skip restart logic as it's handled by viewDidLoad
         guard lifecycleState != .uninitialized else {
-            print("🟢 DocumentCapturePresenter: viewWillAppear - initial load, skipping")
             return
         }
 
         guard uploadState != .uploading, uploadState != .success, uploadState != .navigatedToResult else {
-            print("🟢 DocumentCapturePresenter: viewWillAppear - skipping (uploadState: \(uploadState))")
+            debugLog("🟢 DocumentCapturePresenter: viewWillAppear - skipping (uploadState: \(uploadState))")
             return
         }
 
@@ -872,7 +871,7 @@ extension DocumentCapturePresenter: DocumentCaptureInteractorToPresenter {
                 do {
                     try await view?.setupCamera()
                 } catch {
-                    print("Failed to setup camera after navigation error: \(error)")
+                    debugLog("Failed to setup camera after navigation error: \(error)")
                 }
                 await view?.showError(error.localizedDescription)
             }

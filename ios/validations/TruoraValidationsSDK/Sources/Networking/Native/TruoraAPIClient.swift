@@ -209,9 +209,9 @@ public class TruoraAPIClient {
     }
 
     private func logErrorResponse(statusCode: Int, body: String?) {
-        print("❌ TruoraAPIClient: HTTP \(statusCode)")
+        debugLog("❌ TruoraAPIClient: HTTP \(statusCode)")
         if let body {
-            print("❌ TruoraAPIClient: Response body: \(body)")
+            debugLog("❌ TruoraAPIClient: Response body: \(body)")
         }
     }
 

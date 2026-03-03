@@ -169,7 +169,7 @@ private var routerAssociatedKey: UInt8 = 0
         }
 
         guard let feedbackVC = documentFeedbackViewController, presented === feedbackVC else {
-            print(
+            debugLog(
                 "⚠️ ValidationRouter: Not dismissing presented VC because it is not DocumentFeedback"
             )
             completion?()
@@ -201,7 +201,7 @@ private var routerAssociatedKey: UInt8 = 0
         // Show alert
         guard let navController = navigationController,
               navController.viewIfLoaded?.window != nil else {
-            print(
+            debugLog(
                 "⚠️ ValidationRouter: Cannot present cancel alert - navigation controller not in view hierarchy"
             )
             return
@@ -241,7 +241,7 @@ private var routerAssociatedKey: UInt8 = 0
                     )
                 } catch {
                     // Fallback: dismiss directly if navigation fails
-                    print("⚠️ ValidationRouter: Failed to navigate to cancel result: \(error)")
+                    debugLog("⚠️ ValidationRouter: Failed to navigate to cancel result: \(error)")
                     ValidationConfig.shared.delegate?(.canceled(nil))
                     self.dismissFlow()
                 }
@@ -361,23 +361,21 @@ extension ValidationRouter {
 private func startReferenceFaceEnrollment() -> Task<Void, Error>? {
     #if DEBUG
     if TruoraValidationsSDK.isOfflineMode {
-        print("⚠️ ValidationRouter: Offline mode, skipping reference face enrollment")
+        debugLog("⚠️ ValidationRouter: Offline mode, skipping reference face enrollment")
         return nil
     }
     #endif
 
     guard let accountId = ValidationConfig.shared.accountId, !accountId.isEmpty else {
-        print("⚠️ ValidationRouter: No account id configured, skipping enrollment")
         return nil
     }
 
     guard let referenceFace = ValidationConfig.shared.faceConfig.referenceFace else {
-        print("⚠️ ValidationRouter: No reference face configured, skipping enrollment")
         return nil
     }
 
     guard let apiClient = ValidationConfig.shared.apiClient else {
-        print("❌ ValidationRouter: API client not configured")
+        debugLog("❌ ValidationRouter: API client not configured")
         return nil
     }
 
@@ -402,7 +400,7 @@ private func performEnrollment(
         confirmation: nil
     )
 
-    print("🟢 ValidationRouter: Creating enrollment for account: \(accountId)")
+    debugLog("🟢 ValidationRouter: Creating enrollment for account: \(accountId)")
 
     let enrollment: NativeEnrollmentResponse
     do {
@@ -419,11 +417,11 @@ private func performEnrollment(
     }
 
     guard !Task.isCancelled else {
-        print("⚠️ ValidationRouter: Enrollment task was cancelled")
+        debugLog("⚠️ ValidationRouter: Enrollment task was cancelled")
         throw CancellationError()
     }
 
-    print("🟢 ValidationRouter: Enrollment created - ID: \(enrollment.enrollmentId)")
+    debugLog("🟢 ValidationRouter: Enrollment created - ID: \(enrollment.enrollmentId)")
 
     guard let uploadUrl = enrollment.fileUploadLink else {
         throw TruoraException.network(message: "No file upload link in enrollment response", underlyingError: nil)
@@ -446,12 +444,16 @@ private func uploadReferenceFaceFile(
     referenceFace: ReferenceFace,
     apiClient: TruoraAPIClient
 ) async throws {
-    print("🟢 ValidationRouter: Uploading reference face to presigned URL")
+    debugLog("🟢 ValidationRouter: Uploading reference face to presigned URL")
 
     // Read file data from URL
     let fileData: Data
     do {
-        fileData = try Data(contentsOf: referenceFace.url)
+        if referenceFace.url.isFileURL {
+            fileData = try Data(contentsOf: referenceFace.url)
+        } else {
+            (fileData, _) = try await URLSession.shared.data(from: referenceFace.url)
+        }
     } catch {
         throw TruoraException.sdk(SDKError(
             type: .internalError,
@@ -470,14 +472,14 @@ private func uploadReferenceFaceFile(
     )
 
     guard !Task.isCancelled else {
-        print("⚠️ ValidationRouter: Enrollment task was cancelled")
+        debugLog("⚠️ ValidationRouter: Enrollment task was cancelled")
         return
     }
 
-    print("🟢 ValidationRouter: Reference face uploaded successfully")
+    debugLog("🟢 ValidationRouter: Reference face uploaded successfully")
 
     await MainActor.run {
-        print("✅ ValidationRouter: Reference face enrollment completed")
+        debugLog("✅ ValidationRouter: Reference face enrollment completed")
     }
 }
 
@@ -494,11 +496,11 @@ private func handleExistingEnrollment(
           let json = try? JSONDecoder().decode(
               NativeEnrollmentResponse.self, from: data
           ) else {
-        print("🟢 ValidationRouter: Enrollment exists, could not parse ID")
+        debugLog("🟢 ValidationRouter: Enrollment exists, could not parse ID")
         return
     }
 
-    print("🟢 ValidationRouter: Enrollment exists - ID: \(json.enrollmentId)")
+    debugLog("🟢 ValidationRouter: Enrollment exists - ID: \(json.enrollmentId)")
     try await waitForEnrollmentReady(
         enrollmentId: json.enrollmentId,
         apiClient: apiClient
@@ -537,7 +539,10 @@ private func waitForEnrollmentReady(
         let totalAttempts = enrollmentBackoffIntervals.count
 
         if reason == "waiting_face_validation" {
-            print("🟢 ValidationRouter: Enrollment ready for face validation (attempt \(attempt + 1)/\(totalAttempts))")
+            debugLog(
+                "🟢 ValidationRouter: Enrollment ready for face validation "
+                    + "(attempt \(attempt + 1)/\(totalAttempts))"
+            )
             return
         }
 
@@ -552,12 +557,12 @@ private func waitForEnrollmentReady(
         let attemptNum = attempt + 1
         let log = "🟢 ValidationRouter: Enrollment status=\(status) "
             + "reason=\(reason) (\(attemptNum)/\(totalAttempts)), waiting..."
-        print(log)
+        debugLog(log)
         try await Task.sleep(nanoseconds: interval)
     }
 
     let total = enrollmentBackoffIntervals.count
-    print("⚠️ ValidationRouter: Enrollment not ready after \(total) attempts, proceeding")
+    debugLog("⚠️ ValidationRouter: Enrollment not ready after \(total) attempts, proceeding")
 }
 
 // MARK: - Test Helpers

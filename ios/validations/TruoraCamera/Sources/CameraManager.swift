@@ -137,7 +137,7 @@ class CameraManager: NSObject {
                 self?.delegate?.detectionsReceived(results)
             }
             uiTestDetector?.onError = { [weak self] error in
-                print("⚠️ CameraManager: Real ML detection error: \(error)")
+                debugLog("⚠️ CameraManager: Real ML detection error: \(error)")
                 self?.delegate?.reportError(error: .frameDetectionError(error.localizedDescription))
             }
         }
@@ -195,7 +195,7 @@ class CameraManager: NSObject {
 
         guard let image else {
             // Image not found - log error and report empty detection
-            print("⚠️ CameraManager: Failed to load test image '\(testImageName)' from app bundle")
+            debugLog("⚠️ CameraManager: Failed to load test image '\(testImageName)' from app bundle")
             DispatchQueue.main.async {
                 self.delegate?.detectionsReceived([])
             }

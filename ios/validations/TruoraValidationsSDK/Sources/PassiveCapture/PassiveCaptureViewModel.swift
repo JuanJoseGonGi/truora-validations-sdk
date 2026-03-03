@@ -88,9 +88,9 @@ import UIKit
 
 extension PassiveCaptureViewModel: PassiveCapturePresenterToView {
     func setupCamera() {
-        print("🟢 Setting up camera")
+        debugLog("🟢 Setting up camera")
         guard let delegate = cameraViewDelegate else {
-            print("⚠️ setupCamera() failed - delegate is nil")
+            debugLog("⚠️ setupCamera() failed - delegate is nil")
             errorMessage = "Camera initialization failed. Please try again."
             showError = true
             return
@@ -99,9 +99,9 @@ extension PassiveCaptureViewModel: PassiveCapturePresenterToView {
     }
 
     func startRecording() {
-        print("🟢 PassiveCaptureViewModel: Starting recording")
+        debugLog("🟢 PassiveCaptureViewModel: Starting recording")
         guard let delegate = cameraViewDelegate else {
-            print("⚠️ startRecording() failed - delegate is nil")
+            debugLog("⚠️ startRecording() failed - delegate is nil")
             errorMessage = "Unable to start recording. Please try again."
             showError = true
             return
@@ -110,9 +110,9 @@ extension PassiveCaptureViewModel: PassiveCapturePresenterToView {
     }
 
     func stopRecording() {
-        print("🟢 Stopping recording")
+        debugLog("🟢 Stopping recording")
         guard let delegate = cameraViewDelegate else {
-            print("⚠️ stopRecording() failed - delegate is nil")
+            debugLog("⚠️ stopRecording() failed - delegate is nil")
             errorMessage = "Unable to stop recording properly. The camera may still be in use."
             showError = true
             return
@@ -121,36 +121,36 @@ extension PassiveCaptureViewModel: PassiveCapturePresenterToView {
     }
 
     func stopCamera() {
-        print("🟢 Stopping camera")
+        debugLog("🟢 Stopping camera")
         guard let delegate = cameraViewDelegate else {
-            print("⚠️ stopCamera() failed - delegate is nil")
+            debugLog("⚠️ stopCamera() failed - delegate is nil")
             return
         }
         delegate.stopCamera()
     }
 
     func pauseCamera() {
-        print("🟢 PassiveCaptureViewModel: Pausing camera")
+        debugLog("🟢 PassiveCaptureViewModel: Pausing camera")
         guard let delegate = cameraViewDelegate else {
-            print("⚠️ PassiveCaptureViewModel: pauseCamera() called but delegate is nil")
+            debugLog("⚠️ PassiveCaptureViewModel: pauseCamera() called but delegate is nil")
             return
         }
         delegate.pauseCamera()
     }
 
     func resumeCamera() {
-        print("🟢 PassiveCaptureViewModel: Resuming camera")
+        debugLog("🟢 PassiveCaptureViewModel: Resuming camera")
         guard let delegate = cameraViewDelegate else {
-            print("⚠️ PassiveCaptureViewModel: resumeCamera() called but delegate is nil")
+            debugLog("⚠️ PassiveCaptureViewModel: resumeCamera() called but delegate is nil")
             return
         }
         delegate.resumeCamera()
     }
 
     func pauseVideo() {
-        print("🟢 PassiveCaptureViewModel: Pausing video")
+        debugLog("🟢 PassiveCaptureViewModel: Pausing video")
         guard let delegate = cameraViewDelegate else {
-            print("⚠️ PassiveCaptureViewModel: pauseVideo() called but delegate is nil")
+            debugLog("⚠️ PassiveCaptureViewModel: pauseVideo() called but delegate is nil")
             return
         }
         delegate.stopRecording(skipMediaNotification: true)

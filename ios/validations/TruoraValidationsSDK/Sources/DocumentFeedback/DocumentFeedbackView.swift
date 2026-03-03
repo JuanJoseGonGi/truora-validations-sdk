@@ -24,9 +24,7 @@ import UIKit
 
     func onAppear() {
         guard let presenter else {
-            #if DEBUG
-            print("⚠️ DocumentFeedbackViewModel: presenter is nil in onAppear")
-            #endif
+            debugLog("⚠️ DocumentFeedbackViewModel: presenter is nil in onAppear")
             return
         }
         Task { await presenter.viewDidLoad() }

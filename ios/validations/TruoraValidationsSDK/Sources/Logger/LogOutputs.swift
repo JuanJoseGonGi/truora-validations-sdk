@@ -14,8 +14,8 @@ actor ConsoleLogOutput {
     func output(event: SDKEvent) {
         let emoji = event.level.emoji
         let json = event.toJSON() ?? "{}"
-        print("\(emoji) [TruoraLogger] \(event.eventType.rawValue): \(event.eventName)")
-        print(json)
+        debugLog("\(emoji) [TruoraLogger] \(event.eventType.rawValue): \(event.eventName)")
+        debugLog(json)
     }
 }
 
@@ -60,15 +60,11 @@ actor APILogOutput {
 
         do {
             _ = try await client.log(logBatch)
-            #if DEBUG
-            print("🟢 [TruoraLogger] Sent \(events.count) events")
-            #endif
+            debugLog("🟢 [TruoraLogger] Sent \(events.count) events")
             return true
         } catch {
-            #if DEBUG
             let desc = error.localizedDescription
-            print("❌ [TruoraLogger] Failed to send: \(desc)")
-            #endif
+            debugLog("❌ [TruoraLogger] Failed to send: \(desc)")
             return false
         }
     }

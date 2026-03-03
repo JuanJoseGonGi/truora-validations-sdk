@@ -63,7 +63,7 @@ public class CameraView: UIView {
     /// Note: This should NOT be called for passive/face capture flows, which must always use front camera only.
     public func switchCamera() {
         guard cameraManager.cameraIsSetup else {
-            print("⚠️ CameraView: Cannot switch camera - camera not setup")
+            debugLog("⚠️ CameraView: Cannot switch camera - camera not setup")
             return
         }
         cameraManager.cameraSide = cameraManager.cameraSide == .front ? .back : .front
@@ -160,7 +160,7 @@ extension CameraView: AVCaptureFileOutputRecordingDelegate {
             // If camera was stopped (e.g., app went to background), silently ignore the interruption
             // This is expected behavior - iOS interrupts recordings when app becomes inactive
             if !manager.cameraIsSetup {
-                print("⚠️ CameraView: Recording interrupted (camera stopped), ignoring error")
+                debugLog("⚠️ CameraView: Recording interrupted (camera stopped), ignoring error")
                 url.deleteFile()
                 return
             }

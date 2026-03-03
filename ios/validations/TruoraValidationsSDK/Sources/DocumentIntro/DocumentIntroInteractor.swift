@@ -45,12 +45,12 @@ extension DocumentIntroInteractor: DocumentIntroPresenterToInteractor {
             do {
                 let response = try await performValidationRequest(accountId: accountId)
                 guard !Task.isCancelled else {
-                    print("⚠️ DocumentIntroInteractor: Task was cancelled")
+                    debugLog("⚠️ DocumentIntroInteractor: Task was cancelled")
                     return
                 }
                 await notifySuccess(response: response)
             } catch is CancellationError {
-                print("⚠️ DocumentIntroInteractor: Task was cancelled")
+                debugLog("⚠️ DocumentIntroInteractor: Task was cancelled")
             } catch {
                 await notifyFailure(error: error)
             }
@@ -119,8 +119,8 @@ private extension DocumentIntroInteractor {
 
     func performValidationRequest(accountId: String) async throws -> NativeValidationCreateResponse {
         let request = buildRequest(accountId: accountId)
-        print("🟢 DocumentIntro: Creating validation for account: account=\(accountId)")
-        print("🟢 DocumentIntro: country=\(country.lowercased()) documentType=\(documentType)")
+        debugLog("🟢 DocumentIntro: Creating validation for account: account=\(accountId)")
+        debugLog("🟢 DocumentIntro: country=\(country.lowercased()) documentType=\(documentType)")
 
         if let createValidationHandler {
             return try await createValidationHandler(request)
@@ -134,16 +134,16 @@ private extension DocumentIntroInteractor {
     }
 
     func notifySuccess(response: NativeValidationCreateResponse) async {
-        print("🟢 DocumentIntro: Validation created - ID: \(response.validationId)")
+        debugLog("🟢 DocumentIntro: Validation created - ID: \(response.validationId)")
         guard let presenter else {
-            print("⚠️ DocumentIntro: Presenter deallocated before result")
+            debugLog("⚠️ DocumentIntro: Presenter deallocated before result")
             return
         }
         await presenter.validationCreated(response: response)
     }
 
     func notifyFailure(error: Error) async {
-        print("❌ DocumentIntro: Validation creation failed: \(error)")
+        debugLog("❌ DocumentIntro: Validation creation failed: \(error)")
         if let truoraError = error as? TruoraException {
             await presenter?.validationFailed(truoraError)
         } else {
