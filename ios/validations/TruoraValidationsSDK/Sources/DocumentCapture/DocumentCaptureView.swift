@@ -306,7 +306,6 @@ struct DocumentCameraViewWrapper: UIViewRepresentable {
 
         func autocaptureUnavailable(error: Error?) {
             // Model failed to load - switch to manual capture mode silently
-            // Log error for debugging (print is used consistently across SDK for logging)
             if let error {
                 debugLog("⚠️ DocumentCapture: Autocapture unavailable - \(error.localizedDescription)")
             }
