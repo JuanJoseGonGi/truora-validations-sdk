@@ -12,13 +12,14 @@ public class FrameProcessorFactory {
     public static func createProcessor(
         for type: DetectionType,
         delegate: CameraDelegate?,
-        logger: MLLifecycleLogger? = nil
+        logger: MLLifecycleLogger? = nil,
+        tfliteThreadCount: Int = 2
     ) -> FrameProcessor? {
         switch type {
         case .face:
             FaceFrameProcessor(delegate: delegate, logger: logger)
         case .document:
-            DocumentFrameProcessor(delegate: delegate, logger: logger)
+            DocumentFrameProcessor(delegate: delegate, logger: logger, tfliteThreadCount: tfliteThreadCount)
         case .none:
             nil
         }

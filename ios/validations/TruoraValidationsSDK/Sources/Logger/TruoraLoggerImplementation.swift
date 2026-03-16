@@ -269,12 +269,6 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
             retention: retention
         )
 
-        // Always maintain session buffer (ring buffer, bounded at maxSessionBufferSize)
-        if sessionBuffer.count >= maxSessionBufferSize {
-            sessionBuffer.removeFirst()
-        }
-        sessionBuffer.append(event)
-
         if isSampledIn {
             // Sampled-in: normal path — add to event buffer
             eventBuffer.append(event)
@@ -288,6 +282,12 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
             }
             return
         }
+
+        // Sampled-out: maintain session buffer (ring buffer, bounded at maxSessionBufferSize)
+        if sessionBuffer.count >= maxSessionBufferSize {
+            sessionBuffer.removeFirst()
+        }
+        sessionBuffer.append(event)
 
         let isEscalationEvent = event.level == .error || event.level == .fatal
         guard isEscalationEvent else { return }

@@ -62,13 +62,13 @@ final class DocumentSelectionPresenter {
                     }
                 } else {
                     Task {
-                        await self.view?.displayCameraPermissionAlert()
+                        await self.handleCameraPermissionDenied()
                     }
                 }
             }
         default:
             isCameraAuthorized = false
-            await view?.displayCameraPermissionAlert()
+            await handleCameraPermissionDenied()
         }
     }
 
@@ -87,6 +87,12 @@ final class DocumentSelectionPresenter {
 
     private func clearErrorsIfNeeded() async {
         await view?.setErrors(isCountryError: false, isDocumentError: false)
+    }
+
+    private func handleCameraPermissionDenied() async {
+        debugLog("❌ DocumentSelectionPresenter: Camera permission denied")
+        let error = TruoraException.sdk(SDKError(type: .cameraPermissionError))
+        await router?.handleError(error)
     }
 }
 
@@ -150,7 +156,7 @@ extension DocumentSelectionPresenter: DocumentSelectionViewToPresenter {
         }
 
         guard isCameraAuthorized else {
-            await view?.displayCameraPermissionAlert()
+            await handleCameraPermissionDenied()
             return
         }
 

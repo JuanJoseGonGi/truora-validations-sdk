@@ -23,6 +23,7 @@ final class ValidationConfig: ObservableObject {
     private(set) var lang: TruoraLanguage?
     private(set) var faceConfig: Face
     private(set) var documentConfig: Document
+    private(set) var detectionReporter: DetectionReporter?
     private let logoDownloader: LogoDownloading
     private var logoDownloadTask: Task<Void, Never>?
 
@@ -160,6 +161,16 @@ final class ValidationConfig: ObservableObject {
         self.validationId = validationId
     }
 
+    /// Creates and stores a DetectionReporter for injection detection reporting.
+    /// Called once per validation flow at the entry point.
+    func initializeDetectionReporter() {
+        guard let logger = try? TruoraLoggerImplementation.shared else {
+            return
+        }
+        let detector = InjectionDetector()
+        detectionReporter = detector.createReporter(logger: logger)
+    }
+
     func reset() {
         logoDownloadTask?.cancel()
         logoDownloadTask = nil
@@ -168,6 +179,7 @@ final class ValidationConfig: ObservableObject {
         accountId = nil
         validationId = nil
         enrollmentData = nil
+        detectionReporter = nil
         // Note: Swift ARC automatically handles cleanup of old UIConfig/Face/Document instances
         // and their nested objects (e.g., ReferenceFace's temp file cleanup via deinit)
         uiConfig = UIConfig()

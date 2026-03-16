@@ -18,7 +18,6 @@ private enum CameraLifecycleState {
     case recording // Actively recording
 }
 
-@MainActor
 class PassiveCapturePresenter {
     weak var view: PassiveCapturePresenterToView?
     var interactor: PassiveCapturePresenterToInteractor?
@@ -29,7 +28,7 @@ class PassiveCapturePresenter {
     private var countdown: Int
     private var showHelpDialog: Bool = false
     private var showSettingsPrompt: Bool = false
-    private var countdownTimer: Timer?
+    private var countdownTask: Task<Void, Never>?
     private var capturedVideoData: Data?
     private var lastFrameData: Data?
     private var uploadState: UploadState = .none
@@ -59,8 +58,8 @@ class PassiveCapturePresenter {
 
     private var pendingCameraReadyAction: PendingCameraReadyAction = .none
 
-    // Thread-safe timing properties using NSLock
-    // for low-overhead synchronization
+    // Timing properties protected by NSLock against interleaving
+    // at async suspension points (low-overhead synchronization)
     private let timingLock = NSLock()
     private var videoProcessingStartTime: Date?
     private var faceDetectionStartTime: Date?
@@ -74,13 +73,20 @@ class PassiveCapturePresenter {
 
     private let validationId: String
 
+    // MARK: - Injection Detection
+
+    private let detectionReporter: DetectionReporter?
+    private var runtimeDetectionTask: Task<Void, Never>?
+    private static let runtimeDetectionInterval: TimeInterval = 10.0
+
     init(
         view: PassiveCapturePresenterToView,
         interactor: PassiveCapturePresenterToInteractor?,
         router: ValidationRouter,
         validationId: String,
         useAutocapture: Bool = true,
-        timeProvider: TimeProvider = RealTimeProvider()
+        timeProvider: TimeProvider = RealTimeProvider(),
+        detectionReporter: DetectionReporter? = ValidationConfig.shared.detectionReporter
     ) {
         self.view = view
         self.interactor = interactor
@@ -88,6 +94,7 @@ class PassiveCapturePresenter {
         self.validationId = validationId
         self.useAutocapture = useAutocapture
         self.timeProvider = timeProvider
+        self.detectionReporter = detectionReporter
         // Set initial state based on autocapture setting to avoid flash of countdown
         self.currentState = useAutocapture ? .countdown : .manual
         self.countdown = useAutocapture ? 3 : 0
@@ -110,29 +117,18 @@ class PassiveCapturePresenter {
         countdown = 3
         await updateUI()
 
-        // Timer must be scheduled on main thread to ensure RunLoop is active
-        await MainActor.run {
-            // Invalidate existing timer before creating a new one
-            countdownTimer?.invalidate()
-            countdownTimer = timeProvider.scheduledTimer(
-                withTimeInterval: 1.0,
-                repeats: true
-            ) { [weak self] timer in
-                guard let self else {
-                    timer.invalidate()
-                    return
-                }
-
-                Task { @MainActor in
-                    if self.countdown > 0 {
-                        self.countdown -= 1
-                        await self.updateUI()
-                    } else {
-                        timer.invalidate()
-                        await self.beginWaitingForFace()
-                    }
-                }
+        // Cancel any existing countdown before starting a new one
+        countdownTask?.cancel()
+        countdownTask = Task { [weak self] in
+            guard let self else { return }
+            while self.countdown > 0 {
+                try? await self.timeProvider.sleep(nanoseconds: 1_000_000_000)
+                guard !Task.isCancelled else { return }
+                self.countdown -= 1
+                await self.updateUI()
             }
+            guard !Task.isCancelled else { return }
+            await self.beginWaitingForFace()
         }
     }
 
@@ -427,8 +423,8 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         lastFrameData = nil
 
         // Clean up timers
-        countdownTimer?.invalidate()
-        countdownTimer = nil
+        countdownTask?.cancel()
+        countdownTask = nil
         resetFaceDetectionTimer()
         resetProcessingTimer()
 
@@ -447,6 +443,12 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         async let logView: Void = logViewRendered()
         async let logCamera: Void = logCameraOpened()
         _ = await (logView, logCamera)
+
+        // Layer 2: Report camera detection
+        await reportDetectionLayer("camera")
+
+        // Layer 3: Start periodic runtime detection
+        startRuntimeDetection()
 
         await updateUI()
 
@@ -469,6 +471,37 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
                 await transitionToManualWithoutError()
             }
         }
+    }
+
+    // MARK: - Injection Detection Methods
+
+    private func reportDetectionLayer(_ layer: String) async {
+        guard let reporter = detectionReporter else { return }
+        await reporter.reportLayer(
+            layer,
+            validationId: validationId,
+            flowType: "face"
+        )
+    }
+
+    private func startRuntimeDetection() {
+        stopRuntimeDetection()
+        guard detectionReporter != nil else { return }
+
+        runtimeDetectionTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(
+                    nanoseconds: UInt64(Self.runtimeDetectionInterval * 1_000_000_000)
+                )
+                guard !Task.isCancelled else { break }
+                await self?.reportDetectionLayer("runtime")
+            }
+        }
+    }
+
+    private func stopRuntimeDetection() {
+        runtimeDetectionTask?.cancel()
+        runtimeDetectionTask = nil
     }
 
     func videoRecordingCompleted(videoData: Data) async {
@@ -575,6 +608,9 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
     }
 
     func viewWillDisappear() async {
+        // Stop runtime injection detection
+        stopRuntimeDetection()
+
         // Pause video first to discard any in-progress recording
         if lifecycleState == .recording {
             await view?.pauseVideo()
@@ -588,7 +624,7 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
 
         // Clean up timers
         resetFaceDetectionTimer()
-        countdownTimer?.invalidate()
+        countdownTask?.cancel()
         resetProcessingTimer()
     }
 
@@ -600,8 +636,8 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         wasHelpOpenAtSuspend = showHelpDialog
 
         // Stop time-based flows; on resume we require fresh detections.
-        countdownTimer?.invalidate()
-        countdownTimer = nil
+        countdownTask?.cancel()
+        countdownTask = nil
         resetFaceDetectionTimer()
         resetProcessingTimer()
 
@@ -702,10 +738,13 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
     func cameraPermissionDenied() async {
         isSettingUpCamera = false
         debugLog("❌ PassiveCapturePresenter: Camera permission denied")
-        debugLog("🔔 Showing settings prompt to user")
-        showSettingsPrompt = true
+
+        await view?.stopCamera()
+        lifecycleState = .stopped
+
         await logCameraOpenFailed(errorMessage: "Camera permission denied")
-        await updateUI()
+
+        await router?.handleError(CameraError.permissionDenied().toTruoraException())
     }
 
     func handleCaptureEvent(_ event: PassiveCaptureEvent) async {
@@ -736,8 +775,8 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
         feedbackAtHelp = currentFeedback
 
         // Pause any timed flows while help is visible.
-        countdownTimer?.invalidate()
-        countdownTimer = nil
+        countdownTask?.cancel()
+        countdownTask = nil
         resetFaceDetectionTimer()
 
         wasRecordingBeforeHelp = (lifecycleState == .recording)

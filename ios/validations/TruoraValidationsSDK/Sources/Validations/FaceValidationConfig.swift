@@ -16,7 +16,7 @@ public class Face {
     private var _similarityThreshold: Float?
     private var _waitForResults: Bool = false
     private var _useAutocapture: Bool = true
-    private var _timeout: Int?
+    private var _timeout: Int? = 60
     private var _finishViewConfig: FinishViewConfiguration?
 
     public required init() {}

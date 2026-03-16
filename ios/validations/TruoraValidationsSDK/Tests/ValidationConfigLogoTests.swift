@@ -10,7 +10,7 @@ import XCTest
 @testable import TruoraValidationsSDK
 
 @MainActor final class ValidationConfigLogoTests: XCTestCase {
-    @MainActor private final class MockLogoDownloader: LogoDownloading {
+    private final class MockLogoDownloader: @preconcurrency LogoDownloading {
         var downloadedUrl: URL?
         var resultToReturn: Result<Data, Error>?
 

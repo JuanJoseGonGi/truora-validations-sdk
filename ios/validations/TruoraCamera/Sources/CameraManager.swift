@@ -56,6 +56,10 @@ class CameraManager: NSObject {
 
     weak var delegate: CameraDelegate?
 
+    /// Override for session preset, set by the performance advisor.
+    /// When nil, defaults to `.hd1280x720`.
+    var sessionPresetOverride: AVCaptureSession.Preset?
+
     var cameraOutputMode: CameraOutputMode = .image
     var cameraSide: CameraSide = .back {
         didSet {

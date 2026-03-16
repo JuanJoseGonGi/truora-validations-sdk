@@ -46,12 +46,12 @@ struct PassiveCaptureBottomBar: View {
             Spacer()
 
             // Branding logo - always visible
-            TruoraValidationsSDKAsset.byTruoraDark.swiftUIImage
+            TruoraValidationsSDKAsset.byTruora.swiftUIImage
                 .renderingMode(.template)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 65, height: 20)
-                .foregroundColor(theme.colors.tint00)
+                .foregroundColor(theme.colors.onSurfaceVariant)
         }
         .frame(height: 36) // Fixed height to prevent layout shift
         .padding(.horizontal, 24)

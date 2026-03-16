@@ -114,7 +114,7 @@ final class TruoraLoggerTests: XCTestCase {
 
         // When
         await logger.logException(
-            eventType: .camera,
+            eventType: .device,
             eventName: "exception_test",
             exception: testError,
             level: .error,
@@ -353,23 +353,32 @@ final class TruoraLoggerTests: XCTestCase {
             stackTrace: nil
         )
 
-        // Then: both events should be in the buffer (escalation makes session sampled-in)
-        // Note: the error event triggers flush() which may clear eventBuffer if apiOutput is nil
-        // With enableApiOutput: false, flush() just clears - so only the post-error event remains
-        // Test that post-error events DO reach the buffer
-        // (exact count depends on flush behavior with nil apiOutput)
-        // The key assertion: isSampledIn is true after escalation
+        // Then: after escalation, isSampledIn = true and subsequent events go to eventBuffer.
+        // sessionBuffer stays empty because sampled-in events bypass it.
+        // The post-error INFO event lands in eventBuffer (not sessionBuffer).
         let sessionCount = await logger.sessionBufferCount
-        XCTAssertEqual(sessionCount, 0) // sessionBuffer cleared on escalation
+        XCTAssertEqual(sessionCount, 0) // escalation drains sessionBuffer; post-error events go to eventBuffer
     }
 }
 
 // MARK: - Mock Implementations
 
-@MainActor
-final class MockTruoraLogger: TruoraLogger {
-    private(set) var loggedEvents: [SDKEvent] = []
-    private(set) var flushCallCount = 0
+final class MockTruoraLogger: TruoraLogger, @unchecked Sendable {
+    private let lock = NSLock()
+    private var _loggedEvents: [SDKEvent] = []
+    private var _flushCallCount = 0
+
+    var loggedEvents: [SDKEvent] {
+        lock.lock()
+        defer { lock.unlock() }
+        return _loggedEvents
+    }
+
+    var flushCallCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return _flushCallCount
+    }
 
     func logEvent(
         eventType: EventType,
@@ -399,7 +408,9 @@ final class MockTruoraLogger: TruoraLogger {
             metadata: metadata?.mapValues { "\($0)" } ?? [:],
             retention: retention
         )
-        loggedEvents.append(event)
+        lock.lock()
+        _loggedEvents.append(event)
+        lock.unlock()
     }
 
     func logCamera(eventName: String, level: LogLevel, errorMessage: String?, retention: RetentionPeriod, metadata: [String: Any]?) async {
@@ -421,7 +432,7 @@ final class MockTruoraLogger: TruoraLogger {
     }
 
     func logFeedback(eventName: String, level: LogLevel, errorMessage: String?, retention: RetentionPeriod, metadata: [String: Any]?) async {
-        await logEvent(eventType: .mlModel, eventName: eventName, level: level, errorMessage: errorMessage, retention: retention, metadata: metadata, stackTrace: nil)
+        await logEvent(eventType: .device, eventName: eventName, level: level, errorMessage: errorMessage, retention: retention, metadata: metadata, stackTrace: nil)
     }
 
     func logSdk(eventName: String, level: LogLevel, errorMessage: String?, retention: RetentionPeriod, metadata: [String: Any]?) async {
@@ -433,10 +444,14 @@ final class MockTruoraLogger: TruoraLogger {
     }
 
     func flush() async {
-        flushCallCount += 1
+        lock.lock()
+        _flushCallCount += 1
+        lock.unlock()
     }
 
     func flush(timeoutMs: Int64) async {
-        flushCallCount += 1
+        lock.lock()
+        _flushCallCount += 1
+        lock.unlock()
     }
 }

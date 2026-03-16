@@ -5,6 +5,7 @@
 //  Created by Truora on 23/01/26.
 //
 
+import AVFoundation
 import SwiftUI
 import TruoraCamera
 import UIKit
@@ -23,11 +24,13 @@ struct CameraViewWrapper: UIViewRepresentable {
             }
             return MLLifecycleLoggerAdapter(logger: logger)
         }()
-        let processor = FrameProcessorFactory.createProcessor(
+        var processor = FrameProcessorFactory.createProcessor(
             for: .face,
             delegate: context.coordinator,
             logger: mlLogger
         )
+        // Wire inference latency tracking if the presenter set a callback
+        processor?.onInferenceLatency = context.coordinator.inferenceLatencyCallback
         let cameraView = CameraView(frameProcessor: processor)
         cameraView.backgroundColor = .clear
         cameraView.delegate = context.coordinator
@@ -42,6 +45,10 @@ struct CameraViewWrapper: UIViewRepresentable {
         let viewModel: PassiveCaptureViewModel
         weak var cameraView: CameraView?
 
+        /// Callback for inference latency reporting, set by the presenter
+        /// to feed into the performance advisor's inference tracker.
+        var inferenceLatencyCallback: ((TimeInterval) -> Void)?
+
         init(viewModel: PassiveCaptureViewModel) {
             self.viewModel = viewModel
         }
@@ -49,24 +56,27 @@ struct CameraViewWrapper: UIViewRepresentable {
         func setupCamera() {
             guard let cameraView else {
                 debugLog("⚠️ setupCamera() failed - cameraView is nil")
-                DispatchQueue.main.async {
-                    let message = "Camera view not available. Please restart the validation."
-                    self.viewModel.errorMessage = message
-                    self.viewModel.showError = true
-                }
+                viewModel.errorMessage = "Camera view not available. Please restart the validation."
+                viewModel.showError = true
                 return
             }
             // Passive capture always uses front camera only - camera switching is not supported
             cameraView.startCamera(side: .front, cameraOutputMode: .video)
         }
 
+        func configureSessionPreset(_ preset: AVCaptureSession.Preset) {
+            cameraView?.sessionPresetOverride = preset
+        }
+
+        func setInferenceLatencyCallback(_ callback: ((TimeInterval) -> Void)?) {
+            inferenceLatencyCallback = callback
+        }
+
         func startRecording() {
             guard let cameraView else {
                 debugLog("⚠️ CameraViewDelegate: startRecording() called but cameraView is nil")
-                DispatchQueue.main.async {
-                    self.viewModel.errorMessage = "Camera not ready to record. Please try again."
-                    self.viewModel.showError = true
-                }
+                viewModel.errorMessage = "Camera not ready to record. Please try again."
+                viewModel.showError = true
                 return
             }
             cameraView.startRecordingVideo()
@@ -75,11 +85,9 @@ struct CameraViewWrapper: UIViewRepresentable {
         func stopRecording(skipMediaNotification: Bool) {
             guard let cameraView else {
                 debugLog("⚠️ CameraViewDelegate: stopRecording() called but cameraView is nil")
-                DispatchQueue.main.async {
-                    self.viewModel.errorMessage = "Unable to stop recording. " +
-                        "Camera resources may not be released properly."
-                    self.viewModel.showError = true
-                }
+                viewModel.errorMessage = "Unable to stop recording. " +
+                    "Camera resources may not be released properly."
+                viewModel.showError = true
                 return
             }
             cameraView.stopVideoRecording(skipMediaNotification: skipMediaNotification)
@@ -149,6 +157,8 @@ struct CameraViewWrapper: UIViewRepresentable {
 @MainActor
 protocol CameraViewDelegate: AnyObject {
     func setupCamera()
+    func configureSessionPreset(_ preset: AVCaptureSession.Preset)
+    func setInferenceLatencyCallback(_ callback: ((TimeInterval) -> Void)?)
     func startRecording()
     func stopRecording(skipMediaNotification: Bool)
     func stopCamera()

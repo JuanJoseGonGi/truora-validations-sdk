@@ -5,6 +5,7 @@
 //  Created by Truora on 23/12/25.
 //
 
+import AVFoundation
 import SwiftUI
 import TruoraCamera
 import UIKit
@@ -32,8 +33,31 @@ import UIKit
     /// Tracks if a capture is currently in progress to prevent multiple clicks
     @Published var isCaptureInProgress: Bool = false
 
+    /// TFLite thread count for the document detector, set by the configurator
+    /// from the performance advisor before the camera view is created.
+    var tfliteThreadCount: Int = 2
+
+    /// Whether autocapture is enabled. When false, the TFLite document detection
+    /// model is not loaded, saving ~10MB of memory and startup time.
+    var useAutocapture: Bool = true
+
     var presenter: DocumentCaptureViewToPresenter?
     weak var cameraViewDelegate: DocumentCaptureCameraDelegate?
+
+    #if DEBUG
+    /// Performance advisor reference for the debug overlay. Set by the configurator.
+    var performanceAdvisor: PerformanceAdvisor?
+    #endif
+
+    private let audioPlayer: TruoraAudioPlayer?
+
+    init() {
+        let configuredCountry = ValidationConfig.shared.documentConfig.country.lowercased()
+        self.audioPlayer = TruoraAudioPlayer(
+            languageCode: ValidationConfig.shared.lang?.rawValue ?? Locale.current.languageCode ?? "es",
+            countryCode: configuredCountry.isEmpty ? "co" : configuredCountry
+        )
+    }
 
     func onAppear() {
         Task {
@@ -48,6 +72,7 @@ import UIKit
     }
 
     func onWillDisappear() {
+        audioPlayer?.stop()
         Task { await presenter?.viewWillDisappear() }
     }
 
@@ -120,6 +145,14 @@ extension DocumentCaptureViewModel: DocumentCapturePresenterToView {
         delegate.setupCamera()
     }
 
+    func configureSessionPreset(_ preset: AVCaptureSession.Preset) {
+        cameraViewDelegate?.configureSessionPreset(preset)
+    }
+
+    func setInferenceLatencyCallback(_ callback: ((TimeInterval) -> Void)?) {
+        cameraViewDelegate?.setInferenceLatencyCallback(callback)
+    }
+
     func takePicture() {
         guard let delegate = cameraViewDelegate else {
             errorMessage = TruoraLocalization.string(forKey: LocalizationKeys.cameraErrorCaptureFailed)
@@ -156,7 +189,8 @@ extension DocumentCaptureViewModel: DocumentCapturePresenterToView {
         backPhotoData: Data?,
         backPhotoStatus: CaptureStatus?,
         clearFrontPhoto: Bool,
-        clearBackPhoto: Bool
+        clearBackPhoto: Bool,
+        audioInstruction: TruoraAudioInstruction?
     ) {
         self.currentSide = side
         self.feedbackType = feedbackType
@@ -177,6 +211,10 @@ extension DocumentCaptureViewModel: DocumentCapturePresenterToView {
             self.backPhotoData = data
         }
         self.backPhotoStatus = backPhotoStatus
+
+        if let instruction = audioInstruction {
+            audioPlayer?.play(instruction)
+        }
     }
 
     func showError(_ message: String) {
@@ -193,6 +231,8 @@ extension DocumentCaptureViewModel: DocumentCapturePresenterToView {
 
 @MainActor protocol DocumentCaptureCameraDelegate: AnyObject {
     func setupCamera()
+    func configureSessionPreset(_ preset: AVCaptureSession.Preset)
+    func setInferenceLatencyCallback(_ callback: ((TimeInterval) -> Void)?)
     func takePicture()
     func stopCamera()
     func pauseCamera()
@@ -210,17 +250,21 @@ struct DocumentCameraViewWrapper: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> CameraView {
+        let detectionType: DetectionType = viewModel.useAutocapture ? .document : .none
         let mlLogger: MLLifecycleLogger? = {
             guard let logger = try? TruoraLoggerImplementation.shared else {
                 return nil
             }
             return MLLifecycleLoggerAdapter(logger: logger)
         }()
-        let processor = FrameProcessorFactory.createProcessor(
-            for: .document,
+        var processor = FrameProcessorFactory.createProcessor(
+            for: detectionType,
             delegate: context.coordinator,
-            logger: mlLogger
+            logger: mlLogger,
+            tfliteThreadCount: viewModel.tfliteThreadCount
         )
+        // Wire inference latency tracking if the presenter set a callback
+        processor?.onInferenceLatency = context.coordinator.inferenceLatencyCallback
         let cameraView = CameraView(frameProcessor: processor)
         cameraView.backgroundColor = .clear
         cameraView.delegate = context.coordinator
@@ -235,6 +279,10 @@ struct DocumentCameraViewWrapper: UIViewRepresentable {
     @MainActor final class Coordinator: NSObject, @preconcurrency CameraDelegate, DocumentCaptureCameraDelegate {
         let viewModel: DocumentCaptureViewModel
         weak var cameraView: CameraView?
+
+        /// Callback for inference latency reporting, set by the presenter
+        /// to feed into the performance advisor's inference tracker.
+        var inferenceLatencyCallback: ((TimeInterval) -> Void)?
 
         init(viewModel: DocumentCaptureViewModel) {
             self.viewModel = viewModel
@@ -251,6 +299,14 @@ struct DocumentCameraViewWrapper: UIViewRepresentable {
                 return
             }
             cameraView.startCamera(side: .back, cameraOutputMode: .image)
+        }
+
+        func configureSessionPreset(_ preset: AVCaptureSession.Preset) {
+            cameraView?.sessionPresetOverride = preset
+        }
+
+        func setInferenceLatencyCallback(_ callback: ((TimeInterval) -> Void)?) {
+            inferenceLatencyCallback = callback
         }
 
         func takePicture() {
@@ -295,9 +351,13 @@ struct DocumentCameraViewWrapper: UIViewRepresentable {
         }
 
         func reportError(error: CameraError) {
-            let errorMessage = error.localizedDescription
-            Task { await viewModel.presenter?.cameraError(errorMessage) }
-            viewModel.showError("Camera error: \(errorMessage)")
+            if case .permissionDenied = error {
+                Task { await viewModel.presenter?.cameraPermissionDenied() }
+            } else {
+                let errorMessage = error.localizedDescription
+                Task { await viewModel.presenter?.cameraError(errorMessage) }
+                viewModel.showError("Camera error: \(errorMessage)")
+            }
         }
 
         func detectionsReceived(_ results: [DetectionResult]) {
@@ -355,6 +415,12 @@ struct DocumentCaptureView: View {
                     message: TruoraLocalization.string(forKey: LocalizationKeys.documentCaptureProcessing)
                 )
             }
+
+            #if DEBUG
+            if let advisor = viewModel.performanceAdvisor {
+                PerformanceDebugOverlay(advisor: advisor)
+            }
+            #endif
         }
         .environmentObject(theme)
         .navigationBarHidden(true)
@@ -811,12 +877,12 @@ private struct DocumentCaptureFooter: View {
                 Spacer()
 
                 // Truora logo
-                TruoraValidationsSDKAsset.byTruoraDark.swiftUIImage
+                TruoraValidationsSDKAsset.byTruora.swiftUIImage
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 65, height: 20)
-                    .foregroundColor(theme.colors.tint00)
+                    .foregroundColor(theme.colors.onSurfaceVariant)
             }
             .padding(.horizontal, 24)
         }

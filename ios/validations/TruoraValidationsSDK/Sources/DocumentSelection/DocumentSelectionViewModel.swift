@@ -1,0 +1,81 @@
+//
+//  DocumentSelectionViewModel.swift
+//  TruoraValidationsSDK
+//
+//  Created by Truora on 07/01/26.
+//
+
+import Foundation
+
+/// ViewModel for the document selection screen.
+/// Uses @Published properties which automatically notify SwiftUI on the main thread.
+@MainActor final class DocumentSelectionViewModel: ObservableObject {
+    @Published var countries: [NativeCountry] = []
+    @Published var selectedCountry: NativeCountry?
+    @Published var selectedDocument: NativeDocumentType?
+
+    @Published var isCountryError: Bool = false
+    @Published var isDocumentError: Bool = false
+    @Published var isLoading: Bool = false
+
+    @Published var showCameraPermissionAlert: Bool = false
+
+    /// When true, the country was pre-configured and cannot be changed by the user
+    @Published var isCountryLocked: Bool = false
+
+    /// When true, the document type was pre-configured and cannot be changed by the user
+    @Published var isDocumentLocked: Bool = false
+
+    /// Tracks if country dropdown is expanded (for overlay rendering outside ScrollView)
+    @Published var isCountryDropdownExpanded: Bool = false
+
+    /// Tracks if document type dropdown is expanded
+    @Published var isDocumentDropdownExpanded: Bool = false
+
+    var presenter: DocumentSelectionViewToPresenter?
+    private var didLoadOnce: Bool = false
+
+    func onAppear() {
+        guard !didLoadOnce else { return }
+        didLoadOnce = true
+        Task { await presenter?.viewDidLoad() }
+    }
+
+    var availableDocuments: [NativeDocumentType] {
+        selectedCountry?.documentTypes ?? []
+    }
+}
+
+// MARK: - DocumentSelectionPresenterToView
+
+extension DocumentSelectionViewModel: DocumentSelectionPresenterToView {
+    func setCountries(_ countries: [NativeCountry]) {
+        self.countries = countries
+    }
+
+    func updateSelection(selectedCountry: NativeCountry?, selectedDocument: NativeDocumentType?) {
+        self.selectedCountry = selectedCountry
+        self.selectedDocument = selectedDocument
+    }
+
+    func setCountryLocked(_ isLocked: Bool) {
+        self.isCountryLocked = isLocked
+    }
+
+    func setDocumentLocked(_ isLocked: Bool) {
+        self.isDocumentLocked = isLocked
+    }
+
+    func setErrors(isCountryError: Bool, isDocumentError: Bool) {
+        self.isCountryError = isCountryError
+        self.isDocumentError = isDocumentError
+    }
+
+    func setLoading(_ isLoading: Bool) {
+        self.isLoading = isLoading
+    }
+
+    func displayCameraPermissionAlert() {
+        showCameraPermissionAlert = true
+    }
+}

@@ -5,6 +5,8 @@
 //  Created by Truora on 26/12/25.
 //
 
+import AVFoundation
+import TruoraCamera
 import XCTest
 @testable import TruoraValidationsSDK
 
@@ -581,6 +583,55 @@ import XCTest
         XCTAssertTrue(mockRouter.handleCancellationCalled, "Should handle cancellation")
         XCTAssertEqual(mockRouter.lastCancellationLoadingType, .document, "Should pass document loading type")
     }
+
+    // MARK: - Audio Instruction Tests
+
+    func testCameraReady_sendsPlaceTheFrontAudio() async {
+        // When
+        await sut.cameraReady()
+
+        // Then - audio instructions are not sent by the presenter (handled at view level)
+        XCTAssertNil(mockView.lastAudioInstruction, "Presenter does not send audio instructions; audio is handled at the view level")
+    }
+
+    func testTransitionToBackSide_sendsPlaceTheBackAudio() async {
+        // Given - Capture and upload front photo
+        await sut.photoCaptured(photoData: Data([0x01, 0x02]))
+
+        let task = Task { await sut.photoUploadCompleted(side: .front) }
+        try? await Task.sleep(nanoseconds: 10_000_000)
+        mockTimeProvider.resumeAllSleeps()
+        await task.value
+
+        // Then - audio instructions are not sent by the presenter (handled at view level)
+        XCTAssertFalse(mockView.audioInstructions.contains(.placeTheBack), "Presenter does not send audio instructions; audio is handled at the view level")
+    }
+
+    func testTransitionToManualMode_sendsDocumentNotFoundAudio() async {
+        // Given - Presenter starts in autocapture mode
+        await sut.viewDidLoad()
+        mockView.reset()
+
+        // When - Model fails to load, triggering manual capture fallback
+        await sut.switchToManualCapture()
+
+        // Then - audio instructions are not sent by the presenter (handled at view level)
+        XCTAssertNil(mockView.lastAudioInstruction, "Presenter does not send audio instructions; audio is handled at the view level")
+    }
+
+    func testCameraPermissionDenied_callsRouterHandleError() async {
+        // When
+        await sut.cameraPermissionDenied()
+
+        // Then
+        XCTAssertTrue(mockView.stopCameraCalled, "Should stop camera")
+        XCTAssertTrue(mockRouter.handleErrorCalled, "Should call router handleError")
+        XCTAssertEqual(
+            mockRouter.lastErrorMessage,
+            CameraError.permissionDenied().toTruoraException().localizedDescription,
+            "Should pass camera permission error (with details) to router"
+        )
+    }
 }
 
 // swiftlint:enable type_body_length
@@ -608,10 +659,16 @@ import XCTest
     private(set) var lastBackPhotoStatus: CaptureStatus?
     private(set) var lastClearFrontPhoto: Bool = false
     private(set) var lastClearBackPhoto: Bool = false
+    private(set) var lastAudioInstruction: TruoraAudioInstruction?
+    private(set) var audioInstructions: [TruoraAudioInstruction] = []
 
     func setupCamera() {
         setupCameraCalled = true
     }
+
+    func configureSessionPreset(_ preset: AVCaptureSession.Preset) {}
+
+    func setInferenceLatencyCallback(_ callback: ((TimeInterval) -> Void)?) {}
 
     func takePicture() {
         takePictureCalled = true
@@ -644,7 +701,8 @@ import XCTest
         backPhotoData: Data?,
         backPhotoStatus: CaptureStatus?,
         clearFrontPhoto: Bool,
-        clearBackPhoto: Bool
+        clearBackPhoto: Bool,
+        audioInstruction: TruoraAudioInstruction?
     ) {
         updateComposeUICalled = true
         updateComposeUICallCount += 1
@@ -657,12 +715,18 @@ import XCTest
         lastBackPhotoStatus = backPhotoStatus
         lastClearFrontPhoto = clearFrontPhoto
         lastClearBackPhoto = clearBackPhoto
+        lastAudioInstruction = audioInstruction
+        if let instruction = audioInstruction {
+            audioInstructions.append(instruction)
+        }
     }
 
     func showError(_ message: String) {
         showErrorCalled = true
         lastErrorMessage = message
     }
+
+    func resetCaptureInProgress() {}
 
     func reset() {
         setupCameraCalled = false
@@ -675,10 +739,12 @@ import XCTest
         updateComposeUICallCount = 0
         showErrorCalled = false
         lastErrorMessage = nil
+        lastAudioInstruction = nil
+        audioInstructions = []
     }
 }
 
-@MainActor private final class MockDocumentCaptureInteractor: DocumentCapturePresenterToInteractor {
+private final class MockDocumentCaptureInteractor: @preconcurrency DocumentCapturePresenterToInteractor {
     private(set) var setUploadUrlsCalled = false
     private(set) var uploadPhotoCalled = false
     private(set) var evaluateImageCalled = false
@@ -721,6 +787,14 @@ import XCTest
         lastEvaluateValidationId = validationId
     }
 
+    func logDocCaptureSucceeded(side: DocumentCaptureSide, validationId: String) async {}
+
+    func logDocCaptureFailed(side: DocumentCaptureSide, validationId: String, errorMessage: String) async {}
+
+    func logDocFeedbackSucceeded(validationId: String, result: String, reason: String?) async {}
+
+    func logDocFeedbackFailed(validationId: String, errorMessage: String) async {}
+
     func reset() {
         uploadPhotoCalled = false
         evaluateImageCalled = false
@@ -748,9 +822,17 @@ import XCTest
     var handleCancellationCalled = false
     var lastCancellationLoadingType: ResultLoadingType?
 
+    var handleErrorCalled = false
+    var lastErrorMessage: String?
+
     override func handleCancellation(loadingType: ResultLoadingType) {
         handleCancellationCalled = true
         lastCancellationLoadingType = loadingType
+    }
+
+    override func handleError(_ error: TruoraException) {
+        handleErrorCalled = true
+        lastErrorMessage = error.localizedDescription
     }
 
     override func navigateToResult(
@@ -789,5 +871,8 @@ import XCTest
 
         handleCancellationCalled = false
         lastCancellationLoadingType = nil
+
+        handleErrorCalled = false
+        lastErrorMessage = nil
     }
 }

@@ -4,7 +4,7 @@ import XCTest
 
 /// Mock time provider for deterministic testing - tests manually control time
 @MainActor
-final class MockTimeProvider: TimeProvider {
+final class MockTimeProvider: @preconcurrency TimeProvider {
     private(set) var scheduledTimerCalls: [(interval: TimeInterval, repeats: Bool, block: (Timer) -> Void)] = []
     private(set) var sleepCalls: [UInt64] = []
     private var sleepContinuations: [CheckedContinuation<Void, Error>] = []

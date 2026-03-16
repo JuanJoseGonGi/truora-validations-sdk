@@ -67,7 +67,7 @@ ios/validations/
 
 ### Prerequisites
 
-- Xcode 15.0+
+- Xcode 16+. We recommend always using the latest Xcode version.
 - iOS 13.0+
 - Tuist 4.0+
 - CocoaPods (if using)

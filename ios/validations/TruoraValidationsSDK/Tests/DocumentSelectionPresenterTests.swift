@@ -49,7 +49,7 @@ import XCTest
         XCTAssertFalse(mockView.displayCameraPermissionAlertCalled)
     }
 
-    func testViewDidLoad_showsAlertWhenDenied() async {
+    func testViewDidLoad_callsHandleErrorWhenDenied() async {
         let cameraChecker = MockCameraPermissionChecker(
             status: .denied,
             requestAccessResult: nil
@@ -63,7 +63,8 @@ import XCTest
 
         await sut.viewDidLoad()
 
-        XCTAssertTrue(mockView.displayCameraPermissionAlertCalled)
+        XCTAssertTrue(mockRouter.handleErrorCalled)
+        XCTAssertFalse(mockView.displayCameraPermissionAlertCalled)
     }
 
     func testContinueTapped_withoutSelections_setsErrorsAndDoesNotNavigate() async {
@@ -83,7 +84,7 @@ import XCTest
         XCTAssertFalse(mockRouter.navigateToDocumentIntroCalled)
     }
 
-    func testContinueTapped_withSelections_butCameraNotAuthorized_showsAlertAndDoesNotNavigate() async {
+    func testContinueTapped_withSelections_butCameraNotAuthorized_callsHandleErrorAndDoesNotNavigate() async {
         let cameraChecker = MockCameraPermissionChecker(status: .denied, requestAccessResult: nil)
         sut = DocumentSelectionPresenter(
             view: mockView,
@@ -96,7 +97,8 @@ import XCTest
         await sut.documentSelected(.nationalId)
         await sut.continueTapped()
 
-        XCTAssertTrue(mockView.displayCameraPermissionAlertCalled)
+        XCTAssertTrue(mockRouter.handleErrorCalled)
+        XCTAssertFalse(mockView.displayCameraPermissionAlertCalled)
         XCTAssertFalse(mockRouter.navigateToDocumentIntroCalled)
     }
 
@@ -192,6 +194,9 @@ import XCTest
     private(set) var setCountryLockedCalled = false
     private(set) var lastIsCountryLocked: Bool?
 
+    private(set) var setDocumentLockedCalled = false
+    private(set) var lastIsDocumentLocked: Bool?
+
     func setCountries(_ countries: [NativeCountry]) {
         setCountriesCalled = true
         lastCountries = countries
@@ -206,6 +211,11 @@ import XCTest
     func setCountryLocked(_ isLocked: Bool) {
         setCountryLockedCalled = true
         lastIsCountryLocked = isLocked
+    }
+
+    func setDocumentLocked(_ isLocked: Bool) {
+        setDocumentLockedCalled = true
+        lastIsDocumentLocked = isLocked
     }
 
     func setErrors(isCountryError: Bool, isDocumentError: Bool) {
@@ -224,17 +234,24 @@ import XCTest
     }
 }
 
-@MainActor private final class MockDocumentSelectionInteractor: DocumentSelectionPresenterToInteractor {
+private final class MockDocumentSelectionInteractor: @preconcurrency DocumentSelectionPresenterToInteractor {
     private(set) var fetchSupportedCountriesCalled = false
 
     func fetchSupportedCountries() {
         fetchSupportedCountriesCalled = true
     }
+
+    func logViewRendered() async {}
+
+    func logContinueButtonClicked(selectedCountry: NativeCountry?, selectedDocument: NativeDocumentType?) async {}
+
+    func logCancelButtonClicked() async {}
 }
 
 @MainActor private final class MockDocumentSelectionRouter: ValidationRouter {
     private(set) var handleCancellationCalled = false
     private(set) var navigateToDocumentIntroCalled = false
+    private(set) var handleErrorCalled = false
 
     override func handleCancellation(loadingType: ResultLoadingType) {
         handleCancellationCalled = true
@@ -242,6 +259,10 @@ import XCTest
 
     override func navigateToDocumentIntro() throws {
         navigateToDocumentIntroCalled = true
+    }
+
+    override func handleError(_ error: TruoraException) {
+        handleErrorCalled = true
     }
 }
 

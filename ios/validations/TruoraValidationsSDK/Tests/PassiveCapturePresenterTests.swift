@@ -6,6 +6,7 @@
 //
 
 // swiftlint:disable file_length
+import AVFoundation
 import TruoraCamera
 import Vision
 import XCTest
@@ -710,6 +711,20 @@ import XCTest
         )
     }
 
+    func testCameraPermissionDenied_callsRouterHandleError() async {
+        // When
+        await sut.cameraPermissionDenied()
+
+        // Then
+        XCTAssertTrue(mockView.stopCameraCalled, "Should stop camera")
+        XCTAssertTrue(mockRouter.handleErrorCalled, "Should call router handleError")
+        XCTAssertEqual(
+            mockRouter.lastErrorMessage,
+            CameraError.permissionDenied().toTruoraException().localizedDescription,
+            "Should pass camera permission error (with details) to router"
+        )
+    }
+
     // MARK: - Autocapture Disabled Tests
 
     func testInit_autocaptureEnabled_setsCountdownState() {
@@ -987,6 +1002,10 @@ import XCTest
         setupCameraCount += 1
     }
 
+    func configureSessionPreset(_ preset: AVCaptureSession.Preset) {}
+
+    func setInferenceLatencyCallback(_ callback: ((TimeInterval) -> Void)?) {}
+
     func startRecording() {
         startRecordingCalled = true
     }
@@ -1038,11 +1057,14 @@ import XCTest
         showErrorCalled = true
         lastErrorMessage = message
     }
+
+    func resetRecordingInProgress() {}
 }
 
 // MARK: - Mock Interactor
 
-@MainActor private final class MockPassiveCaptureInteractor: PassiveCapturePresenterToInteractor {
+// Not @MainActor: matches PassiveCapturePresenterToInteractor protocol which is not isolated
+private final class MockPassiveCaptureInteractor: PassiveCapturePresenterToInteractor {
     private(set) var setUploadUrlCalled = false
     private(set) var uploadVideoCalled = false
     private(set) var lastUploadUrl: String?
@@ -1057,6 +1079,10 @@ import XCTest
         uploadVideoCalled = true
         lastVideoData = videoData
     }
+
+    func logFaceCaptureSucceeded() async {}
+
+    func logFaceCaptureFailed(errorMessage: String) async {}
 }
 
 // MARK: - Mock Router

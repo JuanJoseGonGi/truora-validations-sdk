@@ -1,10 +1,10 @@
 Pod::Spec.new do |s|
   s.name             = "TruoraValidationsSDK"
-  s.version          = "1.0.0"
+  s.version          = "1.1.0"
   s.summary          = "SDK of biometric validations"
   s.description      = <<-DESC
-TruoraValidationsSDK provides a complete biometric validation flow -> enrollment,
-base image upload, status check, passive capture in face, get input from ID document.
+TruoraValidationsSDK provides a complete biometric validation flow,
+including base image upload, status check, passive capture in face, and get input from ID document.
 DESC
   s.homepage         = "https://bitbucket.org/truora/truora-sdks"
   s.license          = { :type => "Proprietary", :text => "Copyright Truora. All rights reserved." }
@@ -26,7 +26,7 @@ DESC
     ]
   }
   s.frameworks         = ["UIKit", "Foundation", "SwiftUI"]
-  s.dependency         "TruoraCamera", "1.0.0"
+  s.dependency         "TruoraCamera", "1.1.0"
   s.pod_target_xcconfig = {
     "DEFINES_MODULE" => "YES",
     "SWIFT_VERSION"  => "5.9",

@@ -51,20 +51,23 @@ import XCTest
         return Data(jpegBytes)
     }()
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
+        await TruoraLoggerImplementation.reset()
+        try await TruoraLoggerImplementation.initialize(with: LoggerConfiguration.testing())
         ValidationConfig.shared.reset()
         mockNavigationController = TruoraNavigationController()
         mockDelegate = MockValidationDelegateForRouter()
         router = ValidationRouter(navigationController: mockNavigationController)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         router = nil
         mockNavigationController = nil
         mockDelegate = nil
         ValidationConfig.shared.reset()
-        super.tearDown()
+        await TruoraLoggerImplementation.reset()
+        try await super.tearDown()
     }
 
     // MARK: - Navigate to Passive Capture Tests

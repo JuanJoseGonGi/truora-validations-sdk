@@ -1,4 +1,3 @@
-@MainActor protocol DocumentFeedbackPresenterToView: AnyObject {}
 //
 //  DocumentFeedbackPresenter.swift
 //  TruoraValidationsSDK

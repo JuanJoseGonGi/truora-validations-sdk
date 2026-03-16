@@ -80,6 +80,12 @@ struct PassiveCaptureView: View {
                     onDismiss: { viewModel.handleEvent(.settingsPromptDismissed) }
                 )
             }
+
+            #if DEBUG
+            if let advisor = viewModel.performanceAdvisor {
+                PerformanceDebugOverlay(advisor: advisor)
+            }
+            #endif
         }
         .environmentObject(theme)
         .navigationBarHidden(true)

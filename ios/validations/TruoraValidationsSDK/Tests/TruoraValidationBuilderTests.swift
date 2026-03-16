@@ -313,10 +313,9 @@ extension TruoraValidationBuilderTests {
         }
 
         // Then - Check default values
-        XCTAssertEqual(
+        XCTAssertNil(
             faceConfig.similarityThreshold,
-            0.8,
-            "Should have default threshold"
+            "Should have nil similarity threshold by default (no threshold applied)"
         )
         XCTAssertTrue(faceConfig.useAutocapture, "Should have default autocapture")
         XCTAssertFalse(

@@ -8,6 +8,33 @@
 import SwiftUI
 import UIKit
 
+extension Color {
+    /// Converts a SwiftUI Color to UIColor.
+    /// iOS 14+: uses native UIColor(Color) initializer.
+    /// iOS 13: parses the hex description that SwiftUI produces for RGB colors.
+    /// Falls back to white if parsing fails (e.g. for named or system colors).
+    var uiColor: UIColor {
+        if #available(iOS 14.0, *) {
+            return UIColor(self)
+        }
+        let desc = String(describing: self)
+        guard desc.hasPrefix("#"), desc.count >= 7 else {
+            assertionFailure("Color.uiColor: unable to parse color description '\(desc)' on iOS 13")
+            return .white
+        }
+        let hex = String(desc.dropFirst().prefix(6))
+        let scanner = Scanner(string: hex)
+        var rgb: UInt64 = 0
+        guard scanner.scanHexInt64(&rgb) else { return .white }
+        return UIColor(
+            red: CGFloat((rgb >> 16) & 0xFF) / 255.0,
+            green: CGFloat((rgb >> 8) & 0xFF) / 255.0,
+            blue: CGFloat(rgb & 0xFF) / 255.0,
+            alpha: 1.0
+        )
+    }
+}
+
 struct TruoraColors {
     var surface: Color
     var onSurface: Color

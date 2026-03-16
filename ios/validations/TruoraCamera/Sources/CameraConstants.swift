@@ -34,10 +34,12 @@ public enum CameraConstants {
     // MARK: - Image Processing
 
     /// Maximum dimension (width or height) for compressed images.
-    public static let maxImageSize: CGFloat = 1024
+    /// Settable to allow the performance advisor to reduce this on constrained devices.
+    public static var maxImageSize: CGFloat = 1024
 
     /// JPEG compression quality (0.0 to 1.0).
-    public static let jpegCompressionQuality: CGFloat = 0.85
+    /// Settable to allow the performance advisor to reduce this on constrained devices.
+    public static var jpegCompressionQuality: CGFloat = 0.85
 
     // MARK: - Recording
 

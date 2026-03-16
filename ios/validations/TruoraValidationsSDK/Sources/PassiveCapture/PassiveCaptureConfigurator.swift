@@ -17,12 +17,16 @@ enum PassiveCaptureConfigurator {
         let viewModel = PassiveCaptureViewModel()
         let useAutocapture = ValidationConfig.shared.faceConfig.useAutocapture
 
+        // Create performance advisor for adaptive behavior on constrained devices
+        let performanceAdvisor = PerformanceAdvisor()
+
         let presenter = PassiveCapturePresenter(
             view: viewModel,
             interactor: nil,
             router: router,
             validationId: validationId,
-            useAutocapture: useAutocapture
+            useAutocapture: useAutocapture,
+            performanceAdvisor: performanceAdvisor
         )
 
         let logger = try TruoraLoggerImplementation.shared
@@ -34,6 +38,10 @@ enum PassiveCaptureConfigurator {
 
         presenter.interactor = interactor
         viewModel.presenter = presenter
+
+        #if DEBUG
+        viewModel.performanceAdvisor = performanceAdvisor
+        #endif
 
         let uiConfig = ValidationConfig.shared.uiConfig
         let swiftUIView = PassiveCaptureView(viewModel: viewModel, config: uiConfig)

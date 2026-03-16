@@ -5,6 +5,7 @@
 //  Created by Truora on 30/10/25.
 //
 
+import AVFoundation
 import Foundation
 import TruoraCamera
 import UIKit
@@ -13,6 +14,8 @@ import UIKit
 /// Implementations should ensure UI updates are performed on the main thread.
 @MainActor protocol PassiveCapturePresenterToView: AnyObject {
     func setupCamera()
+    func configureSessionPreset(_ preset: AVCaptureSession.Preset)
+    func setInferenceLatencyCallback(_ callback: ((TimeInterval) -> Void)?)
     func startRecording()
     func stopRecording()
     func stopCamera()
@@ -35,7 +38,6 @@ import UIKit
     func resetRecordingInProgress()
 }
 
-@MainActor
 protocol PassiveCaptureViewToPresenter: AnyObject {
     func viewDidLoad() async
     func viewWillAppear() async
@@ -58,7 +60,6 @@ protocol PassiveCapturePresenterToInteractor: AnyObject {
     func logFaceCaptureFailed(errorMessage: String) async
 }
 
-@MainActor
 protocol PassiveCaptureInteractorToPresenter: AnyObject {
     func videoUploadCompleted(validationId: String) async
     func videoUploadFailed(_ error: TruoraException) async

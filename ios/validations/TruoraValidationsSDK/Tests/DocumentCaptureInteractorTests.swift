@@ -23,7 +23,8 @@ import XCTest
         super.setUp()
         mockPresenter = MockDocumentCapturePresenter()
         sut = DocumentCaptureInteractor(
-            presenter: mockPresenter
+            presenter: mockPresenter,
+            logger: MockTruoraLogger()
         )
         ValidationConfig.shared.reset()
     }
@@ -190,7 +191,8 @@ import XCTest
 
         let interactor = DocumentCaptureInteractor(
             presenter: mockPresenter,
-            uploadFileHandler: mockUploadHandler
+            uploadFileHandler: mockUploadHandler,
+            logger: MockTruoraLogger()
         )
 
         // Configure API client so upload can proceed
@@ -238,7 +240,8 @@ import XCTest
 
         let interactor = DocumentCaptureInteractor(
             presenter: mockPresenter,
-            uploadFileHandler: mockUploadHandler
+            uploadFileHandler: mockUploadHandler,
+            logger: MockTruoraLogger()
         )
 
         // Configure API client so upload can proceed
@@ -320,7 +323,8 @@ import XCTest
     func testDeinit_cancelsUploadTask() {
         // Given
         var interactorOptional: DocumentCaptureInteractor? = DocumentCaptureInteractor(
-            presenter: mockPresenter
+            presenter: mockPresenter,
+            logger: MockTruoraLogger()
         )
         interactorOptional?.setUploadUrls(
             frontUploadUrl: "https://example.com/front",

@@ -5,6 +5,7 @@
 //  Created by Truora on 23/01/26.
 //
 
+import AVFoundation
 import Combine
 import Foundation
 import TruoraCamera
@@ -28,8 +29,16 @@ import UIKit
 
     var presenter: PassiveCaptureViewToPresenter?
     weak var cameraViewDelegate: CameraViewDelegate?
+    private var didLoadOnce: Bool = false
+
+    #if DEBUG
+    /// Performance advisor reference for the debug overlay. Set by the configurator.
+    var performanceAdvisor: PerformanceAdvisor?
+    #endif
 
     func onAppear() {
+        guard !didLoadOnce else { return }
+        didLoadOnce = true
         Task { await presenter?.viewDidLoad() }
     }
 
@@ -96,6 +105,14 @@ extension PassiveCaptureViewModel: PassiveCapturePresenterToView {
             return
         }
         delegate.setupCamera()
+    }
+
+    func configureSessionPreset(_ preset: AVCaptureSession.Preset) {
+        cameraViewDelegate?.configureSessionPreset(preset)
+    }
+
+    func setInferenceLatencyCallback(_ callback: ((TimeInterval) -> Void)?) {
+        cameraViewDelegate?.setInferenceLatencyCallback(callback)
     }
 
     func startRecording() {

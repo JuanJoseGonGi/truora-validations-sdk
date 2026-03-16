@@ -50,6 +50,18 @@ public class TruoraValidationsSDK {
             baseUrl: baseUrl
         )
 
+        // Layer 1: Initialize injection detection and report init
+        ValidationConfig.shared.initializeDetectionReporter()
+        if let reporter = ValidationConfig.shared.detectionReporter {
+            Task {
+                await reporter.reportLayer(
+                    "init",
+                    validationId: ValidationConfig.shared.validationId ?? "",
+                    flowType: "document"
+                )
+            }
+        }
+
         let navController = try ValidationRouter.createDocumentSelectionNavigationController()
 
         navController.modalPresentationStyle = .fullScreen
@@ -126,6 +138,22 @@ public class TruoraValidationsSDK {
                 )
 
                 try ValidationConfig.shared.setValidation(self.type)
+
+                // Layer 1: Initialize injection detection and report init
+                let flowTypeString = switch self.type {
+                case .face: "face"
+                case .document: "document"
+                }
+                ValidationConfig.shared.initializeDetectionReporter()
+                if let reporter = ValidationConfig.shared.detectionReporter {
+                    Task {
+                        await reporter.reportLayer(
+                            "init",
+                            validationId: ValidationConfig.shared.validationId ?? "",
+                            flowType: flowTypeString
+                        )
+                    }
+                }
 
                 let navController = try ValidationRouter.createRootNavigationController(of: type)
 

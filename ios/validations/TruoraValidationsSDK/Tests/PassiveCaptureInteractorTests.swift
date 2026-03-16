@@ -17,7 +17,8 @@ import XCTest
         mockPresenter = MockPassiveCapturePresenter()
         interactor = PassiveCaptureInteractor(
             presenter: mockPresenter,
-            validationId: "test-validation-id"
+            validationId: "test-validation-id",
+            logger: MockTruoraLogger()
         )
         interactor.setUploadUrl("https://example.com/upload")
         ValidationConfig.shared.reset()
@@ -88,7 +89,8 @@ import XCTest
         // Given
         var interactorOptional: PassiveCaptureInteractor? = PassiveCaptureInteractor(
             presenter: mockPresenter,
-            validationId: "test-validation-id"
+            validationId: "test-validation-id",
+            logger: MockTruoraLogger()
         )
         interactorOptional?.setUploadUrl("https://example.com/upload")
 

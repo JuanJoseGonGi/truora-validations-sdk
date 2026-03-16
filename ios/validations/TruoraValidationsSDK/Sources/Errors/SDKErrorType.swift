@@ -34,7 +34,6 @@ public enum SDKErrorType: Int, CaseIterable {
     case invalidFormat = 20022
     case invalidState = 20023
     case invalidConfiguration = 20024
-    case networkError = 20025
     case uploadFailed = 20026
 
     /// Internal/system errors (20500+)
@@ -72,8 +71,6 @@ public enum SDKErrorType: Int, CaseIterable {
             "Operation cannot be performed in current state"
         case .invalidConfiguration:
             "Invalid configuration"
-        case .networkError:
-            "Network connection failed"
         case .uploadFailed:
             "File upload failed"
         // Internal/system errors

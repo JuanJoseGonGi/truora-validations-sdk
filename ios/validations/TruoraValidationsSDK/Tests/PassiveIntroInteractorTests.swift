@@ -15,7 +15,7 @@ import XCTest
     override func setUp() {
         super.setUp()
         mockPresenter = MockPassiveIntroPresenter()
-        interactor = PassiveIntroInteractor(presenter: mockPresenter, enrollmentTask: nil)
+        interactor = PassiveIntroInteractor(presenter: mockPresenter, enrollmentTask: nil, logger: MockTruoraLogger())
         ValidationConfig.shared.reset()
     }
 
@@ -71,7 +71,8 @@ import XCTest
         // Given
         var interactorOptional: PassiveIntroInteractor? = PassiveIntroInteractor(
             presenter: mockPresenter,
-            enrollmentTask: nil
+            enrollmentTask: nil,
+            logger: MockTruoraLogger()
         )
 
         // When
@@ -126,7 +127,7 @@ import XCTest
             try await Task.sleep(nanoseconds: 10_000_000) // 0.01 seconds
         }
 
-        interactor = PassiveIntroInteractor(presenter: mockPresenter, enrollmentTask: mockTask)
+        interactor = PassiveIntroInteractor(presenter: mockPresenter, enrollmentTask: mockTask, logger: MockTruoraLogger())
 
         // When
         let startTime = Date()
@@ -147,7 +148,7 @@ import XCTest
             throw TruoraException.network(message: "Test error")
         }
 
-        interactor = PassiveIntroInteractor(presenter: mockPresenter, enrollmentTask: mockTask)
+        interactor = PassiveIntroInteractor(presenter: mockPresenter, enrollmentTask: mockTask, logger: MockTruoraLogger())
 
         // When/Then
         do {
@@ -164,7 +165,8 @@ import XCTest
         // Given
         var interactorOptional: PassiveIntroInteractor? = PassiveIntroInteractor(
             presenter: mockPresenter,
-            enrollmentTask: nil
+            enrollmentTask: nil,
+            logger: MockTruoraLogger()
         )
 
         // When

@@ -44,10 +44,7 @@ extension CameraManager {
                     if granted {
                         self?.configureSession(view: view, cameraOutputMode: cameraOutputMode)
                     } else {
-                        let cameraError = CameraError.internalError(
-                            "Camera permission denied by user"
-                        )
-                        self?.delegate?.reportError(error: cameraError)
+                        self?.delegate?.reportError(error: .permissionDenied(status: .denied))
                     }
                 }
             }
@@ -66,7 +63,11 @@ extension CameraManager {
 
     private func configureSession(view: UIView, cameraOutputMode: CameraOutputMode) {
         captureSession = AVCaptureSession()
-        captureSession?.sessionPreset = .hd1280x720
+
+        // Use adaptive session preset from performance advisor if available,
+        // otherwise default to 720p
+        let preset: AVCaptureSession.Preset = sessionPresetOverride ?? .hd1280x720
+        captureSession?.sessionPreset = preset
         focusGesture.isEnabled = true
 
         captureSession?.beginConfiguration()

@@ -477,10 +477,7 @@ private func uploadReferenceFaceFile(
     }
 
     debugLog("🟢 ValidationRouter: Reference face uploaded successfully")
-
-    await MainActor.run {
-        debugLog("✅ ValidationRouter: Reference face enrollment completed")
-    }
+    debugLog("✅ ValidationRouter: Reference face enrollment completed")
 }
 
 // MARK: - Enrollment Polling

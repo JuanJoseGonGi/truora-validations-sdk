@@ -25,29 +25,9 @@ struct ValidationLoadingView: View {
         UIDevice.current.userInterfaceIdiom == .pad
     }
 
-    private var loadingIcon: SwiftUI.Image {
-        switch loadingType {
-        case .face:
-            TruoraValidationsSDKAsset.faceLoadingIcon.swiftUIImage
-        case .document:
-            TruoraValidationsSDKAsset.documentLoadingIcon.swiftUIImage
-        }
-    }
-
-    /// Returns the icon size proportional to screen width (50%) with a maximum size.
-    /// - Face icon: 50% of screen width, max 200pt (square)
-    /// - Document icon: 50% of screen width, max 200pt width, aspect ratio 1.3:1
     private func iconSize(for screenWidth: CGFloat) -> CGSize {
-        let maxSize: CGFloat = 200
-        switch loadingType {
-        case .face:
-            let size = min(screenWidth * 0.5, maxSize)
-            return CGSize(width: size, height: size)
-        case .document:
-            let width = min(screenWidth * 0.5, maxSize)
-            let height = width / 1.3 // aspect ratio from Figma (150/115 ≈ 1.3)
-            return CGSize(width: width, height: height)
-        }
+        let size = min(screenWidth * 0.5, 200)
+        return CGSize(width: size, height: size)
     }
 
     private var horizontalPadding: CGFloat {
@@ -83,12 +63,12 @@ struct ValidationLoadingView: View {
                     Spacer()
 
                     // Centered icon
-                    loadingIcon
-                        .renderingMode(.template)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: iconSizeValue.width, height: iconSizeValue.height)
-                        .foregroundColor(theme.colors.onSurfaceVariant)
+                    AnimatedGIFView(
+                        gifName: loadingType.gifName,
+                        tintColor: theme.colors.onSurfaceVariant.uiColor,
+                        size: iconSizeValue
+                    )
+                    .frame(width: iconSizeValue.width, height: iconSizeValue.height)
 
                     Spacer()
 
@@ -129,7 +109,7 @@ struct ValidationLoadingView: View {
                     // Footer with Truora branding
                     HStack {
                         Spacer()
-                        TruoraValidationsSDKAsset.byTruoraDark.swiftUIImage
+                        TruoraValidationsSDKAsset.byTruora.swiftUIImage
                             .renderingMode(.template)
                             .resizable()
                             .scaledToFit()
@@ -156,4 +136,13 @@ struct ValidationLoadingView: View {
 #Preview("Document Loading") {
     ValidationLoadingView(loadingType: .document)
         .environmentObject(TruoraTheme(config: nil))
+}
+
+#Preview("Document Loading with Custom Theme") {
+    ValidationLoadingView(loadingType: .document)
+        .environmentObject(TruoraTheme(
+            config: UIConfig()
+                .setSurfaceVariantColor("#000000")
+                .setOnSurfaceVariantColor("#FF0000")
+        ))
 }

@@ -285,7 +285,7 @@ import XCTest
         // Given
         // Create a weak reference scenario by using a temporary router
         var tempRouter: MockPassiveIntroRouter? = MockPassiveIntroRouter(
-            navigationController: UINavigationController()
+            navigationController: TruoraNavigationController()
         )
         sut = try PassiveIntroPresenter(
             view: mockView,
@@ -422,6 +422,12 @@ private final class MockPassiveIntroInteractor: PassiveIntroPresenterToInteracto
             throw TruoraException.network(message: "Mock enrollment error")
         }
     }
+
+    func logViewRendered() async {}
+
+    func logContinueButtonClicked() async {}
+
+    func logCancelButtonClicked() async {}
 }
 
 // MARK: - Mock Router

@@ -5,6 +5,7 @@
 //  Created by Truora on 26/12/25.
 //
 
+import AVFoundation
 import Foundation
 import TruoraCamera
 import UIKit
@@ -13,6 +14,8 @@ import UIKit
 /// Implementations should ensure UI updates are performed on the main thread.
 @MainActor protocol DocumentCapturePresenterToView: AnyObject {
     func setupCamera()
+    func configureSessionPreset(_ preset: AVCaptureSession.Preset)
+    func setInferenceLatencyCallback(_ callback: ((TimeInterval) -> Void)?)
     func takePicture()
     func pauseVideo()
     func stopCamera()
@@ -30,7 +33,8 @@ import UIKit
         backPhotoData: Data?,
         backPhotoStatus: CaptureStatus?,
         clearFrontPhoto: Bool,
-        clearBackPhoto: Bool
+        clearBackPhoto: Bool,
+        audioInstruction: TruoraAudioInstruction?
     )
 
     func showError(_ message: String)
@@ -39,7 +43,6 @@ import UIKit
     func resetCaptureInProgress()
 }
 
-@MainActor
 protocol DocumentCaptureViewToPresenter: AnyObject {
     func viewDidLoad() async
     func viewWillAppear() async
@@ -62,8 +65,11 @@ protocol DocumentCaptureViewToPresenter: AnyObject {
     /// Silently transitions to manual capture without user interaction.
     func switchToManualCapture() async
 
-    /// Called when a camera error occurs (e.g., permission denied, session failure).
+    /// Called when a camera error occurs (e.g., session failure).
     func cameraError(_ errorMessage: String) async
+
+    /// Called when camera permission is denied. Returns error to caller immediately.
+    func cameraPermissionDenied() async
 }
 
 protocol DocumentCapturePresenterToInteractor: AnyObject {
@@ -82,7 +88,6 @@ protocol DocumentCapturePresenterToInteractor: AnyObject {
     func logDocFeedbackFailed(validationId: String, errorMessage: String) async
 }
 
-@MainActor
 protocol DocumentCaptureInteractorToPresenter: AnyObject {
     func photoUploadCompleted(side: DocumentCaptureSide) async
     func photoUploadFailed(side: DocumentCaptureSide, error: TruoraException) async

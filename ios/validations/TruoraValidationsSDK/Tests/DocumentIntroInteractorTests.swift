@@ -19,7 +19,8 @@ import XCTest
         interactor = DocumentIntroInteractor(
             presenter: mockPresenter,
             country: "PE",
-            documentType: "national-id"
+            documentType: "national-id",
+            logger: MockTruoraLogger()
         )
     }
 
@@ -51,7 +52,8 @@ import XCTest
         var optionalInteractor: DocumentIntroInteractor? = DocumentIntroInteractor(
             presenter: mockPresenter,
             country: "PE",
-            documentType: "national-id"
+            documentType: "national-id",
+            logger: MockTruoraLogger()
         )
 
         optionalInteractor = nil
@@ -71,18 +73,20 @@ import XCTest
         let interactor = DocumentIntroInteractor(
             presenter: mockPresenter,
             country: "PE",
-            documentType: "national-id"
-        ) { request in
-            capturedRequest = request
-            return NativeValidationCreateResponse(
-                validationId: "validation-id",
-                instructions: NativeValidationInstructions(
-                    fileUploadLink: nil,
-                    frontUrl: "https://example.com/front",
-                    reverseUrl: "https://example.com/reverse"
+            documentType: "national-id",
+            createValidationHandler: { request in
+                capturedRequest = request
+                return NativeValidationCreateResponse(
+                    validationId: "validation-id",
+                    instructions: NativeValidationInstructions(
+                        fileUploadLink: nil,
+                        frontUrl: "https://example.com/front",
+                        reverseUrl: "https://example.com/reverse"
+                    )
                 )
-            )
-        }
+            },
+            logger: MockTruoraLogger()
+        )
 
         interactor.createValidation(accountId: accountId)
 

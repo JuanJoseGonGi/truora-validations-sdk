@@ -19,5 +19,6 @@ protocol DocumentFeedbackViewToPresenter: AnyObject {
 
 // MARK: - Presenter to View
 
-// Protocol for updating the document feedback view.
-// Implementations should ensure UI updates are performed on the main thread.
+/// Protocol for updating the document feedback view.
+/// Implementations should ensure UI updates are performed on the main thread.
+@MainActor protocol DocumentFeedbackPresenterToView: AnyObject {}

@@ -173,7 +173,7 @@ public struct TruoraSessionConfiguration {
     }
 
     private func isRetryableStatusCode(_ statusCode: Int) -> Bool {
-        let retryableCodes: Set<Int> = [
+        let retryableCodes: Set = [
             408, // Request Timeout
             429, // Too Many Requests
             500, // Internal Server Error

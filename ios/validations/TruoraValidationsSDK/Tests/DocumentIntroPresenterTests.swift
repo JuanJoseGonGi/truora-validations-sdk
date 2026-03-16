@@ -178,7 +178,7 @@ import XCTest
     }
 }
 
-@MainActor private final class MockDocumentIntroInteractor: DocumentIntroPresenterToInteractor {
+private final class MockDocumentIntroInteractor: @preconcurrency DocumentIntroPresenterToInteractor {
     private(set) var createValidationCalled = false
     private(set) var lastAccountId: String?
 
@@ -186,6 +186,12 @@ import XCTest
         createValidationCalled = true
         lastAccountId = accountId
     }
+
+    func logViewRendered() async {}
+
+    func logContinueButtonClicked() async {}
+
+    func logCancelButtonClicked() async {}
 }
 
 @MainActor private final class MockDocumentIntroRouter: ValidationRouter {

@@ -26,12 +26,16 @@ enum DocumentCaptureConfigurator {
         let viewModel = DocumentCaptureViewModel()
         let useAutocapture = resolveAutocapture(from: ValidationConfig.shared.documentConfig)
 
+        // Create performance advisor for adaptive behavior on constrained devices
+        let performanceAdvisor = PerformanceAdvisor()
+
         let presenter = DocumentCapturePresenter(
             view: viewModel,
             interactor: nil,
             router: router,
             validationId: validationId,
-            useAutocapture: useAutocapture
+            useAutocapture: useAutocapture,
+            performanceAdvisor: performanceAdvisor
         )
 
         let logger = try TruoraLoggerImplementation.shared
@@ -44,7 +48,13 @@ enum DocumentCaptureConfigurator {
         interactor.setUploadUrls(frontUploadUrl: frontUploadUrl, reverseUploadUrl: reverseUploadUrl)
 
         viewModel.presenter = presenter
+        viewModel.useAutocapture = useAutocapture
+        viewModel.tfliteThreadCount = performanceAdvisor.recommendedTFLiteThreadCount
         presenter.interactor = interactor
+
+        #if DEBUG
+        viewModel.performanceAdvisor = performanceAdvisor
+        #endif
 
         let config = ValidationConfig.shared.uiConfig
         let swiftUIView = DocumentCaptureView(viewModel: viewModel, config: config)

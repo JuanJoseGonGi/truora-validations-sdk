@@ -135,7 +135,7 @@ import XCTest
 
         // Then
         XCTAssertTrue(mockRouter.dismissFlowCalled)
-        XCTAssertTrue(mockDelegate.failureCalled)
+        XCTAssertTrue(mockDelegate.cancelCalled)
     }
 
     // MARK: - Finish View Configuration Tests
@@ -372,6 +372,10 @@ private class MockResultInteractor: ResultPresenterToInteractor {
     func cancelPolling() {
         cancelPollingCalled = true
     }
+
+    func logViewRendered() async {}
+
+    func logSdkExecutionFinished() async {}
 }
 
 // MARK: - Mock Router
@@ -389,6 +393,7 @@ private class MockResultInteractor: ResultPresenterToInteractor {
 @MainActor private class MockValidationDelegate {
     var completeCalled = false
     var failureCalled = false
+    var cancelCalled = false
     var lastResult: ValidationResult?
     var lastError: TruoraException?
 
@@ -402,7 +407,7 @@ private class MockResultInteractor: ResultPresenterToInteractor {
                 self?.failureCalled = true
                 self?.lastError = error
             case .canceled:
-                break
+                self?.cancelCalled = true
             }
         }
     }

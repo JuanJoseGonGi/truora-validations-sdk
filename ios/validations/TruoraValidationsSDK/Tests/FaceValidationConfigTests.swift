@@ -26,7 +26,7 @@ import XCTest
     func testInitialState() {
         // Then
         XCTAssertNil(sut.referenceFace, "Reference face should be nil by default")
-        XCTAssertEqual(sut.similarityThreshold, 0.8, "Similarity threshold should default to 0.8")
+        XCTAssertNil(sut.similarityThreshold, "Similarity threshold should be nil by default")
         XCTAssertFalse(sut.waitForResults, "Should not wait for results by default")
         XCTAssertTrue(sut.useAutocapture, "Should use autocapture by default")
         XCTAssertEqual(sut.timeout, 60, "Timeout should default to 60 seconds")

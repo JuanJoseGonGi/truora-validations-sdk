@@ -21,7 +21,7 @@ import XCTest
             validationId: "test-validation-id",
             loadingType: .face,
             timeProvider: mockTimeProvider,
-            logger: MockTruoraLogger()
+            logger: NoOpLogger()
         )
         sut.presenter = mockPresenter
         ValidationConfig.shared.reset()

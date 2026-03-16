@@ -26,6 +26,10 @@ public protocol CameraDelegate: AnyObject {
 /// Frame processor protocol for processing camera frames
 public protocol FrameProcessor {
     func process(sampleBuffer: CMSampleBuffer)
+
+    /// Callback invoked with inference latency in seconds after each detection.
+    /// Set by the host module to feed into the performance advisor's inference tracker.
+    var onInferenceLatency: ((TimeInterval) -> Void)? { get set }
 }
 
 /// Detection type enum for frame processing

@@ -12,7 +12,7 @@ import XCTest
     func testFetchSupportedCountries_returnsAllSupportedCountries() async throws {
         let presenter = MockDocumentSelectionInteractorPresenter()
         presenter.didLoadCountriesExpectation = expectation(description: "Countries loaded")
-        let sut = DocumentSelectionInteractor(presenter: presenter)
+        let sut = DocumentSelectionInteractor(presenter: presenter, logger: MockTruoraLogger())
 
         sut.fetchSupportedCountries()
         try await fulfillment(of: [XCTUnwrap(presenter.didLoadCountriesExpectation)], timeout: 1.0)
@@ -33,7 +33,7 @@ import XCTest
     private(set) var lastCountries: [NativeCountry]?
     var didLoadCountriesExpectation: XCTestExpectation?
 
-    func didLoadCountries(_ countries: [NativeCountry]) {
+    func didLoadCountries(_ countries: [NativeCountry]) async {
         didLoadCountriesCalled = true
         lastCountries = countries
         didLoadCountriesExpectation?.fulfill()

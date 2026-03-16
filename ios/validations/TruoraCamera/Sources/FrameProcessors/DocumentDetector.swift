@@ -105,8 +105,14 @@ class DocumentDetector {
         outputDtype: .float32 // Range [0,1] matching Python model
     )
 
-    init(logger: MLLifecycleLogger? = nil) {
+    /// TFLite thread count — configurable for constrained devices.
+    /// The performance advisor may set this to 1 on devices with few active cores
+    /// or under thermal pressure.
+    var tfliteThreadCount: Int = 2
+
+    init(logger: MLLifecycleLogger? = nil, tfliteThreadCount: Int = 2) {
         self.logger = logger
+        self.tfliteThreadCount = tfliteThreadCount
         loadModels()
     }
 
@@ -130,7 +136,7 @@ class DocumentDetector {
                 self.logger?.logModelLoadSucceeded(modelName: "document_detector")
 
                 var landmarkerOptions = Interpreter.Options()
-                landmarkerOptions.threadCount = 2
+                landmarkerOptions.threadCount = self.tfliteThreadCount
                 self.landmarkerInterpreter = try Interpreter(modelPath: landmarkerPath, options: landmarkerOptions)
 
                 try self.landmarkerInterpreter?.allocateTensors()

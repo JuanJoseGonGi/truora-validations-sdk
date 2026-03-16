@@ -37,7 +37,8 @@ private struct DocumentDetection {
 
 // MARK: - Detection State Manager
 
-/// Manages thread-safe detection timing and debouncing state
+/// Manages detection timing and debouncing state, protected by NSLock
+/// against interleaving at async suspension points
 private final class DetectionStateManager {
     private let lock = NSLock()
 
@@ -244,6 +245,12 @@ final class DocumentCapturePresenter {
     private var currentEvaluationContext: EvaluationContext?
     private var sideNeedingPreviewClear: DocumentCaptureSide?
 
+    // MARK: - Injection Detection
+
+    private let detectionReporter: DetectionReporter?
+    private var runtimeDetectionTask: Task<Void, Never>?
+    private static let runtimeDetectionInterval: TimeInterval = 10.0
+
     // MARK: - Autodetection Properties
 
     private var lifecycleState: CameraLifecycleState = .uninitialized
@@ -267,7 +274,8 @@ final class DocumentCapturePresenter {
         router: ValidationRouter,
         validationId: String,
         useAutocapture: Bool = true,
-        timeProvider: TimeProvider = RealTimeProvider()
+        timeProvider: TimeProvider = RealTimeProvider(),
+        detectionReporter: DetectionReporter? = ValidationConfig.shared.detectionReporter
     ) {
         self.view = view
         self.interactor = interactor
@@ -275,6 +283,7 @@ final class DocumentCapturePresenter {
         self.validationId = validationId
         self.detectionState = DetectionStateManager(useAutocapture: useAutocapture)
         self.timeProvider = timeProvider
+        self.detectionReporter = detectionReporter
         self.currentSide = .front
         self.feedbackType = useAutocapture ? .searching : .scanningManual
     }
@@ -506,6 +515,12 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
         async let logView: Void = logViewRendered()
         async let logCamera: Void = logCameraOpened()
         _ = await (logView, logCamera)
+
+        // Layer 2: Report camera detection
+        await reportDetectionLayer("camera")
+
+        // Layer 3: Start periodic runtime detection
+        startRuntimeDetection()
     }
 
     // MARK: - Logging Methods
@@ -539,6 +554,37 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
                 "selected_camera": "back"
             ]
         )
+    }
+
+    // MARK: - Injection Detection Methods
+
+    private func reportDetectionLayer(_ layer: String) async {
+        guard let reporter = detectionReporter else { return }
+        await reporter.reportLayer(
+            layer,
+            validationId: validationId,
+            flowType: "document"
+        )
+    }
+
+    private func startRuntimeDetection() {
+        stopRuntimeDetection()
+        guard detectionReporter != nil else { return }
+
+        runtimeDetectionTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(
+                    nanoseconds: UInt64(Self.runtimeDetectionInterval * 1_000_000_000)
+                )
+                guard !Task.isCancelled else { break }
+                await self?.reportDetectionLayer("runtime")
+            }
+        }
+    }
+
+    private func stopRuntimeDetection() {
+        runtimeDetectionTask?.cancel()
+        runtimeDetectionTask = nil
     }
 
     private func logCameraOpenFailed(errorMessage: String) async {
@@ -581,7 +627,21 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
         }
     }
 
+    func cameraPermissionDenied() async {
+        debugLog("❌ DocumentCapturePresenter: Camera permission denied")
+
+        await view?.stopCamera()
+        lifecycleState = .stopped
+
+        await logCameraOpenFailed(errorMessage: "Camera permission denied")
+
+        await router?.handleError(CameraError.permissionDenied().toTruoraException())
+    }
+
     func viewWillDisappear() async {
+        // Stop runtime injection detection
+        stopRuntimeDetection()
+
         // Pause video first to discard any in-progress recording
         if lifecycleState == .capturing {
             await view?.pauseVideo()
@@ -659,11 +719,11 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
         case .front:
             frontPhotoStatus = .loading
             await updateUI(frontPhotoDataUpdate: photoData)
-            handleCaptureFlow(side: .front, photoData: photoData)
+            await handleCaptureFlow(side: .front, photoData: photoData)
         case .back:
             backPhotoStatus = .loading
             await updateUI(backPhotoDataUpdate: photoData)
-            handleCaptureFlow(side: .back, photoData: photoData)
+            await handleCaptureFlow(side: .back, photoData: photoData)
         }
     }
 
@@ -1060,11 +1120,11 @@ private extension DocumentCapturePresenter {
         }
     }
 
-    func handleCaptureFlow(side: DocumentCaptureSide, photoData: Data) {
+    func handleCaptureFlow(side: DocumentCaptureSide, photoData: Data) async {
         guard router != nil else {
             uploadState = .none
             showLoadingScreen = false
-            Task { await view?.showError("Router not configured") }
+            await view?.showError("Router not configured")
             return
         }
 

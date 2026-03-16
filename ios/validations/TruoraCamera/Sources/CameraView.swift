@@ -34,6 +34,13 @@ public class CameraView: UIView {
         cameraManager.updatePreviewLayerFrame(for: self)
     }
 
+    /// Override for session preset, forwarded to CameraManager.
+    /// Set this before calling `startCamera()` to use a non-default resolution.
+    public var sessionPresetOverride: AVCaptureSession.Preset? {
+        get { cameraManager.sessionPresetOverride }
+        set { cameraManager.sessionPresetOverride = newValue }
+    }
+
     public func startCamera(side: CameraSide, cameraOutputMode: CameraOutputMode = .image) {
         cameraManager.cameraSide = side
         cameraManager.delegate = delegate
