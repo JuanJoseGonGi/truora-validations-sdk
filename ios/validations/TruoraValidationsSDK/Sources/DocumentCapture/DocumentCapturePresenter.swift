@@ -297,7 +297,8 @@ final class DocumentCapturePresenter {
         frontPhotoDataUpdate: Data? = nil,
         backPhotoDataUpdate: Data? = nil,
         clearFrontPhoto: Bool = false,
-        clearBackPhoto: Bool = false
+        clearBackPhoto: Bool = false,
+        audioInstruction: TruoraAudioInstruction? = nil
     ) async {
         await view?.updateComposeUI(
             side: currentSide,
@@ -310,7 +311,8 @@ final class DocumentCapturePresenter {
             backPhotoData: backPhotoDataUpdate,
             backPhotoStatus: backPhotoStatus,
             clearFrontPhoto: clearFrontPhoto,
-            clearBackPhoto: clearBackPhoto
+            clearBackPhoto: clearBackPhoto,
+            audioInstruction: audioInstruction
         )
     }
 

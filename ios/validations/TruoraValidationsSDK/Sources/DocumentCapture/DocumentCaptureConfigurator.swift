@@ -34,8 +34,7 @@ enum DocumentCaptureConfigurator {
             interactor: nil,
             router: router,
             validationId: validationId,
-            useAutocapture: useAutocapture,
-            performanceAdvisor: performanceAdvisor
+            useAutocapture: useAutocapture
         )
 
         let logger = try TruoraLoggerImplementation.shared

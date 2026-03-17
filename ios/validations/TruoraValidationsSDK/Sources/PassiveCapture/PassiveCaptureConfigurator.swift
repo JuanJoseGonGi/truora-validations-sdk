@@ -25,8 +25,7 @@ enum PassiveCaptureConfigurator {
             interactor: nil,
             router: router,
             validationId: validationId,
-            useAutocapture: useAutocapture,
-            performanceAdvisor: performanceAdvisor
+            useAutocapture: useAutocapture
         )
 
         let logger = try TruoraLoggerImplementation.shared
