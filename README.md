@@ -18,7 +18,7 @@ Add the SDK to your project using Swift Package Manager:
    ```
    https://github.com/truora/truora-validations-sdk.git
    ```
-3. Select version: `0.0.1` or higher
+3. Select version: `1.0.0` or higher
 4. Select the `TruoraValidationsSDK` product
 
 #### Option 2: Package.swift
@@ -27,7 +27,7 @@ Add the dependency in your `Package.swift` file:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/truora/truora-validations-sdk.git", from: "0.0.1")
+    .package(url: "https://github.com/truora/truora-validations-sdk.git", from: "1.0.0")
 ],
 targets: [
     .target(
