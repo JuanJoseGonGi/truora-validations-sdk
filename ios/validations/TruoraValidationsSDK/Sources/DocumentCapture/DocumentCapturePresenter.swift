@@ -519,7 +519,12 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
         _ = await (logView, logCamera)
 
         // Layer 2: Report camera detection
-        await reportDetectionLayer("camera")
+        let shouldBlock = await reportDetectionLayer("camera")
+        if shouldBlock {
+            stopRuntimeDetection()
+            await router?.handleError(TruoraException.sdk(SDKError(type: .validationInterrupted)))
+            return
+        }
 
         // Layer 3: Start periodic runtime detection
         startRuntimeDetection()
@@ -560,9 +565,9 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
 
     // MARK: - Injection Detection Methods
 
-    private func reportDetectionLayer(_ layer: String) async {
-        guard let reporter = detectionReporter else { return }
-        await reporter.reportLayer(
+    private func reportDetectionLayer(_ layer: String) async -> Bool {
+        guard let reporter = detectionReporter else { return false }
+        return await reporter.reportLayer(
             layer,
             validationId: validationId,
             flowType: "document"
@@ -579,7 +584,14 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
                     nanoseconds: UInt64(Self.runtimeDetectionInterval * 1_000_000_000)
                 )
                 guard !Task.isCancelled else { break }
-                await self?.reportDetectionLayer("runtime")
+                let shouldBlock = await self?.reportDetectionLayer("runtime") ?? false
+                if shouldBlock {
+                    self?.stopRuntimeDetection()
+                    await self?.router?.handleError(
+                        TruoraException.sdk(SDKError(type: .validationInterrupted))
+                    )
+                    break
+                }
             }
         }
     }

@@ -188,7 +188,7 @@ final class DetectionReporterTests: XCTestCase {
         let logger = MockDetectionLogger()
         let reporter = DetectionReporter(detector: detector, logger: logger)
 
-        await reporter.reportLayer("init", validationId: "v1", flowType: "face")
+        _ = await reporter.reportLayer("init", validationId: "v1", flowType: "face")
 
         XCTAssertEqual(logger.entries.count, 1)
         XCTAssertEqual(logger.entries.first?.eventName, "injection_init")
@@ -199,7 +199,7 @@ final class DetectionReporterTests: XCTestCase {
         let logger = MockDetectionLogger()
         let reporter = DetectionReporter(detector: detector, logger: logger)
 
-        await reporter.reportLayer("camera", validationId: "v1", flowType: "face")
+        _ = await reporter.reportLayer("camera", validationId: "v1", flowType: "face")
 
         XCTAssertEqual(logger.entries.count, 1)
         XCTAssertEqual(logger.entries.first?.eventName, "injection_camera")
@@ -210,7 +210,7 @@ final class DetectionReporterTests: XCTestCase {
         let logger = MockDetectionLogger()
         let reporter = DetectionReporter(detector: detector, logger: logger)
 
-        await reporter.reportLayer("runtime", validationId: "v1", flowType: "face")
+        _ = await reporter.reportLayer("runtime", validationId: "v1", flowType: "face")
 
         XCTAssertEqual(logger.entries.count, 1)
         XCTAssertEqual(logger.entries.first?.eventName, "injection_runtime")
@@ -224,9 +224,9 @@ final class DetectionReporterTests: XCTestCase {
         let reporter = DetectionReporter(detector: detector, logger: logger)
 
         // First call: init layer detects simulator
-        await reporter.reportLayer("init", validationId: "v1", flowType: "face")
+        _ = await reporter.reportLayer("init", validationId: "v1", flowType: "face")
         // Second call: runtime layer re-runs jailbreak (no new signals since no files)
-        await reporter.reportLayer("runtime", validationId: "v1", flowType: "face")
+        _ = await reporter.reportLayer("runtime", validationId: "v1", flowType: "face")
 
         XCTAssertEqual(logger.entries.count, 2)
 
@@ -251,9 +251,9 @@ final class DetectionReporterTests: XCTestCase {
         let reporter = DetectionReporter(detector: detector, logger: logger)
 
         // First: init detects simulator
-        await reporter.reportLayer("init", validationId: "v1", flowType: "face")
+        _ = await reporter.reportLayer("init", validationId: "v1", flowType: "face")
         // Second: camera detects external camera (new signal)
-        await reporter.reportLayer("camera", validationId: "v1", flowType: "face")
+        _ = await reporter.reportLayer("camera", validationId: "v1", flowType: "face")
 
         XCTAssertEqual(logger.entries.count, 2)
 
@@ -270,7 +270,7 @@ final class DetectionReporterTests: XCTestCase {
         let logger = MockDetectionLogger()
         let reporter = DetectionReporter(detector: detector, logger: logger)
 
-        await reporter.reportLayer("init", validationId: "v1", flowType: "face")
+        _ = await reporter.reportLayer("init", validationId: "v1", flowType: "face")
 
         XCTAssertEqual(
             logger.entries.first?.level,
@@ -285,7 +285,7 @@ final class DetectionReporterTests: XCTestCase {
         let logger = MockDetectionLogger()
         let reporter = DetectionReporter(detector: detector, logger: logger)
 
-        await reporter.reportLayer("init", validationId: "v1", flowType: "face")
+        _ = await reporter.reportLayer("init", validationId: "v1", flowType: "face")
 
         XCTAssertEqual(
             logger.entries.first?.level,
@@ -294,22 +294,39 @@ final class DetectionReporterTests: XCTestCase {
         )
     }
 
-    // MARK: - Unsigned fallback
+    // MARK: - Blocking threshold
 
-    func testReportLayer_bridgeUnavailable_signatureIsUnsigned() async {
+    func testReportLayer_belowThreshold_returnsTrue() async {
+        // Simulator (50 penalty) + sandbox compromised (50 penalty) = trust score 0
+        let detector = makeDetector(isSimulator: true, canWriteSandbox: true)
+        let logger = MockDetectionLogger()
+        let reporter = DetectionReporter(detector: detector, logger: logger)
+
+        let shouldBlock = await reporter.reportLayer("init", validationId: "v1", flowType: "face")
+
+        XCTAssertTrue(shouldBlock, "Score 0 < threshold 50 should return true (block)")
+    }
+
+    func testReportLayer_aboveThreshold_returnsFalse() async {
+        // Clean device: trust score 100
         let detector = makeDetector()
         let logger = MockDetectionLogger()
         let reporter = DetectionReporter(detector: detector, logger: logger)
 
-        await reporter.reportLayer("init", validationId: "v1", flowType: "face")
+        let shouldBlock = await reporter.reportLayer("init", validationId: "v1", flowType: "face")
 
-        let metadata = logger.entries.first?.metadata
-        let signature = metadata?["signature"] as? String
-        XCTAssertEqual(
-            signature,
-            "unsigned",
-            "Without xcframework, signature should be 'unsigned'"
-        )
+        XCTAssertFalse(shouldBlock, "Score 100 >= threshold 50 should return false (no block)")
+    }
+
+    func testReportLayer_atThreshold_returnsFalse() async {
+        // Simulator: trust score 50 (50 penalty) - uses < not <=
+        let detector = makeDetector(isSimulator: true)
+        let logger = MockDetectionLogger()
+        let reporter = DetectionReporter(detector: detector, logger: logger)
+
+        let shouldBlock = await reporter.reportLayer("init", validationId: "v1", flowType: "face")
+
+        XCTAssertFalse(shouldBlock, "Score == threshold (50) should return false (uses < not <=)")
     }
 
     // MARK: - Metadata fields
@@ -319,13 +336,12 @@ final class DetectionReporterTests: XCTestCase {
         let logger = MockDetectionLogger()
         let reporter = DetectionReporter(detector: detector, logger: logger)
 
-        await reporter.reportLayer("init", validationId: "v1", flowType: "face")
+        _ = await reporter.reportLayer("init", validationId: "v1", flowType: "face")
 
         let metadata = logger.entries.first?.metadata
         XCTAssertNotNil(metadata?["trust_score"])
         XCTAssertNotNil(metadata?["risk_bitmask"])
         XCTAssertNotNil(metadata?["delta_bitmask"])
-        XCTAssertNotNil(metadata?["signature"])
         XCTAssertNotNil(metadata?["ts"])
         XCTAssertNotNil(metadata?["bitmask_v"])
     }
@@ -337,9 +353,9 @@ final class DetectionReporterTests: XCTestCase {
         let logger = MockDetectionLogger()
         let reporter = DetectionReporter(detector: detector, logger: logger)
 
-        await reporter.reportLayer("init", validationId: "v1", flowType: "face")
+        _ = await reporter.reportLayer("init", validationId: "v1", flowType: "face")
         await reporter.reset()
-        await reporter.reportLayer("init", validationId: "v1", flowType: "face")
+        _ = await reporter.reportLayer("init", validationId: "v1", flowType: "face")
 
         // After reset, the same signals should produce a non-zero delta again
         XCTAssertEqual(logger.entries.count, 2)
@@ -369,7 +385,7 @@ final class DetectionReporterTests: XCTestCase {
         let logger = MockDetectionLogger()
         let reporter = DetectionReporter(detector: detector, logger: logger)
 
-        await reporter.reportLayer("init", validationId: "v1", flowType: "face")
+        _ = await reporter.reportLayer("init", validationId: "v1", flowType: "face")
 
         XCTAssertEqual(logger.entries.first?.retention, .oneWeek)
     }

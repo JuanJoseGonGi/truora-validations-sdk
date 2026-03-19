@@ -79,13 +79,15 @@ final class InjectionDetector: @unchecked Sendable {
 
     /// Creates a `DetectionReporter` that wraps this detector for progressive reporting.
     ///
-    /// The returned actor orchestrates detect -> encode -> sign -> log, sending
-    /// HMAC-signed reports through the provided logger at each lifecycle layer.
+    /// The returned actor orchestrates detect -> encode -> log, sending
+    /// reports through the provided logger at each lifecycle layer.
     ///
-    /// - Parameter logger: Logger for sending `EventType.device` events to the backend
+    /// - Parameters:
+    ///   - logger: Logger for sending `EventType.device` events to the backend
+    ///   - blockingThreshold: Trust score below which the flow is blocked (default 50)
     /// - Returns: A new `DetectionReporter` actor bound to this detector
-    func createReporter(logger: TruoraLogger) -> DetectionReporter {
-        DetectionReporter(detector: self, logger: logger)
+    func createReporter(logger: TruoraLogger, blockingThreshold: Int = 50) -> DetectionReporter {
+        DetectionReporter(detector: self, logger: logger, blockingThreshold: blockingThreshold)
     }
 
     // MARK: - Private

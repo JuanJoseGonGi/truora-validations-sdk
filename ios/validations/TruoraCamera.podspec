@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "TruoraCamera"
-  s.version          = "1.1.0"
+  s.version          = "1.1.1-beta"
   s.summary          = "Truora camera module to capture input for biometric validations"
   s.description      = <<-DESC
 TruoraCamera is a camera module based on AVFoundation, with facial detection (Vision/CoreML)

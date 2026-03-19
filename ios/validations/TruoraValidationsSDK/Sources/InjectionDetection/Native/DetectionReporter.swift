@@ -1,22 +1,22 @@
 import Foundation
 
-/// Orchestrates injection detection reporting: detect -> encode -> sign -> log.
+/// Orchestrates injection detection reporting: detect -> encode -> log.
 ///
 /// Uses `actor` isolation for thread safety (matches `TruoraLogger`'s async API).
 /// Each call to `reportLayer(_:validationId:flowType:)` runs the appropriate
-/// detection layer, encodes the results to a bitmask, signs the report (if the
-/// native xcframework is linked), and logs it via `TruoraLogger.logDevice()`.
+/// detection layer, encodes the results to a bitmask, and logs it via
+/// `TruoraLogger.logDevice()`.
 ///
 /// **Deduplication:** Tracks an accumulated bitmask across calls. Only new
 /// signals (delta) are reported, preventing double-counting when runtime
 /// re-checks find the same conditions.
 ///
-/// **Escalation:** Trust scores below the threshold (50 default) trigger
-/// `.error` level logging, which causes session escalation via the
-/// dual-buffer drain in `SdkLogger`.
+/// **Blocking:** Returns `true` when the trust score falls below
+/// `blockingThreshold`, signaling the caller to abort the capture flow.
 actor DetectionReporter {
     private let detector: InjectionDetector
     private let logger: TruoraLogger
+    private let blockingThreshold: Int
     private var accumulatedBitmask: UInt32 = 0
 
     /// Creates a reporter that wraps an injection detector and logs results.
@@ -24,24 +24,28 @@ actor DetectionReporter {
     /// - Parameters:
     ///   - detector: The `InjectionDetector` providing layered detection
     ///   - logger: Logger for sending `EventType.device` events to the backend
-    init(detector: InjectionDetector, logger: TruoraLogger) {
+    ///   - blockingThreshold: Trust score below which the flow is blocked (default 50)
+    init(detector: InjectionDetector, logger: TruoraLogger, blockingThreshold: Int = 50) {
         self.detector = detector
         self.logger = logger
+        self.blockingThreshold = blockingThreshold
     }
 
-    /// Runs the named detection layer, encodes results, signs, and logs.
+    /// Runs the named detection layer, encodes results, and logs.
     ///
     /// - Parameters:
     ///   - layerName: Layer identifier: "init", "camera", or "runtime"
     ///   - validationId: Current validation session identifier
     ///   - flowType: Flow type ("face" or "document")
+    /// - Returns: `true` if the trust score is below the blocking threshold
+    ///   and the caller should abort the flow.
     func reportLayer(
         _ layerName: String,
         validationId: String,
         flowType: String
-    ) async {
+    ) async -> Bool {
         // 1. Run appropriate detector method
-        guard runDetectorLayer(layerName) else { return }
+        guard runDetectorLayer(layerName) else { return false }
 
         // 2. Get cumulative trust result
         let trustResult = detector.computeTrustResult()
@@ -58,49 +62,17 @@ actor DetectionReporter {
         // 6. Timestamp
         let timestamp = Int64(Date().timeIntervalSince1970)
 
-        // 7. Sign report (or use fallback when bridge unavailable)
-        let signature: String
-        let bitmaskVersion: Int
-        let threshold: Int
+        // 7. Determine log level based on blocking threshold
+        let shouldBlock = trustResult.trustScore < blockingThreshold
+        let level: LogLevel = shouldBlock ? .error : .info
 
-        if NativeDetectionBridge.isAvailable {
-            let signed = NativeDetectionBridge.signReport(
-                validationId: validationId,
-                flowType: flowType,
-                trustScore: trustResult.trustScore,
-                riskBitmask: accumulatedBitmask,
-                timestamp: timestamp
-            )
-            if signed == nil {
-                await logger.logSdk(
-                    eventName: "sign_report_failed",
-                    level: .warning,
-                    errorMessage: "Report signing failed;"
-                        + " sending unsigned",
-                    retention: .oneWeek,
-                    metadata: nil
-                )
-            }
-            signature = signed ?? "unsigned"
-            bitmaskVersion = NativeDetectionBridge.getBitmaskVersion()
-            threshold = NativeDetectionBridge.getEscalationThreshold()
-        } else {
-            signature = "unsigned"
-            bitmaskVersion = BitmaskEncoder.version
-            threshold = 50
-        }
-
-        // 8. Determine log level based on escalation threshold
-        let level: LogLevel = trustResult.trustScore < threshold ? .error : .info
-
-        // 9. Log the detection report as a device event
+        // 8. Log the detection report as a device event
         let metadata: [String: Any] = [
             "trust_score": trustResult.trustScore,
             "risk_bitmask": String(accumulatedBitmask, radix: 16),
             "delta_bitmask": String(deltaBitmask, radix: 16),
-            "signature": signature,
             "ts": timestamp,
-            "bitmask_v": bitmaskVersion
+            "bitmask_v": BitmaskEncoder.version
         ]
 
         await logger.logDevice(
@@ -109,6 +81,8 @@ actor DetectionReporter {
             retention: .oneWeek,
             metadata: metadata
         )
+
+        return shouldBlock
     }
 
     /// Clears accumulated state and resets the underlying detector.

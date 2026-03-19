@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "TruoraValidationsSDK"
-  s.version          = "1.1.0"
+  s.version          = "1.1.1-beta"
   s.summary          = "SDK of biometric validations"
   s.description      = <<-DESC
 TruoraValidationsSDK provides a complete biometric validation flow,
@@ -26,7 +26,7 @@ DESC
     ]
   }
   s.frameworks         = ["UIKit", "Foundation", "SwiftUI"]
-  s.dependency         "TruoraCamera", "1.1.0"
+  s.dependency         "TruoraCamera", "1.1.1-beta"
   s.pod_target_xcconfig = {
     "DEFINES_MODULE" => "YES",
     "SWIFT_VERSION"  => "5.9",
