@@ -406,11 +406,16 @@ private func performEnrollment(
     do {
         enrollment = try await apiClient.createEnrollment(request: request)
     } catch let error as TruoraAPIError {
-        if case .serverError(statusCode: 409, let body) = error {
-            try await handleExistingEnrollment(
-                body: body,
-                apiClient: apiClient
-            )
+        if case .serverError(statusCode: 409, _) = error {
+            if let logger = try? TruoraLoggerImplementation.shared {
+                await logger.logSdk(
+                    eventName: "enrollment_already_exists",
+                    level: .warning,
+                    errorMessage: nil,
+                    retention: .oneWeek,
+                    metadata: ["account_id": accountId]
+                )
+            }
             return
         }
         throw error
@@ -481,28 +486,6 @@ private func uploadReferenceFaceFile(
 }
 
 // MARK: - Enrollment Polling
-
-/// Handles a 409 conflict when enrollment already exists.
-/// Parses the enrollment ID from the response body and polls
-/// until it is ready for face validation.
-private func handleExistingEnrollment(
-    body: String?,
-    apiClient: TruoraAPIClient
-) async throws {
-    guard let data = body?.data(using: .utf8),
-          let json = try? JSONDecoder().decode(
-              NativeEnrollmentResponse.self, from: data
-          ) else {
-        debugLog("🟢 ValidationRouter: Enrollment exists, could not parse ID")
-        return
-    }
-
-    debugLog("🟢 ValidationRouter: Enrollment exists - ID: \(json.enrollmentId)")
-    try await waitForEnrollmentReady(
-        enrollmentId: json.enrollmentId,
-        apiClient: apiClient
-    )
-}
 
 /// Exponential backoff intervals for enrollment polling.
 /// Starts at 500ms and doubles up to 8s (total ~30s).
