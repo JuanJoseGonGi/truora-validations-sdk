@@ -13,10 +13,19 @@ import os
 /// - `td_get_escalation_threshold()` — trust score blocking threshold
 /// - `td_free_string(ptr)` — frees Rust-allocated strings
 final class NativeDetectionBridge: DetectionBridging {
+    @available(iOS 14.0, *)
     private static let log = Logger(
         subsystem: "com.truora.validations",
         category: "NativeDetectionBridge"
     )
+
+    private static func logWarning(_ message: String) {
+        if #available(iOS 14.0, *) {
+            log.warning("\(message)")
+        } else {
+            NSLog("[NativeDetectionBridge] ⚠️ %@", message)
+        }
+    }
 
     private init() {}
 
@@ -26,7 +35,7 @@ final class NativeDetectionBridge: DetectionBridging {
     static func create() -> NativeDetectionBridge? {
         #if canImport(TruoraDetection)
         guard td_bitmask_version() > 0 else {
-            log.warning("TruoraDetection linked but td_bitmask_version() returned 0")
+            logWarning("TruoraDetection linked but td_bitmask_version() returned 0")
             return nil
         }
         return NativeDetectionBridge()
@@ -82,7 +91,7 @@ final class NativeDetectionBridge: DetectionBridging {
             riskBitmask,
             timestamp
         ) else {
-            Self.log.warning("td_sign_report returned nil — signature unavailable")
+            Self.logWarning("td_sign_report returned nil — signature unavailable")
             return "unsigned"
         }
         defer { td_free_string(UnsafeMutablePointer(mutating: ptr)) }
