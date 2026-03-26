@@ -232,6 +232,37 @@ import XCTest
             try ValidationConfig.shared.setValidation(.document(document))
         )
     }
+
+    // MARK: - Detection Reporter Forwarding Tests
+
+    func testUpdateValidationId_forwardsToReporter() async throws {
+        // Given: inject a DetectionReporter backed by a mock bridge into ValidationConfig.shared
+        let detector = InjectionDetector()
+        let logger = MockDetectionLogger()
+        let mockBridge = MockDetectionBridge()
+        let reporter = detector.createReporter(
+            logger: logger,
+            flowType: "face",
+            bridge: mockBridge
+        )
+        ValidationConfig.shared.setDetectionReporterForTesting(reporter)
+
+        // When: call updateValidationId — forwards to reporter via fire-and-forget Task
+        ValidationConfig.shared.updateValidationId("test-val-id")
+
+        // Allow the fire-and-forget Task to execute
+        try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+
+        // Trigger signReport by calling reportLayer
+        _ = await reporter.reportLayer("camera")
+
+        // Then: the forwarded validationId must appear in signReport arguments
+        XCTAssertEqual(
+            mockBridge.lastSignReportValidationId,
+            "test-val-id",
+            "ValidationConfig.updateValidationId must forward to DetectionReporter.updateValidationId"
+        )
+    }
 }
 
 // MARK: - Test Helpers

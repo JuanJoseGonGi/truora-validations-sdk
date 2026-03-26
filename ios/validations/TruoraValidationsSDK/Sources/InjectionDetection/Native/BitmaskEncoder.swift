@@ -15,6 +15,10 @@ enum BitmaskEncoder {
     /// Current bitmask layout version. Increment when bit assignments change.
     static let version = 1
 
+    /// Expected bitmask version from native library.
+    /// Mismatch disables native for the session.
+    static let expectedNativeVersion: UInt32 = 1
+
     // MARK: - Bit Assignments
 
     // Simulator signals (bits 0-7)

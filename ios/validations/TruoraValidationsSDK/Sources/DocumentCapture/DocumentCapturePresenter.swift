@@ -266,7 +266,7 @@ final class DocumentCapturePresenter {
 
     /// Constants for logging
     private static let viewName = "doc_capture"
-    private static let validationType = "doc_validation"
+    private static let validationType = "document_validation"
 
     init(
         view: DocumentCapturePresenterToView,
@@ -567,11 +567,7 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
 
     private func reportDetectionLayer(_ layer: String) async -> Bool {
         guard let reporter = detectionReporter else { return false }
-        return await reporter.reportLayer(
-            layer,
-            validationId: validationId,
-            flowType: "document"
-        )
+        return await reporter.reportLayer(layer)
     }
 
     private func startRuntimeDetection() {

@@ -20,7 +20,7 @@ final class DocumentCaptureInteractor {
     private let logger: TruoraLogger
 
     /// Constants for logging
-    private static let validationType = "doc_validation"
+    private static let validationType = "document_validation"
 
     init(
         presenter: DocumentCaptureInteractorToPresenter,

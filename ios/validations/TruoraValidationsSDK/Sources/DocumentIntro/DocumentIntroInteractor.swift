@@ -17,7 +17,7 @@ class DocumentIntroInteractor {
 
     /// Constants for logging
     private static let viewName = "doc_intro"
-    private static let validationType = "doc_validation"
+    private static let validationType = "document_validation"
 
     init(
         presenter: DocumentIntroInteractorToPresenter?,

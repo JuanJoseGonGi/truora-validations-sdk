@@ -8,9 +8,8 @@
 import Foundation
 
 /// Log level enumeration representing the severity of log events.
-/// Follows standard logging conventions (debug < info < warning < error < fatal).
+/// Follows standard logging conventions (info < warning < error < fatal).
 public enum LogLevel: String, Codable, Sendable, CaseIterable {
-    case debug
     case info
     case warning
     case error
@@ -19,18 +18,16 @@ public enum LogLevel: String, Codable, Sendable, CaseIterable {
     /// Priority value for comparison (higher = more severe)
     public var priority: Int {
         switch self {
-        case .debug: 0
-        case .info: 1
-        case .warning: 2
-        case .error: 3
-        case .fatal: 4
+        case .info: 0
+        case .warning: 1
+        case .error: 2
+        case .fatal: 3
         }
     }
 
     /// Emoji prefix for console output (maintains existing SDK convention)
     public var emoji: String {
         switch self {
-        case .debug: "⚪️"
         case .info: "🟢"
         case .warning: "🟡"
         case .error: "🔴"

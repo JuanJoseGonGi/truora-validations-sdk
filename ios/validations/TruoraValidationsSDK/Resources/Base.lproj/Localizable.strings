@@ -127,10 +127,12 @@
 /* Countries */
 "country_all" = "All";
 "country_ar" = "Argentina";
+"country_bo" = "Bolivia";
 "country_br" = "Brazil";
 "country_cl" = "Chile";
 "country_co" = "Colombia";
 "country_cr" = "Costa Rica";
+"country_ec" = "Ecuador";
 "country_mx" = "Mexico";
 "country_pe" = "Peru";
 "country_sv" = "El Salvador";
@@ -160,6 +162,8 @@
 "doc_pe_ptp" = "Temporary Stay Permit";
 "doc_ve_national_id" = "Identity Card";
 "doc_ar_national_id" = "National Identity Document";
+"doc_bo_national_id" = "National ID";
+"doc_ec_national_id" = "National ID";
 "doc_br_cnh" = "CNH";
 "doc_br_general_reg" = "General Registry";
 "doc_br_national_id" = "ID Card (CPF)";
@@ -168,6 +172,7 @@
 "doc_co_foreign_id" = "Foreign ID";
 "doc_co_ppt" = "PPT (Temporal Protection Permit)";
 "doc_co_temp_id" = "Temporary ID";
+"doc_co_tax_id" = "NIT";
 "doc_co_ptp" = "PPT (VEN)";
 "doc_sv_national_id" = "Unique Identity Document (DUI)";
 "doc_sv_foreign_id" = "Residency card";
@@ -184,6 +189,9 @@
 "desc_cl_passport" = "From Chile, valid and current";
 "desc_sv_keep_hand" = "Keep your original document handy";
 "desc_co_temp_id" = "Temporary National ID";
+"desc_taxpayer_id" = "Taxpayer ID";
+"desc_co_taxpayer_id" = "Tax identification number";
+"desc_co_ptp" = "PPT (Temporal Protection Permit)";
 
 /* Cancel Alert */
 "cancel_alert_title" = "Cancel validation";

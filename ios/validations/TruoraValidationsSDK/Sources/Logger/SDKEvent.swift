@@ -51,13 +51,10 @@ public struct SDKEvent: Codable, Sendable {
 
     // MARK: - Business Context (High Cardinality)
 
-    /// User identifier from ValidationConfig
-    public let userId: String?
-
     /// Validation identifier from ValidationConfig
     public let validationId: String?
 
-    /// Type of validation (face_validation, doc_validation)
+    /// Type of validation (face_validation, document_validation)
     public let validationType: String?
 
     /// Account identifier from ValidationConfig
@@ -80,7 +77,7 @@ public struct SDKEvent: Codable, Sendable {
     // MARK: - Additional Context
 
     /// Flexible metadata dictionary for event-specific context
-    public let metadata: [String: String]
+    public let metadata: [String: AnyCodableValue]
 
     /// Data retention period
     public let retention: RetentionPeriod
@@ -97,7 +94,6 @@ public struct SDKEvent: Codable, Sendable {
         errorCode: String? = nil,
         durationMs: Int64? = nil,
         stackTrace: String? = nil,
-        userId: String? = nil,
         validationId: String? = nil,
         validationType: String? = nil,
         accountId: String? = nil,
@@ -105,7 +101,7 @@ public struct SDKEvent: Codable, Sendable {
         osVersion: String,
         sdkVersion: String,
         platform: String = "ios",
-        metadata: [String: String] = [:],
+        metadata: [String: AnyCodableValue] = [:],
         retention: RetentionPeriod
     ) {
         self.eventId = eventId
@@ -117,7 +113,6 @@ public struct SDKEvent: Codable, Sendable {
         self.errorCode = errorCode
         self.durationMs = durationMs
         self.stackTrace = stackTrace
-        self.userId = userId
         self.validationId = validationId
         self.validationType = validationType
         self.accountId = accountId
@@ -141,7 +136,6 @@ public struct SDKEvent: Codable, Sendable {
         case errorCode = "error_code"
         case durationMs = "duration_ms"
         case stackTrace = "stack_trace"
-        case userId = "user_id"
         case validationId = "validation_id"
         case validationType = "validation_type"
         case accountId = "account_id"
@@ -187,11 +181,10 @@ public extension SDKEvent {
         if let errorCode { dict["error_code"] = errorCode }
         if let durationMs { dict["duration_ms"] = durationMs }
         if let stackTrace { dict["stack_trace"] = stackTrace }
-        if let userId { dict["user_id"] = userId }
         if let validationId { dict["validation_id"] = validationId }
         if let validationType { dict["validation_type"] = validationType }
         if let accountId { dict["account_id"] = accountId }
-        dict["metadata"] = metadata
+        dict["metadata"] = metadata.mapValues { $0.rawValue }
 
         return dict
     }

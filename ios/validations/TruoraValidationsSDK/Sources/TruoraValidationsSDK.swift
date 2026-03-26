@@ -51,13 +51,9 @@ public class TruoraValidationsSDK {
         )
 
         // Layer 1: Initialize injection detection and report init
-        ValidationConfig.shared.initializeDetectionReporter()
+        ValidationConfig.shared.initializeDetectionReporter(flowType: "document")
         if let reporter = ValidationConfig.shared.detectionReporter {
-            let shouldBlock = await reporter.reportLayer(
-                "init",
-                validationId: ValidationConfig.shared.validationId ?? "",
-                flowType: "document"
-            )
+            let shouldBlock = await reporter.reportLayer("init")
             if shouldBlock {
                 completion?(.error(TruoraException.sdk(
                     SDKError(type: .validationInterrupted)
@@ -148,13 +144,9 @@ public class TruoraValidationsSDK {
                 case .face: "face"
                 case .document: "document"
                 }
-                ValidationConfig.shared.initializeDetectionReporter()
+                ValidationConfig.shared.initializeDetectionReporter(flowType: flowTypeString)
                 if let reporter = ValidationConfig.shared.detectionReporter {
-                    let shouldBlock = await reporter.reportLayer(
-                        "init",
-                        validationId: ValidationConfig.shared.validationId ?? "",
-                        flowType: flowTypeString
-                    )
+                    let shouldBlock = await reporter.reportLayer("init")
                     if shouldBlock {
                         completion?(.error(TruoraException.sdk(
                             SDKError(type: .validationInterrupted)

@@ -79,15 +79,29 @@ final class InjectionDetector: @unchecked Sendable {
 
     /// Creates a `DetectionReporter` that wraps this detector for progressive reporting.
     ///
-    /// The returned actor orchestrates detect -> encode -> log, sending
-    /// reports through the provided logger at each lifecycle layer.
+    /// The returned actor orchestrates detect -> encode -> native bridge -> sign -> log,
+    /// sending reports through the provided logger at each lifecycle layer.
     ///
     /// - Parameters:
     ///   - logger: Logger for sending `EventType.device` events to the backend
+    ///   - flowType: The flow type for this session ("face" or "document"). Immutable once set.
     ///   - blockingThreshold: Trust score below which the flow is blocked (default 50)
+    ///   - bridge: Native detection bridge; defaults to `NativeDetectionBridge.create()`
+    ///     which returns nil when the XCFramework binary is absent.
     /// - Returns: A new `DetectionReporter` actor bound to this detector
-    func createReporter(logger: TruoraLogger, blockingThreshold: Int = 50) -> DetectionReporter {
-        DetectionReporter(detector: self, logger: logger, blockingThreshold: blockingThreshold)
+    func createReporter(
+        logger: TruoraLogger,
+        flowType: String,
+        blockingThreshold: Int = 50,
+        bridge: (any DetectionBridging)? = NativeDetectionBridge.create()
+    ) -> DetectionReporter {
+        DetectionReporter(
+            detector: self,
+            logger: logger,
+            flowType: flowType,
+            blockingThreshold: blockingThreshold,
+            bridge: bridge
+        )
     }
 
     // MARK: - Private

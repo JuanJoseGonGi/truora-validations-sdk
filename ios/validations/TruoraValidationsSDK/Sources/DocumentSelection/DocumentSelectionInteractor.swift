@@ -13,7 +13,7 @@ final class DocumentSelectionInteractor {
 
     /// Constants for logging
     private static let viewName = "doc_selection"
-    private static let validationType = "doc_validation"
+    private static let validationType = "document_validation"
 
     init(
         presenter: DocumentSelectionInteractorToPresenter?,
@@ -28,7 +28,7 @@ extension DocumentSelectionInteractor: DocumentSelectionPresenterToInteractor {
     func fetchSupportedCountries() {
         // Supported countries.
         let countries: [NativeCountry] = [
-            .all, .ar, .br, .cl, .co, .cr, .mx, .pe, .sv, .ve
+            .all, .ar, .bo, .br, .cl, .co, .cr, .ec, .mx, .pe, .sv, .ve
         ]
         Task { await presenter?.didLoadCountries(countries) }
     }

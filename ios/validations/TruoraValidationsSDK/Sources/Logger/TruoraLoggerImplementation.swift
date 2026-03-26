@@ -257,7 +257,6 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
             errorCode: nil,
             durationMs: durationMs,
             stackTrace: stackTrace,
-            userId: context.userId,
             validationId: context.validationId,
             validationType: context.validationType,
             accountId: context.accountId,
@@ -506,7 +505,6 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
 
     /// Validation context structure to avoid large tuples
     private struct ValidationContext {
-        let userId: String?
         let validationId: String?
         let validationType: String?
         let accountId: String?
@@ -519,7 +517,6 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
         let validationId = await MainActor.run { config.validationId }
 
         return ValidationContext(
-            userId: accountId,
             validationId: validationId,
             validationType: nil,
             accountId: accountId
@@ -542,15 +539,44 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
         "longitude", "lat", "lon", "lng"
     ]
 
-    /// Convert Any metadata to String metadata and filter forbidden GDPR keys
-    private func convertMetadata(_ metadata: [String: Any]?) -> [String: String]? {
+    private static let recognizedPrefixes = ["s_", "i_", "f_", "b_", "t_", "as_"]
+
+    private func hasRecognizedPrefix(_ key: String) -> Bool {
+        Self.recognizedPrefixes.contains { key.hasPrefix($0) }
+    }
+
+    private func applyTypePrefix(key: String, value: AnyCodableValue) -> String {
+        guard !hasRecognizedPrefix(key) else { return key }
+        switch value {
+        case .bool: return "b_\(key)"
+        case .int: return "i_\(key)"
+        case .double: return "f_\(key)"
+        case .string: return "s_\(key)"
+        case .stringArray: return "as_\(key)"
+        }
+    }
+
+    /// Convert Any metadata to AnyCodableValue metadata with type prefixing and GDPR filtering
+    private func convertMetadata(_ metadata: [String: Any]?) -> [String: AnyCodableValue]? {
         guard let metadata else { return nil }
 
-        return metadata.reduce(into: [String: String]()) { result, element in
+        return metadata.reduce(into: [String: AnyCodableValue]()) { result, element in
             let key = element.key.lowercased()
-            if !Self.forbiddenKeys.contains(key) {
-                result[element.key] = "\(element.value)"
+            guard !Self.forbiddenKeys.contains(key) else { return }
+
+            let value: AnyCodableValue = switch element.value {
+            case let val as Bool: .bool(val)
+            case let val as Int: .int(val)
+            case let val as Int64: .int(Int(val))
+            case let val as Double: .double(val)
+            case let val as Float: .double(Double(val))
+            case let val as [String]: .stringArray(val)
+            case let val as String: .string(val)
+            default: .string("\(element.value)")
             }
+
+            let prefixedKey = applyTypePrefix(key: element.key, value: value)
+            result[prefixedKey] = value
         }
     }
 

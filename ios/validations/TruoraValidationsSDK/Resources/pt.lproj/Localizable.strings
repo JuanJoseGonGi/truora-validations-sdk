@@ -127,10 +127,12 @@
 /* Countries */
 "country_all" = "Todos";
 "country_ar" = "Argentina";
+"country_bo" = "Bolívia";
 "country_br" = "Brasil";
 "country_cl" = "Chile";
 "country_co" = "Colômbia";
 "country_cr" = "Costa Rica";
+"country_ec" = "Equador";
 "country_mx" = "México";
 "country_pe" = "Peru";
 "country_sv" = "El Salvador";
@@ -160,6 +162,8 @@
 "doc_pe_ptp" = "Permissão temporária de permanência";
 "doc_ve_national_id" = "Cédula de identidade";
 "doc_ar_national_id" = "Documento nacional de identidade";
+"doc_bo_national_id" = "Cédula de identidade";
+"doc_ec_national_id" = "Cédula de identidade";
 "doc_br_cnh" = "CNH";
 "doc_br_general_reg" = "Registro Geral";
 "doc_br_national_id" = "Cédula (CPF)";
@@ -168,6 +172,7 @@
 "doc_co_foreign_id" = "Cédula de estrangeiro";
 "doc_co_ppt" = "PPT (Permissão por proteção temporária)";
 "doc_co_temp_id" = "Senha";
+"doc_co_tax_id" = "NIT";
 "doc_co_ptp" = "PPT (VEN)";
 "doc_sv_national_id" = "Documento Único de Identidade (DUI)";
 "doc_sv_foreign_id" = "Cartão de residência";
@@ -184,6 +189,9 @@
 "desc_cl_passport" = "Do Chile, válido e vigente";
 "desc_sv_keep_hand" = "Mantenha seu documento original à mão";
 "desc_co_temp_id" = "Cédula de cidadania temporal";
+"desc_taxpayer_id" = "ID do contribuinte";
+"desc_co_taxpayer_id" = "Número de Identificação Tributária";
+"desc_co_ptp" = "PPT (Permissão por proteção temporária)";
 
 /* Cancel Alert */
 "cancel_alert_title" = "Cancelar validação";

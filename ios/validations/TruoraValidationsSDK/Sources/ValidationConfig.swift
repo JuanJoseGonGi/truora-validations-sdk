@@ -46,6 +46,13 @@ final class ValidationConfig: ObservableObject {
         ValidationConfig(logoDownloader: logoDownloader)
     }
 
+    /// Injects a pre-built DetectionReporter for testing purposes.
+    /// Use this to supply a reporter backed by a mock bridge to verify
+    /// the ValidationConfig → DetectionReporter forwarding chain.
+    func setDetectionReporterForTesting(_ reporter: DetectionReporter) {
+        detectionReporter = reporter
+    }
+
     /// Configures the SDK.
     /// - Parameters:
     ///   - apiKey: API key for authentication.
@@ -159,16 +166,22 @@ final class ValidationConfig: ObservableObject {
 
     func updateValidationId(_ validationId: String) {
         self.validationId = validationId
+        Task { [detectionReporter] in
+            await detectionReporter?.updateValidationId(validationId)
+        }
     }
 
     /// Creates and stores a DetectionReporter for injection detection reporting.
     /// Called once per validation flow at the entry point.
-    func initializeDetectionReporter() {
+    ///
+    /// - Parameter flowType: The flow type for this session ("face" or "document").
+    func initializeDetectionReporter(flowType: String) {
         guard let logger = try? TruoraLoggerImplementation.shared else {
             return
         }
         let detector = InjectionDetector()
-        detectionReporter = detector.createReporter(logger: logger)
+        let bridge = NativeDetectionBridge.create()
+        detectionReporter = detector.createReporter(logger: logger, flowType: flowType, bridge: bridge)
     }
 
     func reset() {

@@ -55,6 +55,8 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static let countryAll = TruoraValidationsSDKStrings.tr("Localizable", "country_all")
   /// Argentina
   public static let countryAr = TruoraValidationsSDKStrings.tr("Localizable", "country_ar")
+  /// Bolivia
+  public static let countryBo = TruoraValidationsSDKStrings.tr("Localizable", "country_bo")
   /// Brazil
   public static let countryBr = TruoraValidationsSDKStrings.tr("Localizable", "country_br")
   /// Chile
@@ -63,6 +65,8 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static let countryCo = TruoraValidationsSDKStrings.tr("Localizable", "country_co")
   /// Costa Rica
   public static let countryCr = TruoraValidationsSDKStrings.tr("Localizable", "country_cr")
+  /// Ecuador
+  public static let countryEc = TruoraValidationsSDKStrings.tr("Localizable", "country_ec")
   /// Mexico
   public static let countryMx = TruoraValidationsSDKStrings.tr("Localizable", "country_mx")
   /// Peru
@@ -77,6 +81,10 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static let descClPassport = TruoraValidationsSDKStrings.tr("Localizable", "desc_cl_passport")
   /// From Colombia, valid and current
   public static let descCoPassport = TruoraValidationsSDKStrings.tr("Localizable", "desc_co_passport")
+  /// PPT (Temporal Protection Permit)
+  public static let descCoPtp = TruoraValidationsSDKStrings.tr("Localizable", "desc_co_ptp")
+  /// Tax identification number
+  public static let descCoTaxpayerId = TruoraValidationsSDKStrings.tr("Localizable", "desc_co_taxpayer_id")
   /// Temporary National ID
   public static let descCoTempId = TruoraValidationsSDKStrings.tr("Localizable", "desc_co_temp_id")
   /// Valid and issued in Colombia
@@ -89,8 +97,12 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static let descPhysicalOriginal = TruoraValidationsSDKStrings.tr("Localizable", "desc_physical_original")
   /// Keep your original document handy
   public static let descSvKeepHand = TruoraValidationsSDKStrings.tr("Localizable", "desc_sv_keep_hand")
+  /// Taxpayer ID
+  public static let descTaxpayerId = TruoraValidationsSDKStrings.tr("Localizable", "desc_taxpayer_id")
   /// National Identity Document
   public static let docArNationalId = TruoraValidationsSDKStrings.tr("Localizable", "doc_ar_national_id")
+  /// National ID
+  public static let docBoNationalId = TruoraValidationsSDKStrings.tr("Localizable", "doc_bo_national_id")
   /// CNH
   public static let docBrCnh = TruoraValidationsSDKStrings.tr("Localizable", "doc_br_cnh")
   /// General Registry
@@ -109,12 +121,16 @@ public enum TruoraValidationsSDKStrings: Sendable {
   public static let docCoPpt = TruoraValidationsSDKStrings.tr("Localizable", "doc_co_ppt")
   /// PPT (VEN)
   public static let docCoPtp = TruoraValidationsSDKStrings.tr("Localizable", "doc_co_ptp")
+  /// NIT
+  public static let docCoTaxId = TruoraValidationsSDKStrings.tr("Localizable", "doc_co_tax_id")
   /// Temporary ID
   public static let docCoTempId = TruoraValidationsSDKStrings.tr("Localizable", "doc_co_temp_id")
   /// Foreign ID
   public static let docCrForeignId = TruoraValidationsSDKStrings.tr("Localizable", "doc_cr_foreign_id")
   /// National ID
   public static let docCrNationalId = TruoraValidationsSDKStrings.tr("Localizable", "doc_cr_national_id")
+  /// National ID
+  public static let docEcNationalId = TruoraValidationsSDKStrings.tr("Localizable", "doc_ec_national_id")
   /// Permanent/temporary residence
   public static let docMxForeignId = TruoraValidationsSDKStrings.tr("Localizable", "doc_mx_foreign_id")
   /// INE/IFE (CURP)

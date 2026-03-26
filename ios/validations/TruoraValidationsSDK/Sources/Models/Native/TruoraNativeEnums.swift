@@ -12,10 +12,12 @@ import Foundation
 public enum NativeCountry: String, CaseIterable, Identifiable {
     case all
     case ar
+    case bo
     case br
     case cl
     case co
     case cr
+    case ec
     case mx
     case pe
     case sv
@@ -35,10 +37,12 @@ public enum NativeCountry: String, CaseIterable, Identifiable {
         switch self {
         case .all: "🌍"
         case .ar: "🇦🇷"
+        case .bo: "🇧🇴"
         case .br: "🇧🇷"
         case .cl: "🇨🇱"
         case .co: "🇨🇴"
         case .cr: "🇨🇷"
+        case .ec: "🇪🇨"
         case .mx: "🇲🇽"
         case .pe: "🇵🇪"
         case .sv: "🇸🇻"
@@ -50,7 +54,9 @@ public enum NativeCountry: String, CaseIterable, Identifiable {
     public var documentTypes: [NativeDocumentType] {
         switch self {
         case .mx:
-            [.nationalId, .foreignId, .passport]
+            [.nationalId, .taxId, .foreignId, .passport]
+        case .bo:
+            [.nationalId]
         case .br:
             [.cnh, .generalRegistration]
         case .co:
@@ -59,6 +65,8 @@ public enum NativeCountry: String, CaseIterable, Identifiable {
             [.nationalId, .foreignId, .driverLicense, .passport]
         case .cr:
             [.nationalId, .foreignId]
+        case .ec:
+            [.nationalId]
         case .pe:
             [.nationalId, .foreignId]
         case .ve:
@@ -115,8 +123,10 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
         case .pe: labelKeyForPe
         case .ve: labelKeyForVe
         case .ar: labelKeyForAr
+        case .bo: labelKeyForBo
         case .sv: labelKeyForSv
         case .cr: labelKeyForCr
+        case .ec: labelKeyForEc
         case .all: genericLabelKey
         }
     }
@@ -124,6 +134,7 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
     private var labelKeyForMx: String {
         switch self {
         case .nationalId: LocalizationKeys.docMxNationalId
+        case .taxId: LocalizationKeys.docMxTaxId
         case .foreignId: LocalizationKeys.docMxForeignId
         default: genericLabelKey
         }
@@ -134,6 +145,7 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
         case .cnh: LocalizationKeys.docBrCnh
         case .generalRegistration: LocalizationKeys.docBrGeneralReg
         case .nationalId: LocalizationKeys.docBrNationalId
+        case .taxId: LocalizationKeys.docBrTaxId
         default: genericLabelKey
         }
     }
@@ -143,6 +155,7 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
         case .nationalId: LocalizationKeys.docCoNationalId
         case .foreignId: LocalizationKeys.docCoForeignId
         case .ppt: LocalizationKeys.docCoPpt
+        case .taxId: LocalizationKeys.docCoTaxId
         case .temporaryNationalId: LocalizationKeys.docCoTempId
         case .ptp: LocalizationKeys.docCoPtp
         default: genericLabelKey
@@ -160,6 +173,7 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
         switch self {
         case .nationalId: LocalizationKeys.docPeNationalId
         case .foreignId: LocalizationKeys.docPeForeignId
+        case .taxId: LocalizationKeys.docPeTaxId
         case .ptp: LocalizationKeys.docPePtp
         default: genericLabelKey
         }
@@ -179,10 +193,24 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
         }
     }
 
+    private var labelKeyForBo: String {
+        switch self {
+        case .nationalId: LocalizationKeys.docBoNationalId
+        default: genericLabelKey
+        }
+    }
+
     private var labelKeyForSv: String {
         switch self {
         case .nationalId: LocalizationKeys.docSvNationalId
         case .foreignId: LocalizationKeys.docSvForeignId
+        default: genericLabelKey
+        }
+    }
+
+    private var labelKeyForEc: String {
+        switch self {
+        case .nationalId: LocalizationKeys.docEcNationalId
         default: genericLabelKey
         }
     }
@@ -221,12 +249,14 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
         case .mx:
             switch self {
             case .nationalId, .foreignId: LocalizationKeys.descOriginalValid
+            case .taxId: LocalizationKeys.descTaxpayerId
             case .passport: LocalizationKeys.descMxPassport
             default: nil
             }
         case .br:
             switch self {
             case .cnh, .generalRegistration: LocalizationKeys.descPhysicalOriginal
+            case .taxId: LocalizationKeys.descTaxpayerId
             default: nil
             }
         case .co:
@@ -234,7 +264,9 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
             case .nationalId, .rut, .identityCard: LocalizationKeys.descPhysicalOriginal
             case .foreignId, .ppt: LocalizationKeys.descCoValidIssued
             case .passport: LocalizationKeys.descCoPassport
+            case .taxId: LocalizationKeys.descCoTaxpayerId
             case .temporaryNationalId: LocalizationKeys.descCoTempId
+            case .ptp: LocalizationKeys.descCoPtp
             default: nil
             }
         case .cl:
@@ -256,6 +288,10 @@ public enum NativeDocumentType: String, CaseIterable, Identifiable {
         case .all:
             self == .passport ? LocalizationKeys.descOriginalValid : nil
         case .ar:
+            self == .nationalId ? LocalizationKeys.descPhysicalOriginal : nil
+        case .bo:
+            self == .nationalId ? LocalizationKeys.descPhysicalOriginal : nil
+        case .ec:
             self == .nationalId ? LocalizationKeys.descPhysicalOriginal : nil
         case .cr:
             nil

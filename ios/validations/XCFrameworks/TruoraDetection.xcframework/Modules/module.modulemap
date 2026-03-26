@@ -1,0 +1,4 @@
+module TruoraDetection {
+    header "../Headers/truora_detection.h"
+    export *
+}

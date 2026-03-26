@@ -68,7 +68,7 @@ extension ResultInteractor: ResultPresenterToInteractor {
 
     func logSdkExecutionFinished() async {
         let validationType = loadingType == .face
-            ? "face_validation" : "doc_validation"
+            ? "face_validation" : "document_validation"
         await logger.logSdk(
             eventName: "sdk_execution_finished",
             level: .info,

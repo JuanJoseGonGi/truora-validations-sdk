@@ -163,16 +163,19 @@ enum LocalizationKeys {
     // Mexico
     static let docMxNationalId = "doc_mx_national_id"
     static let docMxForeignId = "doc_mx_foreign_id"
+    static let docMxTaxId = "doc_mx_tax_id"
 
     // Brazil
     static let docBrCnh = "doc_br_cnh"
     static let docBrGeneralReg = "doc_br_general_reg"
     static let docBrNationalId = "doc_br_national_id"
+    static let docBrTaxId = "doc_br_tax_id"
 
     // Colombia
     static let docCoNationalId = "doc_co_national_id"
     static let docCoForeignId = "doc_co_foreign_id"
     static let docCoPpt = "doc_co_ppt"
+    static let docCoTaxId = "doc_co_tax_id"
     static let docCoTempId = "doc_co_temp_id"
     static let docCoPtp = "doc_co_ptp"
 
@@ -182,6 +185,7 @@ enum LocalizationKeys {
     // Peru
     static let docPeNationalId = "doc_pe_national_id"
     static let docPeForeignId = "doc_pe_foreign_id"
+    static let docPeTaxId = "doc_pe_tax_id"
     static let docPePtp = "doc_pe_ptp"
 
     // Venezuela
@@ -193,6 +197,12 @@ enum LocalizationKeys {
     // El Salvador
     static let docSvNationalId = "doc_sv_national_id"
     static let docSvForeignId = "doc_sv_foreign_id"
+
+    // Bolivia
+    static let docBoNationalId = "doc_bo_national_id"
+
+    // Ecuador
+    static let docEcNationalId = "doc_ec_national_id"
 
     // Costa Rica
     static let docCrNationalId = "doc_cr_national_id"
@@ -207,7 +217,8 @@ enum LocalizationKeys {
     static let descCoValidIssued = "desc_co_valid_issued"
     static let descCoPassport = "desc_co_passport"
     static let descCoTempId = "desc_co_temp_id"
-    static let descCoTaxId = "desc_co_tax_id"
+    static let descCoTaxpayerId = "desc_co_taxpayer_id"
+    static let descCoPtp = "desc_co_ptp"
     static let descClForeignId = "desc_cl_foreign_id"
     static let descClPassport = "desc_cl_passport"
     static let descSvKeepHand = "desc_sv_keep_hand"

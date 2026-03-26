@@ -243,9 +243,9 @@ final class InjectionDetectorE2ETests: XCTestCase {
     func testObs01_reporterLogsInjectionInitWithRequiredMetadata() async {
         let detector = InjectionDetector()
         let logger = CapturingLogger()
-        let reporter = detector.createReporter(logger: logger)
+        let reporter = detector.createReporter(logger: logger, flowType: "face")
 
-        _ = await reporter.reportLayer("init", validationId: "", flowType: "face")
+        _ = await reporter.reportLayer("init")
 
         let call = logger.calls.first { $0.eventName == "injection_init" }
         XCTAssertNotNil(call, "Expected injection_init event to be logged")
@@ -268,9 +268,9 @@ final class InjectionDetectorE2ETests: XCTestCase {
     func testObs01_reporterLogsInjectionCameraWithRequiredMetadata() async {
         let detector = InjectionDetector()
         let logger = CapturingLogger()
-        let reporter = detector.createReporter(logger: logger)
+        let reporter = detector.createReporter(logger: logger, flowType: "face")
 
-        _ = await reporter.reportLayer("camera", validationId: "", flowType: "face")
+        _ = await reporter.reportLayer("camera")
 
         let call = logger.calls.first { $0.eventName == "injection_camera" }
         XCTAssertNotNil(call, "Expected injection_camera event to be logged")
@@ -360,13 +360,13 @@ final class InjectionDetectorE2ETests: XCTestCase {
     func testSimulator_initLayerTwice_deltaIsZeroOnSecondCall() async {
         let detector = InjectionDetector()
         let logger = CapturingLogger()
-        let reporter = detector.createReporter(logger: logger)
+        let reporter = detector.createReporter(logger: logger, flowType: "face")
 
         // First init call: simulator signals detected, delta should be non-zero
-        _ = await reporter.reportLayer("init", validationId: "", flowType: "face")
+        _ = await reporter.reportLayer("init")
 
         // Second init call: same environment, no new signals
-        _ = await reporter.reportLayer("init", validationId: "", flowType: "face")
+        _ = await reporter.reportLayer("init")
 
         let initCalls = logger.calls.filter { $0.eventName == "injection_init" }
         XCTAssertEqual(initCalls.count, 2, "Expected exactly 2 injection_init events")

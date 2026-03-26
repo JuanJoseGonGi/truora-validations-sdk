@@ -482,11 +482,7 @@ extension PassiveCapturePresenter: PassiveCaptureViewToPresenter {
 
     private func reportDetectionLayer(_ layer: String) async -> Bool {
         guard let reporter = detectionReporter else { return false }
-        return await reporter.reportLayer(
-            layer,
-            validationId: validationId,
-            flowType: "face"
-        )
+        return await reporter.reportLayer(layer)
     }
 
     private func startRuntimeDetection() {

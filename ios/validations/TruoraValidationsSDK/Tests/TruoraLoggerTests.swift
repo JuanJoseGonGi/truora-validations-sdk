@@ -397,7 +397,6 @@ final class MockTruoraLogger: TruoraLogger, @unchecked Sendable {
             errorCode: nil,
             durationMs: nil,
             stackTrace: stackTrace,
-            userId: nil,
             validationId: nil,
             validationType: nil,
             accountId: nil,
@@ -405,7 +404,17 @@ final class MockTruoraLogger: TruoraLogger, @unchecked Sendable {
             osVersion: "1.0",
             sdkVersion: "1.0.0",
             platform: "ios",
-            metadata: metadata?.mapValues { "\($0)" } ?? [:],
+            metadata: metadata?.reduce(
+                into: [String: AnyCodableValue]()
+            ) { result, pair in
+                switch pair.value {
+                case let val as Bool: result[pair.key] = .bool(val)
+                case let val as Int: result[pair.key] = .int(val)
+                case let val as Double: result[pair.key] = .double(val)
+                case let val as String: result[pair.key] = .string(val)
+                default: result[pair.key] = .string("\(pair.value)")
+                }
+            } ?? [:],
             retention: retention
         )
         lock.lock()
