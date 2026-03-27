@@ -533,7 +533,7 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
     private func buildMergedMetadata(
         context: ValidationContext,
         eventMetadata: [String: Any]?
-    ) -> [String: String] {
+    ) -> [String: AnyCodableValue] {
         let pairs: [(String, String?)] = [
             ("s_account_id", context.accountId),
             ("s_validation_id", context.validationId),
@@ -541,10 +541,10 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
             ("s_flow_id", context.flowId),
             ("s_client_id", context.clientId)
         ]
-        var contextMeta: [String: String] = [:]
+        var contextMeta: [String: AnyCodableValue] = [:]
         for (key, value) in pairs {
             guard let value else { continue }
-            contextMeta[key] = value
+            contextMeta[key] = .string(value)
         }
         let converted = convertMetadata(eventMetadata) ?? [:]
         return contextMeta.merging(converted) { _, event in event }
