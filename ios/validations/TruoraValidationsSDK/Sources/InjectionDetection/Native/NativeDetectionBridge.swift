@@ -26,7 +26,7 @@ final class NativeDetectionBridge: DetectionBridging {
     static func create() -> NativeDetectionBridge? {
         #if canImport(TruoraDetection)
         guard td_bitmask_version() > 0 else {
-            os_log("TruoraDetection linked but td_bitmask_version() returned 0")
+            os_log("TruoraDetection linked but td_bitmask_version() returned 0", log: log, type: .fault)
             return nil
         }
         return NativeDetectionBridge()
@@ -82,7 +82,7 @@ final class NativeDetectionBridge: DetectionBridging {
             riskBitmask,
             timestamp
         ) else {
-            Self.os_log("td_sign_report returned nil — signature unavailable")
+            os_log("td_sign_report returned nil — signature unavailable", log: Self.log, type: .fault)
             return "unsigned"
         }
         defer { td_free_string(UnsafeMutablePointer(mutating: ptr)) }
