@@ -239,33 +239,18 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
         metadata: [String: Any]?,
         stackTrace: String?
     ) async {
-        // Auto-compute duration since logger initialization
         let durationMs = Int64(Date().timeIntervalSince(initializationTime) * 1000)
-
-        // Get context from ValidationConfig
         let context = await getValidationContext()
-
-        // Access deviceInfo on MainActor
-        let deviceModel = await deviceInfo.model
-        let osVersion = await deviceInfo.osVersion
+        let mergedMetadata = buildMergedMetadata(context: context, eventMetadata: metadata)
 
         let event = SDKEvent(
             eventType: eventType,
             eventName: eventName,
             level: level,
             errorMessage: errorMessage,
-            errorCode: nil,
             durationMs: durationMs,
             stackTrace: stackTrace,
-            validationId: context.validationId,
-            validationType: context.validationType,
-            accountId: context.accountId,
-            deviceModel: deviceModel,
-            osVersion: osVersion,
-            sdkVersion: config.sdkVersion,
-            platform: "ios",
-            metadata: convertMetadata(metadata) ?? [:],
-            retention: retention
+            metadata: mergedMetadata
         )
 
         if isSampledIn {
@@ -456,10 +441,24 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
 
         // Copy buffer atomically (actor-isolated)
         let eventsToFlush = eventBuffer
+        let context = await getValidationContext()
+        let deviceModel = await deviceInfo.model
+        let osVersion = await deviceInfo.osVersion
 
         // Send to API if configured
         if let apiOutput {
-            let success = await apiOutput.output(events: eventsToFlush)
+            let batch = SDKLog(
+                sdkVersion: config.sdkVersion,
+                platform: "ios",
+                timestamp: Int64(Date().timeIntervalSince1970 * 1000),
+                deviceModel: deviceModel,
+                osVersion: osVersion,
+                validationId: context.validationId,
+                accountId: context.accountId,
+                events: eventsToFlush
+            )
+
+            let success = await apiOutput.output(batch: batch)
             if success {
                 eventBuffer.removeAll()
                 flushFailureCount = 0
@@ -508,6 +507,9 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
         let validationId: String?
         let validationType: String?
         let accountId: String?
+        let processId: String?
+        let flowId: String?
+        let clientId: String?
     }
 
     /// Get validation context from ValidationConfig
@@ -519,8 +521,33 @@ public actor TruoraLoggerImplementation: TruoraLogger { // swiftlint:disable:thi
         return ValidationContext(
             validationId: validationId,
             validationType: nil,
-            accountId: accountId
+            accountId: accountId,
+            processId: nil,
+            flowId: nil,
+            clientId: nil
         )
+    }
+
+    /// Build context metadata and merge with event-specific metadata.
+    /// Context keys use the s_ prefix. Event-specific keys override context.
+    private func buildMergedMetadata(
+        context: ValidationContext,
+        eventMetadata: [String: Any]?
+    ) -> [String: String] {
+        let pairs: [(String, String?)] = [
+            ("s_account_id", context.accountId),
+            ("s_validation_id", context.validationId),
+            ("s_process_id", context.processId),
+            ("s_flow_id", context.flowId),
+            ("s_client_id", context.clientId)
+        ]
+        var contextMeta: [String: String] = [:]
+        for (key, value) in pairs {
+            guard let value else { continue }
+            contextMeta[key] = value
+        }
+        let converted = convertMetadata(eventMetadata) ?? [:]
+        return contextMeta.merging(converted) { _, event in event }
     }
 
     // GDPR Forbidden keys from backend spec (static to avoid recreating on every call)

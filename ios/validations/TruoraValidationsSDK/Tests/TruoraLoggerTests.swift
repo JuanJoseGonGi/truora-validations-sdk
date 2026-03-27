@@ -394,16 +394,7 @@ final class MockTruoraLogger: TruoraLogger, @unchecked Sendable {
             eventName: eventName,
             level: level,
             errorMessage: errorMessage,
-            errorCode: nil,
-            durationMs: nil,
             stackTrace: stackTrace,
-            validationId: nil,
-            validationType: nil,
-            accountId: nil,
-            deviceModel: "Mock",
-            osVersion: "1.0",
-            sdkVersion: "1.0.0",
-            platform: "ios",
             metadata: metadata?.reduce(
                 into: [String: AnyCodableValue]()
             ) { result, pair in
@@ -414,8 +405,7 @@ final class MockTruoraLogger: TruoraLogger, @unchecked Sendable {
                 case let val as String: result[pair.key] = .string(val)
                 default: result[pair.key] = .string("\(pair.value)")
                 }
-            } ?? [:],
-            retention: retention
+            } ?? [:]
         )
         lock.lock()
         _loggedEvents.append(event)

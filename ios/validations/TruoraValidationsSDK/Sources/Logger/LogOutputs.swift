@@ -37,30 +37,10 @@ actor APILogOutput {
         )
     }
 
-    func output(events: [SDKEvent]) async -> Bool {
-        guard !events.isEmpty else { return true }
-
-        // Build batch: sdkVersion from actor config, platform hardcoded,
-        // device/validation context extracted from the first event.
-        let firstEvent = events[0]
-
-        let logBatch = SDKLog(
-            sdkVersion: sdkVersion,
-            platform: "ios",
-            timestamp: Int64(Date().timeIntervalSince1970 * 1000),
-            deviceModel: firstEvent.deviceModel,
-            osVersion: firstEvent.osVersion,
-            processId: nil,
-            flowId: nil,
-            validationId: firstEvent.validationId,
-            accountId: firstEvent.accountId,
-            clientId: nil,
-            events: events
-        )
-
+    func output(batch: SDKLog) async -> Bool {
         do {
-            _ = try await client.log(logBatch)
-            debugLog("🟢 [TruoraLogger] Sent \(events.count) events")
+            _ = try await client.log(batch)
+            debugLog("🟢 [TruoraLogger] Sent \(batch.events.count) events")
             return true
         } catch {
             let desc = error.localizedDescription

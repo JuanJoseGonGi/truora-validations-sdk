@@ -33,6 +33,7 @@ import SwiftUI
 public enum TruoraValidationsSDKAsset: Sendable {
   public static let all = TruoraValidationsSDKImages(name: "all")
   public static let ar = TruoraValidationsSDKImages(name: "ar")
+  public static let bo = TruoraValidationsSDKImages(name: "bo")
   public static let br = TruoraValidationsSDKImages(name: "br")
   public static let byTruora = TruoraValidationsSDKImages(name: "by_truora")
   public static let cl = TruoraValidationsSDKImages(name: "cl")
@@ -41,6 +42,7 @@ public enum TruoraValidationsSDKAsset: Sendable {
   public static let documentBack = TruoraValidationsSDKImages(name: "document_back")
   public static let documentFront = TruoraValidationsSDKImages(name: "document_front")
   public static let documentIntro = TruoraValidationsSDKImages(name: "document_intro")
+  public static let ec = TruoraValidationsSDKImages(name: "ec")
   public static let iconLock = TruoraValidationsSDKImages(name: "icon_lock")
   public static let logoTruora = TruoraValidationsSDKImages(name: "logo_truora")
   public static let mx = TruoraValidationsSDKImages(name: "mx")
