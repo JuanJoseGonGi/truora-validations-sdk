@@ -36,7 +36,7 @@ public struct LoggerConfiguration: Sendable {
     // MARK: - Sampling Configuration
 
     /// Sampling rate for events (1.0 = 100%, 0.0 = 0%)
-    /// Default: 0.5 (keep 50% of sessions)
+    /// Default: 1.0 (keep 100% of sessions)
     public let sampleRate: Double
 
     // MARK: - Output Configuration
@@ -59,7 +59,7 @@ public struct LoggerConfiguration: Sendable {
     ///   - loggingEndpoint: Base URL for logging API
     ///   - maxBufferSize: Maximum events in buffer (default: 20)
     ///   - flushIntervalMs: Auto-flush interval in ms (default: 30000)
-    ///   - sampleRate: Sampling rate 0.0-1.0 (default: 0.5)
+    ///   - sampleRate: Sampling rate 0.0-1.0 (default: 1.0)
     ///   - enableConsoleOutput: Console output in DEBUG (default: true)
     ///   - enableApiOutput: Send to Truora API (default: true)
     public init(
@@ -68,7 +68,7 @@ public struct LoggerConfiguration: Sendable {
         loggingEndpoint: String = "https://api.validations.truora.com/v1",
         maxBufferSize: Int = 20,
         flushIntervalMs: Int64 = 30000,
-        sampleRate: Double = 0.5,
+        sampleRate: Double = 1.0,
         enableConsoleOutput: Bool = true,
         enableApiOutput: Bool = true
     ) {

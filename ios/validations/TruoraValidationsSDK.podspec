@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "TruoraValidationsSDK"
-  s.version          = "1.2.2"
+  s.version          = "1.2.5"
   s.summary          = "SDK of biometric validations"
   s.description      = <<-DESC
 TruoraValidationsSDK provides a complete biometric validation flow,
@@ -22,11 +22,13 @@ DESC
   s.resource_bundles = {
     "validations_TruoraValidationsSDK" => [
       "ios/validations/TruoraValidationsSDK/Resources/**/*.strings",
-      "ios/validations/TruoraValidationsSDK/Resources/Assets.xcassets"
+      "ios/validations/TruoraValidationsSDK/Resources/Assets.xcassets",
+      "ios/validations/TruoraValidationsSDK/Resources/Audio/*.mp3",
+      "ios/validations/TruoraValidationsSDK/Resources/*.gif"
     ]
   }
   s.frameworks         = ["UIKit", "Foundation", "SwiftUI"]
-  s.dependency         "TruoraCamera", "1.2.2"
+  s.dependency         "TruoraCamera", "1.2.5"
   s.pod_target_xcconfig = {
     "DEFINES_MODULE" => "YES",
     "SWIFT_VERSION"  => "5.9",

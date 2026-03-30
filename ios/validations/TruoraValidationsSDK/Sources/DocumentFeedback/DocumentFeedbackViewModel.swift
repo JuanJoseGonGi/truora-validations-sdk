@@ -14,14 +14,23 @@ import Foundation
     let capturedImageData: Data?
     let retriesLeft: Int
     var presenter: DocumentFeedbackViewToPresenter?
+    private let audioPlayer: TruoraAudioPlayer
 
     init(feedback: FeedbackScenario, capturedImageData: Data?, retriesLeft: Int) {
         self.feedback = feedback
         self.capturedImageData = capturedImageData
         self.retriesLeft = retriesLeft
+        let configuredCountry = ValidationConfig.shared.documentConfig.country.lowercased()
+        self.audioPlayer = TruoraAudioPlayer(
+            languageCode: ValidationConfig.shared.lang?.rawValue ?? Locale.current.languageCode ?? "es",
+            countryCode: configuredCountry.isEmpty ? "co" : configuredCountry
+        )
     }
 
     func onAppear() {
+        if let instruction = audioInstruction(for: feedback) {
+            audioPlayer.play(instruction)
+        }
         guard let presenter else {
             debugLog("⚠️ DocumentFeedbackViewModel: presenter is nil in onAppear")
             return
@@ -29,7 +38,18 @@ import Foundation
         Task { await presenter.viewDidLoad() }
     }
 
-    func onDisappear() {}
+    func onDisappear() {
+        audioPlayer.stop()
+    }
+
+    private func audioInstruction(for scenario: FeedbackScenario) -> TruoraAudioInstruction? {
+        switch scenario {
+        case .documentNotFound: .documentNotFound
+        case .frontOfDocumentNotFound: .placeTheFront
+        case .backOfDocumentNotFound: .placeTheBack
+        case .blurryImage, .imageWithReflection, .faceNotFound, .lowLight: nil
+        }
+    }
 
     func retryTapped() {
         Task { await presenter?.retryTapped() }

@@ -1,16 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56">
+<svg xmlns="http://www.w3.org/2000/svg" width="30" height="22" viewBox="0 0 30 22">
   <defs>
     <clipPath id="flagClip">
       <path
-        d="M4,8.5L52,8.5A3.5,3.5 0,0 1,55.5 12L55.5,44A3.5,3.5 0,0 1,52 47.5L4,47.5A3.5,3.5 0,0 1,0.5 44L0.5,12A3.5,3.5 0,0 1,4 8.5z" />
+        d="M4,0.286L26,0.286A4,4 0,0 1,30 4.286L30,17.714A4,4 0,0 1,26 21.714L4,21.714A4,4 0,0 1,0 17.714L0,4.286A4,4 0,0 1,4 0.286z" />
     </clipPath>
   </defs>
   <path
-    d="M4,8.5L52,8.5A3.5,3.5 0,0 1,55.5 12L55.5,44A3.5,3.5 0,0 1,52 47.5L4,47.5A3.5,3.5 0,0 1,0.5 44L0.5,12A3.5,3.5 0,0 1,4 8.5z"
-    fill="#ffffff" stroke="#F5F5F5" stroke-width="1" />
+    d="M4,0.286L26,0.286A4,4 0,0 1,30 4.286L30,17.714A4,4 0,0 1,26 21.714L4,21.714A4,4 0,0 1,0 17.714L0,4.286A4,4 0,0 1,4 0.286z"
+    fill="#ffffff" />
   <g clip-path="url(#flagClip)">
-    <path d="M0,21.333H56V8H0V21.333Z" fill="#DA291C" fill-rule="evenodd" />
-    <path d="M0,34.667H56V21.333H0V34.667Z" fill="#F2D031" fill-rule="evenodd" />
-    <path d="M0,48H56V34.667H0V48Z" fill="#007934" fill-rule="evenodd" />
+    <path d="M0,7.143H30V0H0V7.143Z" fill="#E63426" fill-rule="evenodd" />
+    <path d="M0,14.286H30V7.143H0V14.286Z" fill="#FFEB1F" fill-rule="evenodd" />
+    <path d="M0,21.429H30V14.286H0V21.429Z" fill="#058C3F" fill-rule="evenodd" />
   </g>
 </svg>

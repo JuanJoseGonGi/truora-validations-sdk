@@ -42,11 +42,20 @@ import TruoraCamera
     var presenter: DocumentCaptureViewToPresenter?
     weak var cameraViewDelegate: DocumentCaptureCameraDelegate?
     private var didLoadOnce: Bool = false
+    private let audioPlayer: TruoraAudioPlayer?
 
     #if DEBUG
     /// Performance advisor reference for the debug overlay. Set by the configurator.
     var performanceAdvisor: PerformanceAdvisor?
     #endif
+
+    init() {
+        let configuredCountry = ValidationConfig.shared.documentConfig.country.lowercased()
+        self.audioPlayer = TruoraAudioPlayer(
+            languageCode: ValidationConfig.shared.lang?.rawValue ?? Locale.current.languageCode ?? "es",
+            countryCode: configuredCountry.isEmpty ? "co" : configuredCountry
+        )
+    }
 
     func onAppear() {
         guard !didLoadOnce else { return }
@@ -62,6 +71,7 @@ import TruoraCamera
     }
 
     func onWillDisappear() {
+        audioPlayer?.stop()
         Task { await presenter?.viewWillDisappear() }
     }
 
@@ -202,9 +212,10 @@ extension DocumentCaptureViewModel: DocumentCapturePresenterToView {
             self.backPhotoData = data
         }
         self.backPhotoStatus = backPhotoStatus
-        // audioInstruction handling intentionally omitted in this version
-        // (audio is handled at the view level via DocumentFeedbackView)
-        _ = audioInstruction
+
+        if let instruction = audioInstruction {
+            audioPlayer?.play(instruction)
+        }
     }
 
     func showError(_ message: String) {

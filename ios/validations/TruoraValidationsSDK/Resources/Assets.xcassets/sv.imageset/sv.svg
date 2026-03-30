@@ -1,23 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56">
+<svg xmlns="http://www.w3.org/2000/svg" width="30" height="22" viewBox="0 0 30 22">
   <defs>
     <clipPath id="flagClip">
       <path
-        d="M4,8.5L52,8.5A3.5,3.5 0,0 1,55.5 12L55.5,44A3.5,3.5 0,0 1,52 47.5L4,47.5A3.5,3.5 0,0 1,0.5 44L0.5,12A3.5,3.5 0,0 1,4 8.5z" />
+        d="M4,0.286L26,0.286A4,4 0,0 1,30 4.286L30,17.714A4,4 0,0 1,26 21.714L4,21.714A4,4 0,0 1,0 17.714L0,4.286A4,4 0,0 1,4 0.286z" />
     </clipPath>
-    <linearGradient id="shieldGradient" x1="22.667" y1="23.733" x2="22.667" y2="33.333" gradientUnits="userSpaceOnUse">
+    <linearGradient id="shieldGradient" x1="12.143" y1="8.428" x2="12.143" y2="13.571" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#3C7839" />
       <stop offset="1" stop-color="#31642E" />
     </linearGradient>
   </defs>
   <path
-    d="M4,8.5L52,8.5A3.5,3.5 0,0 1,55.5 12L55.5,44A3.5,3.5 0,0 1,52 47.5L4,47.5A3.5,3.5 0,0 1,0.5 44L0.5,12A3.5,3.5 0,0 1,4 8.5z"
-    fill="#ffffff" stroke="#F5F5F5" stroke-width="1" />
+    d="M4,0.286L26,0.286A4,4 0,0 1,30 4.286L30,17.714A4,4 0,0 1,26 21.714L4,21.714A4,4 0,0 1,0 17.714L0,4.286A4,4 0,0 1,4 0.286z"
+    fill="#ffffff" />
   <g clip-path="url(#flagClip)">
-    <path d="M0,21.333H56V8H0V21.333Z" fill="#1B57C4" fill-rule="evenodd" />
-    <path d="M0,48H56V34.667H0V48Z" fill="#1B57C4" fill-rule="evenodd" />
+    <path d="M0,7.143H30V0H0V7.143Z" fill="#1B57C4" fill-rule="evenodd" />
+    <path d="M0,21.429H30V14.286H0V21.429Z" fill="#1B57C4" fill-rule="evenodd" />
     <path
-      d="M24.8,23.733C23.504,24.706 22.667,26.255 22.667,28C22.667,30.945 25.054,33.333 28,33.333C30.945,33.333 33.333,30.945 33.333,28C33.333,26.255 32.495,24.706 31.2,23.733L29.333,29.333H26.667L24.8,23.733Z"
+      d="M13.286,8.428C12.592,8.95 12.143,9.78 12.143,10.714C12.143,12.292 13.422,13.571 15,13.571C16.578,13.571 17.857,12.292 17.857,10.714C17.857,9.78 17.408,8.95 16.714,8.428L15.714,11.429H14.286L13.286,8.428Z"
       fill="url(#shieldGradient)" fill-rule="evenodd" />
-    <path d="M28,22.667L29.333,29.333H26.667L28,22.667Z" fill="#F9C92E" fill-rule="evenodd" />
+    <path d="M15,7.857L15.714,11.429H14.286L15,7.857Z" fill="#F9C92E" fill-rule="evenodd" />
   </g>
 </svg>

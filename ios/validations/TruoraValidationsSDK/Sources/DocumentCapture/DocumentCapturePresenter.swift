@@ -337,7 +337,7 @@ final class DocumentCapturePresenter {
         detectionState.startDetectionProcessingTimer()
         lifecycleState = .ready
 
-        await updateUI()
+        await updateUI(audioInstruction: .placeTheBack)
     }
 
     /// Transitions to manual mode when autocapture timeout is reached
@@ -345,7 +345,7 @@ final class DocumentCapturePresenter {
         detectionState.resetDocumentDetectionTimer()
         feedbackType = .scanningManual
         detectionState.setDisplayedFeedback(.scanningManual)
-        await updateUI()
+        await updateUI(audioInstruction: .documentNotFound)
     }
 
     /// Updates feedback with debouncing, returns true if UI should update
@@ -512,6 +512,7 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
 
     func cameraReady() async {
         lifecycleState = .ready
+        await updateUI(audioInstruction: .placeTheFront)
 
         // Log view and camera events concurrently (independent operations)
         async let logView: Void = logViewRendered()
@@ -817,7 +818,7 @@ extension DocumentCapturePresenter: DocumentCaptureViewToPresenter {
         if isInvalidSide {
             detectionState.resetDocumentDetectionTimer()
             if updateDebouncedFeedback(.rotate) {
-                await updateUI()
+                await updateUI(audioInstruction: .rotateDocument)
             }
             return
         }
