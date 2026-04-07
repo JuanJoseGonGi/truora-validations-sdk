@@ -1,0 +1,110 @@
+name: "PoC: iOS CI Build & Test"
+
+# Manual trigger for PoC evaluation.
+# In production this will be triggered by repository_dispatch from Bitbucket
+# (for PR builds) and on:push:tags (for releases).
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Runner label"
+        required: true
+        default: "macos-15"
+        type: choice
+        options:
+          - macos-15
+          - macos-15-large
+          - macos-15-xlarge
+
+jobs:
+  build-and-test:
+    name: Build & Test (SPM)
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 30
+
+    steps:
+      - name: System info
+        run: |
+          echo "::group::Machine"
+          sw_vers
+          sysctl -n machdep.cpu.brand_string
+          sysctl -n hw.ncpu
+          echo "RAM: $(sysctl -n hw.memsize | awk '{print $1/1073741824}') GB"
+          echo "::endgroup::"
+
+          echo "::group::Xcode"
+          xcodebuild -version
+          echo "::endgroup::"
+
+          echo "::group::Disk"
+          df -h /
+          echo "::endgroup::"
+
+          echo "::group::Pre-installed tools"
+          ruby --version
+          pod --version
+          echo "::endgroup::"
+
+      - uses: actions/checkout@v4
+
+      - name: Cache SPM resolved packages
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Resolve dependencies
+        run: |
+          START=$(date +%s)
+          swift package resolve
+          END=$(date +%s)
+          echo "### Resolve: $((END-START))s" >> $GITHUB_STEP_SUMMARY
+
+      - name: Build
+        run: |
+          START=$(date +%s)
+          swift build 2>&1 | tail -20
+          END=$(date +%s)
+          echo "### Build: $((END-START))s" >> $GITHUB_STEP_SUMMARY
+
+      - name: Disk after build
+        run: |
+          df -h /
+          du -sh .build/ || true
+
+      - name: Timing summary
+        run: |
+          echo "## PoC Results" >> $GITHUB_STEP_SUMMARY
+          echo "- **Runner:** ${{ inputs.runner }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Xcode:** $(xcodebuild -version | head -1)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Disk remaining:** $(df -h / | tail -1 | awk '{print $4}')" >> $GITHUB_STEP_SUMMARY
+
+  pod-lint:
+    name: Pod Lint (CocoaPods)
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Locate podspecs
+        run: |
+          echo "Podspecs in repo:"
+          find . -name "*.podspec" -maxdepth 3 | head -10
+          echo "---"
+          echo "Note: podspecs are NOT in the mirror repo."
+          echo "In production, pod trunk push runs from the Bitbucket monorepo"
+          echo "(passed via repository_dispatch or cloned)."
+
+      - name: Simulate pod trunk push (dry run)
+        run: |
+          echo "pod trunk push requires podspec files from the Bitbucket monorepo."
+          echo "This step validates that the CocoaPods toolchain works."
+          echo "---"
+          pod --version
+          pod trunk me 2>&1 || echo "(No trunk session — expected for PoC)"
+          echo "---"
+          echo "### CocoaPods version: $(pod --version)" >> $GITHUB_STEP_SUMMARY
+          echo "### Ruby version: $(ruby --version)" >> $GITHUB_STEP_SUMMARY
